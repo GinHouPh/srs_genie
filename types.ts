@@ -1,8 +1,54 @@
 export type UserRole = 'admin' | 'staff' | 'client';
 export type StaffRole = 'super_admin' | 'billing_manager' | 'support_lead' | 'tech_architect';
-export type SubscriptionTier = 'free' | 'pro' | 'team' | 'enterprise';
+export type SubscriptionTier = 'free' | 'pro' | 'team' | 'enterprise' | string;
 export type PaymentStatus = 'paid' | 'pending' | 'failed' | 'refunded';
 export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled';
+
+// AI Model Provider Configurations
+export type AIProviderType = 'google' | 'openai' | 'anthropic' | 'deepseek' | 'ollama' | 'groq' | 'custom';
+
+export interface AIModelDefinition {
+  id: string; // e.g. "gemini-2.5-flash", "claude-3-7-sonnet"
+  name: string; // e.g. "Gemini 2.5 Flash"
+  providerId: string;
+  providerName: string;
+  contextWindow: string; // e.g. "1M Tokens"
+  speed: 'Ultra Fast' | 'Fast' | 'Balanced' | 'Reasoning Deep';
+  recommendedFor: string;
+  isEnabled: boolean;
+  isDefault?: boolean;
+}
+
+export interface AIModelProvider {
+  id: string;
+  name: string;
+  type: AIProviderType;
+  apiKey: string;
+  baseUrl?: string;
+  isActive: boolean;
+  isDefault: boolean;
+  models: AIModelDefinition[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Analytics Metrics
+export interface AnalyticsDataPoint {
+  date: string;
+  specsCount: number;
+  tokens: number;
+  revenue: number;
+  activeAgents: number;
+}
+
+export interface ModelShareMetric {
+  modelName: string;
+  provider: string;
+  percentage: number;
+  tokenCount: number;
+  requestCount: number;
+}
+
 
 export interface User {
   id: string;
@@ -10,11 +56,16 @@ export interface User {
   email: string;
   role: UserRole;
   staffRole?: StaffRole;
+  tenantId?: string;
   avatarUrl?: string;
   company?: string;
   plan?: SubscriptionTier;
   createdAt?: string;
   specsCount?: number;
+  isEmailVerified?: boolean;
+  verificationCode?: string;
+  trialEndsAt?: string;
+  isTrialActive?: boolean;
 }
 
 export interface AuthState {
@@ -25,6 +76,7 @@ export interface AuthState {
 // SaaS Customer record for Admin Console
 export interface SaaSCustomer {
   id: string;
+  tenantId?: string;
   name: string;
   email: string;
   company: string;
@@ -36,6 +88,7 @@ export interface SaaSCustomer {
   paymentStatus: PaymentStatus;
   avatarUrl?: string;
   mcpApiKeyCount: number;
+  trialEndsAt?: string;
 }
 
 // SaaS Staff Member
@@ -66,11 +119,19 @@ export interface PricingPlan {
   quotaMcpKeys: number;
   maxTeamSeats: number;
   prioritySupport: boolean;
+  // Trial Plan Parameters
+  isTrial?: boolean;
+  trialDays?: number;
+  trialRequiresCard?: boolean;
+  trialAutoConvertsTo?: string;
+  postTrialMonthlyPrice?: number;
+  maxTrialsPerUser?: number;
 }
 
 // SaaS Invoice
 export interface SaaSInvoice {
   id: string;
+  tenantId?: string;
   customerId: string;
   customerName: string;
   customerEmail: string;
@@ -79,6 +140,70 @@ export interface SaaSInvoice {
   date: string;
   plan: SubscriptionTier;
   invoiceNumber: string;
+  paymentGateway?: 'cashfree' | 'stripe' | 'manual';
+  transactionId?: string;
+  currency?: string;
+}
+
+// Cashfree PG Configuration for SaaS Owner
+export interface CashfreeGatewayConfig {
+  appId: string;
+  secretKey: string;
+  environment: 'sandbox' | 'production';
+  currency: 'INR' | 'USD';
+  apiVersion: string;
+  isActive: boolean;
+  webhookUrl?: string;
+}
+
+// Payment Transaction Record
+export interface PaymentTransactionRecord {
+  id: string;
+  tenantId?: string;
+  orderId: string;
+  cfOrderId?: string;
+  customerId: string;
+  customerEmail: string;
+  customerName?: string;
+  amount: number;
+  currency: string;
+  planId: SubscriptionTier;
+  status: 'SUCCESS' | 'FAILED' | 'PENDING' | 'CANCELLED';
+  paymentSessionId?: string;
+  paymentMethod?: string;
+  gateway: 'cashfree';
+  createdAt: string;
+}
+
+// SaaS Business & Enterprise Settings
+export interface BusinessSettings {
+  companyName: string;
+  brandName: string;
+  legalEntityName: string;
+  taxRegistrationNumber: string;
+  supportEmail: string;
+  billingEmail: string;
+  websiteUrl: string;
+  headquartersAddress: string;
+  defaultCurrency: 'INR' | 'USD' | 'EUR' | 'GBP';
+  timezone: string;
+  // SaaS & Trial Parameters
+  defaultTrialDays: number;
+  defaultTrialQuotaSpecs: number;
+  maxTrialsPerCustomer: number;
+  requireCardForTrials: boolean;
+  enforceEmailVerification: boolean;
+  allowSelfRegistration: boolean;
+  // Invoicing & Branding
+  invoicePrefix: string;
+  taxRatePercent: number;
+  invoiceFooterNote: string;
+  invoiceDueDays: number;
+  // System Notice & Operational Status
+  maintenanceMode: boolean;
+  announcementBannerText: string;
+  showAnnouncementBanner: boolean;
+  updatedAt?: string;
 }
 
 // SaaS Business KPI Metrics
@@ -98,6 +223,7 @@ export interface SaasMetrics {
 // MCP Server Key & Session
 export interface McpApiKey {
   id: string;
+  tenantId?: string;
   name: string;
   key: string;
   projectId: string;
@@ -132,6 +258,8 @@ export interface ProjectInput {
   lastModified: Date;
   status: 'draft' | 'generated';
   formData: SRSFormData;
+  tenantId?: string;
+  userId?: string;
 }
 
 // Hierarchical .specs File item
@@ -173,11 +301,38 @@ export interface VibeTask {
 }
 
 export enum AppState {
+  LANDING = 'LANDING',
   AUTH = 'AUTH',
   DASHBOARD = 'DASHBOARD',
   WIZARD = 'WIZARD',
   GENERATING = 'GENERATING',
   RESULT = 'RESULT',
   ADMIN_CONSOLE = 'ADMIN_CONSOLE',
-  MCP_HUB = 'MCP_HUB'
+  MCP_HUB = 'MCP_HUB',
+  BILLING = 'BILLING'
+}
+
+// Fraud & Blacklist Types
+export type BlacklistType = 'email' | 'domain' | 'ip';
+
+export interface BlacklistEntry {
+  id: string;
+  type: BlacklistType;
+  value: string;
+  reason: string;
+  addedAt: string;
+  addedBy: string;
+  isActive: boolean;
+}
+
+export interface FraudEvaluationResult {
+  allowed: boolean;
+  riskScore: number;
+  reason?: string;
+  violations: string[];
+  isDisposable: boolean;
+  isBlacklisted: boolean;
+  isRateLimited: boolean;
+  isDummyOrReserved?: boolean;
+  mxActive?: boolean;
 }

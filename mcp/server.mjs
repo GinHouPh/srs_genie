@@ -3,14 +3,64 @@
 /**
  * SRS Genie Model Context Protocol (MCP) Server
  * Implements MCP JSON-RPC 2.0 specification over STDIO
- * Enables AI Agents (Claude Desktop, Cursor, Antigravity, Windsurf) to access .specs directly.
+ * Hardened with SHA-256 token verification, path traversal defenses, and rate limiting.
  */
 
 import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
+import crypto from 'crypto';
 
 const SPECS_DIR = path.resolve(process.cwd(), '.specs');
+
+// CLI args parsing (e.g., --key=srs_live_xxx)
+let cliKey = null;
+for (const arg of process.argv.slice(2)) {
+  if (arg.startsWith('--key=')) {
+    cliKey = arg.slice(6);
+  }
+}
+
+const REQUIRED_KEY = process.env.SRS_MCP_KEY || cliKey || null;
+
+// Rate limiting state: sliding window (120 reqs/min)
+const RATE_LIMIT_WINDOW_MS = 60000;
+const RATE_LIMIT_MAX = 120;
+let requestTimestamps = [];
+
+function checkRateLimit() {
+  const now = Date.now();
+  requestTimestamps = requestTimestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  if (requestTimestamps.length >= RATE_LIMIT_MAX) {
+    return false;
+  }
+  requestTimestamps.push(now);
+  return true;
+}
+
+// Constant-time key comparison using SHA-256
+function verifyApiKey(presentedKey) {
+  if (!REQUIRED_KEY) return true; // Auth optional if no key is configured in env or CLI
+  if (!presentedKey || typeof presentedKey !== 'string') return false;
+
+  try {
+    const hashExpected = crypto.createHash('sha256').update(REQUIRED_KEY).digest();
+    const hashPresented = crypto.createHash('sha256').update(presentedKey).digest();
+    return crypto.timingSafeEqual(hashExpected, hashPresented);
+  } catch (e) {
+    return false;
+  }
+}
+
+// Strict path traversal defense
+function isPathSafe(baseDir, targetRelPath) {
+  if (!targetRelPath || typeof targetRelPath !== 'string') return false;
+  if (targetRelPath.includes('\0')) return false; // Null byte protection
+
+  const resolved = path.resolve(baseDir, targetRelPath);
+  const rel = path.relative(baseDir, resolved);
+  return !rel.startsWith('..') && !path.isAbsolute(rel);
+}
 
 const TOOLS = [
   {
@@ -77,6 +127,27 @@ const TOOLS = [
 function handleRequest(request) {
   const { id, method, params } = request;
 
+  // 1. Rate Limiting Check
+  if (!checkRateLimit()) {
+    return {
+      jsonrpc: '2.0',
+      id,
+      error: { code: -32000, message: 'Rate limit exceeded: Maximum 120 requests per minute.' }
+    };
+  }
+
+  // 2. Authentication Check for RPC methods requiring access
+  if (method === 'tools/call' && REQUIRED_KEY) {
+    const presentedKey = params?.apiKey || request.apiKey || (params?.arguments && params.arguments.apiKey);
+    if (!verifyApiKey(presentedKey)) {
+      return {
+        jsonrpc: '2.0',
+        id,
+        error: { code: -32001, message: 'Unauthorized: Invalid or missing SRS Genie MCP key' }
+      };
+    }
+  }
+
   switch (method) {
     case 'initialize':
       return {
@@ -87,7 +158,7 @@ function handleRequest(request) {
           capabilities: { tools: {}, resources: {} },
           serverInfo: {
             name: 'srs-genie-mcp-server',
-            version: '1.0.0'
+            version: '1.1.0'
           }
         }
       };
@@ -118,14 +189,15 @@ function handleRequest(request) {
         }
 
         if (toolName === 'get_spec_file') {
-          const targetPath = path.resolve(SPECS_DIR, args.filePath);
-          if (!targetPath.startsWith(SPECS_DIR)) {
+          if (!isPathSafe(SPECS_DIR, args.filePath)) {
             return {
               jsonrpc: '2.0',
               id,
-              result: { isError: true, content: [{ type: 'text', text: 'Access denied: Path outside .specs' }] }
+              result: { isError: true, content: [{ type: 'text', text: 'Access denied: Illegal path traversal detected' }] }
             };
           }
+
+          const targetPath = path.resolve(SPECS_DIR, args.filePath);
           if (!fs.existsSync(targetPath)) {
             return {
               jsonrpc: '2.0',
@@ -162,14 +234,28 @@ function handleRequest(request) {
         }
 
         if (toolName === 'append_decision_log') {
+          // Input length limits to prevent disk exhaustion attacks
+          const title = String(args.title || '').slice(0, 150).replace(/[\r\n]/g, ' ');
+          const context = String(args.context || 'N/A').slice(0, 3000);
+          const decision = String(args.decision || '').slice(0, 3000);
+          const consequences = String(args.consequences || 'None noted').slice(0, 3000);
+
+          if (!title || !decision) {
+            return {
+              jsonrpc: '2.0',
+              id,
+              result: { isError: true, content: [{ type: 'text', text: 'Missing required parameters: title and decision are mandatory.' }] }
+            };
+          }
+
           const adrPath = path.join(SPECS_DIR, 'state', 'decisions_log.md');
           const date = new Date().toISOString().split('T')[0];
-          const newEntry = `\n\n### ${args.title}\n- **Date:** ${date}\n- **Context:** ${args.context || 'N/A'}\n- **Decision:** ${args.decision}\n- **Consequences:** ${args.consequences || 'None noted'}\n`;
+          const newEntry = `\n\n### ${title}\n- **Date:** ${date}\n- **Context:** ${context}\n- **Decision:** ${decision}\n- **Consequences:** ${consequences}\n`;
           fs.appendFileSync(adrPath, newEntry);
           return {
             jsonrpc: '2.0',
             id,
-            result: { content: [{ type: 'text', text: `Appended decision record: ${args.title}` }] }
+            result: { content: [{ type: 'text', text: `Appended decision record: ${title}` }] }
           };
         }
 

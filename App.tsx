@@ -1,29 +1,40 @@
 import React, { useState } from 'react';
 import { Header } from './components/Header';
+import { LandingPage } from './components/LandingPage';
 import { WizardForm } from './components/WizardForm';
 import { DocumentPreview } from './components/DocumentPreview';
 import { Auth } from './components/Auth';
 import { Dashboard } from './components/Dashboard';
 import { AdminConsole } from './components/admin/AdminConsole';
 import { McpHub } from './components/McpHub';
-import { ClientSubscriptionModal } from './components/ClientSubscriptionModal';
+import { ClientBillingPage } from './components/ClientBillingPage';
 import { AppState, ProjectInput, GeneratedContent, User, SubscriptionTier } from './types';
 import { generateComprehensiveSpecPackage } from './services/specGeneratorService';
 import { authService } from './services/authService';
 import { projectStore, SavedProjectRecord } from './services/projectStore';
+import { saasStore } from './services/saasStore';
 
 export default function App() {
   // Real persistent session
   const [user, setUser] = useState<User | null>(() => authService.getCurrentUser());
+  const [businessSettings] = useState(() => saasStore.getBusinessSettings());
   const [appState, setAppState] = useState<AppState>(() =>
-    authService.getCurrentUser() ? AppState.DASHBOARD : AppState.AUTH
+    authService.getCurrentUser() ? AppState.DASHBOARD : AppState.LANDING
   );
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionTier>('pro');
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [activeProjectName, setActiveProjectName] = useState<string>('My Project');
   const [error, setError] = useState<string | null>(null);
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState<boolean>(false);
 
   // Auth Handlers
+  const handleOpenAuth = (mode: 'login' | 'register', plan?: SubscriptionTier) => {
+    setAuthMode(mode);
+    if (plan) setSelectedPlan(plan);
+    setAppState(AppState.AUTH);
+    setError(null);
+  };
+
   const handleLogin = (loggedInUser: User) => {
     setUser(loggedInUser);
     setAppState(AppState.DASHBOARD);
@@ -32,17 +43,25 @@ export default function App() {
   const handleLogout = () => {
     authService.logout();
     setUser(null);
-    setAppState(AppState.AUTH);
+    setAppState(AppState.LANDING);
   };
 
   // Nav Handlers
   const handleStartNew = () => {
+    if (!user) {
+      handleOpenAuth('register', 'free');
+      return;
+    }
     setAppState(AppState.WIZARD);
     setError(null);
   };
 
   const handleBackToDash = () => {
-    setAppState(AppState.DASHBOARD);
+    if (!user) {
+      setAppState(AppState.LANDING);
+    } else {
+      setAppState(AppState.DASHBOARD);
+    }
     setError(null);
   };
 
@@ -106,16 +125,21 @@ export default function App() {
   };
 
   // Generation Handler for comprehensive .specs
-  const handleFormSubmit = async (data: ProjectInput) => {
+  const handleFormSubmit = async (data: ProjectInput, selectedModelId?: string) => {
+    if (!user) {
+      handleOpenAuth('register');
+      return;
+    }
+
     setAppState(AppState.GENERATING);
     setActiveProjectName(data.name);
     try {
       // Associate with current user
       const projectPayload = {
         ...data,
-        userId: user?.id
+        userId: user.id
       };
-      const packageResult = await generateComprehensiveSpecPackage(projectPayload);
+      const packageResult = await generateComprehensiveSpecPackage(projectPayload, selectedModelId);
       // Persist real project to projectStore
       projectStore.saveFullProject(projectPayload, packageResult.specsHierarchy);
       setGeneratedContent(packageResult);
@@ -153,14 +177,33 @@ export default function App() {
           }
         }}
         onNavigateToMcp={() => setAppState(AppState.MCP_HUB)}
-        onNavigateToDashboard={() => setAppState(AppState.DASHBOARD)}
-        onOpenClientSubscription={() => setShowSubscriptionModal(true)}
+        onNavigateToDashboard={() => {
+          if (user) setAppState(AppState.DASHBOARD);
+          else setAppState(AppState.LANDING);
+        }}
+        onNavigateToLanding={() => setAppState(AppState.LANDING)}
+        onOpenClientSubscription={() => setAppState(AppState.BILLING)}
+        onOpenAuth={(mode) => handleOpenAuth(mode)}
       />
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 relative z-10 w-full">
+      {/* Global Business Announcement Banner */}
+      {businessSettings.showAnnouncementBanner && businessSettings.announcementBannerText && (
+        <div className="w-full bg-accent/90 text-white py-2 px-4 text-xs font-display uppercase tracking-wider flex items-center justify-center gap-2 relative z-40 border-b border-accent/40 shadow-sm mt-16">
+          <span className="font-semibold">{businessSettings.announcementBannerText}</span>
+        </div>
+      )}
+
+      {/* Maintenance Mode Notice if active */}
+      {businessSettings.maintenanceMode && (
+        <div className="w-full bg-amber-500 text-ink py-2 px-4 text-xs font-display uppercase tracking-wider font-bold flex items-center justify-center gap-2 relative z-40">
+          <span>⚠️ Maintenance Mode Active: Public account registrations are temporarily paused for platform upgrades.</span>
+        </div>
+      )}
+
+      <main className={`flex-1 flex flex-col items-center justify-center relative z-10 w-full ${!businessSettings.showAnnouncementBanner && !businessSettings.maintenanceMode ? 'mt-16' : ''}`}>
         {/* Error notification banner if any */}
         {error && (
-          <div className="w-full max-w-4xl mx-auto mb-4 p-4 border-l-2 border-accent bg-box border border-line text-white text-xs flex items-center justify-between">
+          <div className="w-full max-w-4xl mx-auto my-4 p-4 border-l-2 border-accent bg-box border border-line text-white text-xs flex items-center justify-between">
             <span>{error}</span>
             <button onClick={() => setError(null)} className="font-display uppercase tracking-[0.1em] text-accent hover:text-white text-xs ml-4">
               Dismiss
@@ -168,15 +211,29 @@ export default function App() {
           </div>
         )}
 
-        {/* State: Landing / Auth */}
+        {/* State: Storefront Landing Page (Public default for visitors) */}
+        {appState === AppState.LANDING && (
+          <LandingPage
+            onStartFree={() => handleOpenAuth('register', 'free')}
+            onSignIn={() => handleOpenAuth('login')}
+            onSelectPlan={(planId) => handleOpenAuth('register', planId)}
+          />
+        )}
+
+        {/* State: Auth (Sign In / Register) */}
         {appState === AppState.AUTH && (
-          <div className="w-full animate-in fade-in duration-500">
-            <Auth onLogin={handleLogin} />
+          <div className="w-full animate-in fade-in duration-500 py-12">
+            <Auth
+              onLogin={handleLogin}
+              initialMode={authMode}
+              initialPlan={selectedPlan}
+              onCancel={() => setAppState(AppState.LANDING)}
+            />
           </div>
         )}
 
-        {/* State: Dashboard */}
-        {appState === AppState.DASHBOARD && (
+        {/* State: Dashboard (Strictly requires login) */}
+        {appState === AppState.DASHBOARD && user && (
           <div className="w-full animate-in fade-in duration-500">
             <Dashboard
               user={user}
@@ -184,7 +241,7 @@ export default function App() {
               onSelectProject={handleSelectExistingProject}
               onOpenMcpHub={() => setAppState(AppState.MCP_HUB)}
               onOpenAdmin={() => setAppState(AppState.ADMIN_CONSOLE)}
-              onOpenSubscription={() => setShowSubscriptionModal(true)}
+              onOpenSubscription={() => setAppState(AppState.BILLING)}
             />
           </div>
         )}
@@ -195,7 +252,7 @@ export default function App() {
             {user?.role === 'admin' || user?.role === 'staff' ? (
               <AdminConsole onBackToDashboard={handleBackToDash} />
             ) : (
-              <div className="p-10 agape-card max-w-md mx-auto text-center">
+              <div className="p-10 agape-card max-w-md mx-auto text-center my-12">
                 <div className="eyebrow mb-2">Restricted Access</div>
                 <h3 className="font-display text-xl font-semibold text-white uppercase tracking-[0.06em] mb-2">
                   Access Restricted
@@ -225,14 +282,32 @@ export default function App() {
           </div>
         )}
 
-        {/* State: Wizard Form */}
+        {/* State: Wizard Form (Strictly requires login) */}
         {appState === AppState.WIZARD && (
-          <div className="w-full animate-in fade-in duration-500">
-            <WizardForm
-              onSubmit={handleFormSubmit}
-              onBack={handleBackToDash}
-            />
-          </div>
+          user ? (
+            <div className="w-full animate-in fade-in duration-500">
+              <WizardForm
+                onSubmit={handleFormSubmit}
+                onBack={handleBackToDash}
+              />
+            </div>
+          ) : (
+            <div className="p-10 agape-card max-w-md mx-auto text-center my-12">
+              <div className="eyebrow mb-2">Account Required</div>
+              <h3 className="font-display text-xl font-semibold text-white uppercase tracking-[0.06em] mb-2">
+                Sign In to Create Specifications
+              </h3>
+              <p className="font-body text-xs text-muted mb-6">
+                Please create a free client account or sign in to build and save 6-tier .specs packages.
+              </p>
+              <button
+                onClick={() => handleOpenAuth('register')}
+                className="btn btn-sm btn--accent"
+              >
+                Create Free Account
+              </button>
+            </div>
+          )
         )}
 
         {/* State: Generating */}
@@ -265,13 +340,16 @@ export default function App() {
           </div>
         )}
 
-        {/* Modal: Client Subscription & Quotas */}
-        {showSubscriptionModal && user && (
-          <ClientSubscriptionModal
-            user={user}
-            onClose={() => setShowSubscriptionModal(false)}
-            onPlanUpdated={handlePlanUpdated}
-          />
+        {/* State: Client Billing & Subscriptions Page (Pure Page) */}
+        {appState === AppState.BILLING && user && (
+          <div className="w-full animate-in fade-in duration-500">
+            <ClientBillingPage
+              user={user}
+              onBack={handleBackToDash}
+              onPlanUpdated={handlePlanUpdated}
+              onNavigateToAdmin={() => setAppState(AppState.ADMIN_CONSOLE)}
+            />
+          </div>
         )}
       </main>
     </div>

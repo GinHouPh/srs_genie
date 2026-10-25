@@ -1,11 +1,13 @@
-import { ProjectInput, GeneratedContent } from '../types';
+import { ProjectInput, GeneratedContent, User } from '../types';
 import { synthesizeSpecsSuite } from './specGeneratorService';
+import { auditLogger } from './auditLogger';
 
 const STORAGE_PROJECTS_KEY = 'srs_genie_saved_projects';
 const STORAGE_SPECS_KEY = 'srs_genie_specs_hierarchies';
 
 export interface SavedProjectRecord extends ProjectInput {
   userId?: string;
+  tenantId?: string;
   specsHierarchy?: Record<string, string>;
   createdAt: string;
   updatedAt: string;
@@ -27,6 +29,8 @@ class ProjectStore {
         // Start with a clean starter project so user can immediately test without having to re-type 15 forms
         const starterProject: SavedProjectRecord = {
           id: 'proj_starter_1',
+          tenantId: 'tenant_master_001',
+          userId: 'admin_root',
           name: 'NextGen SaaS Analytics',
           version: '1.0.0',
           status: 'generated',
@@ -67,13 +71,44 @@ class ProjectStore {
     } catch (e) {}
   }
 
-  // CRUD Operations
-  getAllProjects(): SavedProjectRecord[] {
-    return [...this.projects];
+  // Tenant-Aware CRUD Operations
+  getAllProjects(user?: User | null): SavedProjectRecord[] {
+    if (!user || user.role === 'admin' || user.role === 'staff') {
+      return [...this.projects];
+    }
+
+    // Strict Multi-Tenant Isolation for Clients
+    return this.projects.filter(p => {
+      const matchesUser = p.userId && p.userId === user.id;
+      const matchesTenant = p.tenantId && user.tenantId && p.tenantId === user.tenantId;
+      return matchesUser || matchesTenant;
+    });
   }
 
-  getProjectById(id: string): SavedProjectRecord | undefined {
-    return this.projects.find(p => p.id === id);
+  getProjectById(id: string, user?: User | null): SavedProjectRecord | undefined {
+    const proj = this.projects.find(p => p.id === id);
+    if (!proj) return undefined;
+
+    // Verify tenant ownership if client
+    if (user && user.role === 'client') {
+      const isOwner = (proj.userId && proj.userId === user.id) || (proj.tenantId && user.tenantId && proj.tenantId === user.tenantId);
+      if (!isOwner) {
+        auditLogger.log({
+          actorId: user.id,
+          actorEmail: user.email,
+          actorRole: 'client',
+          tenantId: user.tenantId || 'unknown',
+          action: 'tenant.isolation.violation',
+          status: 'DENIED',
+          resourceType: 'project',
+          resourceId: id,
+          details: `Client attempted unauthorized cross-tenant read on project ${id}. Blocked.`
+        });
+        return undefined; // Block cross-tenant access
+      }
+    }
+
+    return proj;
   }
 
   createProject(input: {
@@ -81,9 +116,11 @@ class ProjectStore {
     version?: string;
     formData?: any;
     userId?: string;
+    tenantId?: string;
   }): SavedProjectRecord {
     const newProj: SavedProjectRecord = {
       id: `proj_${Date.now()}`,
+      tenantId: input.tenantId || (input.userId ? `tenant_${input.userId}` : 'tenant_default'),
       name: input.name.trim(),
       version: input.version || '1.0.0',
       status: 'draft',
@@ -101,15 +138,33 @@ class ProjectStore {
     newProj.specsHierarchy = synthesizeSpecsSuite(newProj);
     this.projects = [newProj, ...this.projects];
     this.saveToStorage();
+
+    auditLogger.log({
+      actorId: input.userId || 'system',
+      actorEmail: 'system',
+      actorRole: 'client',
+      tenantId: newProj.tenantId || 'tenant_default',
+      action: 'project.created',
+      status: 'SUCCESS',
+      resourceType: 'project',
+      resourceId: newProj.id,
+      details: `Project "${newProj.name}" created under tenant ${newProj.tenantId}.`
+    });
+
     return newProj;
   }
 
-  saveFullProject(project: ProjectInput, specs?: Record<string, string>): SavedProjectRecord {
+  saveFullProject(project: ProjectInput, specs?: Record<string, string>, user?: User | null): SavedProjectRecord {
     const existingIdx = this.projects.findIndex(p => p.id === project.id);
     const now = new Date().toISOString();
 
+    const tenantId = user?.tenantId || project.tenantId || (user?.role === 'admin' ? 'tenant_master_001' : (user ? `tenant_${user.id}` : 'tenant_master_001'));
+    const userId = user?.id || project.userId;
+
     const record: SavedProjectRecord = {
       ...project,
+      userId,
+      tenantId,
       lastModified: new Date(),
       updatedAt: now,
       createdAt: existingIdx >= 0 ? this.projects[existingIdx].createdAt : now,
@@ -123,6 +178,19 @@ class ProjectStore {
     }
 
     this.saveToStorage();
+
+    auditLogger.log({
+      actorId: userId || 'anonymous',
+      actorEmail: user?.email || 'user',
+      actorRole: user?.role || 'client',
+      tenantId: tenantId,
+      action: 'project.specs.synthesized',
+      status: 'SUCCESS',
+      resourceType: 'project',
+      resourceId: record.id,
+      details: `Synthesized complete 22-file .specs suite for "${record.name}" under tenant ${tenantId}.`
+    });
+
     return record;
   }
 
@@ -162,6 +230,11 @@ class ProjectStore {
     this.projects = this.projects.filter(p => p.id !== id);
     this.saveToStorage();
     return this.projects.length < initialLen;
+  }
+
+  clearAllProjects() {
+    this.projects = [];
+    this.saveToStorage();
   }
 }
 

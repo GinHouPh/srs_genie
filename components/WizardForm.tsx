@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ProjectInput, SRSFormData } from '../types';
-import { ChevronRight, ChevronLeft, FileText, Save, Eye, CheckCircle, ArrowLeft, Sparkles, HelpCircle } from 'lucide-react';
+import { ProjectInput, SRSFormData, AIModelDefinition } from '../types';
+import { ChevronRight, ChevronLeft, FileText, Save, Eye, CheckCircle, ArrowLeft, Sparkles, HelpCircle, Cpu } from 'lucide-react';
+import { saasStore } from '../services/saasStore';
 
 interface WizardFormProps {
-  onSubmit: (data: ProjectInput) => void;
+  onSubmit: (data: ProjectInput, selectedModelId?: string) => void;
   onBack: () => void;
   initialData?: Partial<ProjectInput>;
 }
@@ -13,6 +14,10 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
   const [formData, setFormData] = useState<SRSFormData>(initialData?.formData || {});
   const [viewMode, setViewMode] = useState<'form' | 'summary'>('form');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const availableModels = saasStore.getAvailableModels();
+  const defaultModel = saasStore.getDefaultModel();
+  const [selectedModelId, setSelectedModelId] = useState<string>(defaultModel?.id || 'gemini-2.5-flash');
 
   const handleInputChange = (section: string, field: string, value: any) => {
     setFormData(prev => ({
@@ -42,7 +47,7 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
       status: 'generated',
       formData: formData
     };
-    onSubmit(projectInput);
+    onSubmit(projectInput, selectedModelId);
   };
 
   const formSections = [
@@ -1187,6 +1192,58 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
             })}
           </div>
 
+          {/* AI Model Provider Selection Grid */}
+          <div className="p-6 border-t border-line bg-surface/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <div>
+                <div className="eyebrow mb-1">AI Intelligence Pipeline</div>
+                <h3 className="font-display text-base font-semibold text-white uppercase tracking-[0.06em] flex items-center gap-2">
+                  <Cpu className="w-4 h-4 text-accent" />
+                  Select AI Synthesis Model
+                </h3>
+              </div>
+              <span className="text-[11px] font-body text-muted">
+                Choose which model engine synthesizes your 22-file .specs suite
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {availableModels.map(model => {
+                const isSelected = model.id === selectedModelId;
+                return (
+                  <div
+                    key={model.id}
+                    onClick={() => setSelectedModelId(model.id)}
+                    className={`p-4 border cursor-pointer transition-all relative ${
+                      isSelected
+                        ? 'border-accent bg-box shadow-md shadow-accent/5 ring-1 ring-accent'
+                        : 'border-line bg-ink hover:border-line-hover hover:bg-surface'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-display text-xs uppercase tracking-wider text-white font-semibold">
+                        {model.name}
+                      </span>
+                      <span className={isSelected ? 'badge--on text-[9px]' : 'badge--off text-[9px]'}>
+                        {model.providerName}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-[10px] font-mono text-muted mb-2">
+                      <span className="text-accent">{model.speed}</span>
+                      <span>·</span>
+                      <span>{model.contextWindow}</span>
+                    </div>
+
+                    <p className="font-body text-[11px] text-muted line-clamp-2">
+                      {model.recommendedFor}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="p-6 border-t border-line bg-surface">
             <button
                onClick={handleGenerate}
@@ -1194,7 +1251,7 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
                className="btn btn--accent w-full justify-center disabled:opacity-50"
              >
                <Sparkles className="w-4 h-4 mr-1.5" />
-               <span>Generate 22-File .specs Suite</span>
+               <span>Generate 22-File .specs Suite ({availableModels.find(m => m.id === selectedModelId)?.name || 'Gemini 2.5'})</span>
              </button>
           </div>
         </div>
@@ -1220,7 +1277,24 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
                </h1>
              </div>
              
-             <div className="flex gap-3">
+             <div className="flex flex-wrap items-center gap-3">
+               {/* Quick Model Selector in Header */}
+               <div className="flex items-center gap-2 bg-box px-3 py-1.5 border border-line text-xs font-display">
+                 <Cpu className="w-3.5 h-3.5 text-accent" />
+                 <span className="text-muted uppercase tracking-wider text-[11px] hidden sm:inline">Model:</span>
+                 <select
+                   value={selectedModelId}
+                   onChange={e => setSelectedModelId(e.target.value)}
+                   className="bg-transparent text-white font-semibold text-xs outline-none cursor-pointer"
+                 >
+                   {availableModels.map(m => (
+                     <option key={m.id} value={m.id} className="bg-surface text-white">
+                       {m.name} ({m.providerName})
+                     </option>
+                   ))}
+                 </select>
+               </div>
+
                <button
                  onClick={exportData}
                  className="btn btn-sm btn--ghost"

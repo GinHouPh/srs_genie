@@ -9,7 +9,9 @@ interface HeaderProps {
   onNavigateToAdmin?: () => void;
   onNavigateToMcp?: () => void;
   onNavigateToDashboard?: () => void;
+  onNavigateToLanding?: () => void;
   onOpenClientSubscription?: () => void;
+  onOpenAuth?: (mode: 'login' | 'register') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,7 +21,9 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateToAdmin,
   onNavigateToMcp,
   onNavigateToDashboard,
-  onOpenClientSubscription
+  onNavigateToLanding,
+  onOpenClientSubscription,
+  onOpenAuth
 }) => {
   const isBusinessOwnerOrStaff = user?.role === 'admin' || user?.role === 'staff';
   const isClient = user?.role === 'client';
@@ -32,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="shell h-16 flex items-center justify-between">
         {/* Brand */}
         <div
-          onClick={onNavigateToDashboard}
+          onClick={user ? onNavigateToDashboard : onNavigateToLanding}
           className="flex items-center space-x-3 cursor-pointer group select-none"
         >
           <div className="w-8 h-8 bg-box border border-line flex items-center justify-center group-hover:border-accent transition-colors">
@@ -48,8 +52,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Center Navigation Links */}
-        {user && (
+        {/* Center Navigation Links for Authenticated Users */}
+        {user ? (
           <nav className="hidden md:flex items-center gap-1 bg-surface border border-line p-1">
             <button
               onClick={onNavigateToDashboard}
@@ -90,20 +94,46 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            {/* Client sees their Subscription & Plan */}
-            {isClient && onOpenClientSubscription && (
+            {/* Subscription & Billing Page Link */}
+            {onOpenClientSubscription && (
               <button
                 onClick={onOpenClientSubscription}
-                className="flex items-center gap-2 px-3 py-1.5 font-display text-xs tracking-[0.16em] uppercase text-muted hover:text-white hover:bg-box transition-all border-l border-line"
+                className={`flex items-center gap-2 px-3 py-1.5 font-display text-xs tracking-[0.16em] uppercase transition-all border-l border-line ${
+                  currentAppState === AppState.BILLING
+                    ? 'bg-accent text-white font-semibold'
+                    : 'text-muted hover:text-white hover:bg-box'
+                }`}
               >
                 <CreditCard className="w-3.5 h-3.5 text-accent" />
                 Billing
               </button>
             )}
           </nav>
+        ) : (
+          /* Public Storefront Navigation for Visitors */
+          <nav className="hidden md:flex items-center gap-6 font-display text-xs uppercase tracking-[0.16em] text-muted">
+            <a
+              href="#specs-architecture"
+              className="hover:text-white transition-colors"
+            >
+              6-Tier Architecture
+            </a>
+            <a
+              href="#mcp"
+              className="hover:text-white transition-colors"
+            >
+              MCP Protocol
+            </a>
+            <a
+              href="#pricing"
+              className="hover:text-white transition-colors"
+            >
+              Pricing Plans
+            </a>
+          </nav>
         )}
 
-        {/* User Profile & Actions */}
+        {/* User Profile / Auth Action Buttons */}
         <div className="flex items-center space-x-3">
           {user ? (
             <div className="flex items-center gap-3">
@@ -157,10 +187,20 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <span className="font-display text-xs tracking-[0.2em] text-muted uppercase">
-                AI Agent Documentation
-              </span>
+            /* Unauthenticated Visitor CTA Buttons */
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => onOpenAuth?.('login')}
+                className="btn btn-sm btn--ghost"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => onOpenAuth?.('register')}
+                className="btn btn-sm btn--accent"
+              >
+                Get Started
+              </button>
             </div>
           )}
         </div>

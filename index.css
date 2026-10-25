@@ -38,20 +38,20 @@
   background: var(--color-muted);
 }
 
-/* Layout Container */
+/* Layout Container - Full Width across viewports so all horizontal menus & tables are visible */
 .shell {
   width: 100%;
-  max-width: 1300px;
+  max-width: 100%;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
 @media (min-width: 640px) {
   .shell {
-    padding-left: 2rem;
-    padding-right: 2rem;
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
   }
 }
 
@@ -59,6 +59,13 @@
   .shell {
     padding-left: 2.5rem;
     padding-right: 2.5rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  .shell {
+    padding-left: 3.5rem;
+    padding-right: 3.5rem;
   }
 }
 
