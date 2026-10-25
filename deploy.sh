@@ -37,24 +37,18 @@ else
     echo "==> Checking for pre-built 'dist' directory..."
 fi
 
-# Deploy built files to public_html
+# If dist is present, deployment is ready!
 if [ -d "dist" ]; then
-    echo "==> Copying build artifacts from dist/ to $DEPLOY_TARGET..."
-    mkdir -p "$DEPLOY_TARGET"
-    cp -r dist/* "$DEPLOY_TARGET"/
+    echo "==> Production build 'dist' is ready."
     
-    # Ensure hidden files (.htaccess) are copied
-    if [ -f "dist/.htaccess" ]; then
-        cp dist/.htaccess "$DEPLOY_TARGET/.htaccess"
+    # If Apache is pointing to an external public_html directory outside this repo:
+    if [ -d "../public_html" ] && [ "$(pwd)" != "$(readlink -f ../public_html 2>/dev/null || echo '')" ]; then
+        echo "==> Syncing files to ../public_html..."
+        cp -r dist/* ../public_html/
+        cp .htaccess ../public_html/.htaccess 2>/dev/null || true
     fi
 
-    # Ensure Cashfree PHP API directory is present
-    if [ -d "dist/api" ]; then
-        mkdir -p "$DEPLOY_TARGET/api"
-        cp -r dist/api/* "$DEPLOY_TARGET/api"/
-    fi
-
-    echo "✅ Application successfully deployed to $DEPLOY_TARGET!"
+    echo "✅ Application successfully prepared for Serverbyt Apache!"
 else
     echo "⚠️ Error: 'dist' folder not found. Please build locally or configure GitHub Actions."
     exit 1

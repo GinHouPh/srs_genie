@@ -1,0 +1,46 @@
+# ----------------------------------------------------------------------
+# SRS Genie - Root Apache Configuration (.htaccess) for Serverbyt / StackCP
+# Directs all web traffic into the compiled production React app in /dist
+# ----------------------------------------------------------------------
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. Forward Cashfree API calls to PHP handler in dist/api/
+  RewriteRule ^api/cashfree(/.*)?$ dist/api/cashfree.php [L,QSA]
+
+  # 2. Prevent directory listing
+  Options -Indexes
+
+  # 3. If the requested file or directory exists inside dist/, serve it from dist/
+  RewriteCond %{REQUEST_URI} !^/dist/
+  RewriteCond %{DOCUMENT_ROOT}/dist/%{REQUEST_URI} -f [OR]
+  RewriteCond %{DOCUMENT_ROOT}/dist/%{REQUEST_URI} -d
+  RewriteRule ^(.*)$ dist/$1 [L]
+
+  # 4. If request is already inside dist/ and is a real file, do not rewrite
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # 5. Route all SPA client-side routes (e.g. /, /admin, /billing) to dist/index.html
+  RewriteRule ^ dist/index.html [L]
+</IfModule>
+
+# ----------------------------------------------------------------------
+# Security & MIME Types
+# ----------------------------------------------------------------------
+<IfModule mod_mime.c>
+  AddType application/javascript .js .mjs
+  AddType text/css .css
+  AddType image/svg+xml .svg
+  AddType application/font-woff2 .woff2
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

@@ -1,0 +1,48 @@
+# ----------------------------------------------------------------------
+# SRS Genie - Apache Configuration (.htaccess) for Serverbyt / StackCP
+# ----------------------------------------------------------------------
+
+# Enable Rewrite Engine
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. Route Cashfree API endpoints to PHP handler
+  RewriteRule ^api/cashfree(/.*)?$ api/cashfree.php [L,QSA]
+
+  # 2. Prevent directory listing
+  Options -Indexes
+
+  # 3. Handle Single Page Application (React Router / HTML5 History)
+  # If request is an existing file or directory, serve it directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Otherwise, route all requests to index.html
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# ----------------------------------------------------------------------
+# Security Headers
+# ----------------------------------------------------------------------
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# ----------------------------------------------------------------------
+# Performance & Static Asset Caching
+# ----------------------------------------------------------------------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
