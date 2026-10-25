@@ -354,13 +354,26 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login', init
             </form>
 
             {isLogin && (
-              <div className="p-4 bg-box/60 border border-line mb-6">
-                <div className="font-display text-xs uppercase tracking-[0.18em] text-accent mb-1 font-semibold">
-                  Business Owner / Admin Portal Demo:
+              <div className="p-4 bg-box/60 border border-line mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <div className="font-display text-xs uppercase tracking-[0.18em] text-accent mb-1 font-semibold">
+                    Business Owner / Admin Portal Demo:
+                  </div>
+                  <div className="font-mono text-xs text-muted">
+                    Email: <span className="text-white font-semibold">admin@srsgenie.ai</span> · Password: <span className="text-white font-semibold">Admin123!</span>
+                  </div>
                 </div>
-                <div className="font-mono text-xs text-muted">
-                  Email: <span className="text-white">admin@srsgenie.ai</span> · Password: <span className="text-white">Admin123!</span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('admin@srsgenie.ai');
+                    setPassword('Admin123!');
+                    setError(null);
+                  }}
+                  className="btn btn--secondary text-xs px-3 py-1.5 shrink-0 self-start sm:self-auto"
+                >
+                  ⚡ Fill Admin
+                </button>
               </div>
             )}
 
