@@ -1,0 +1,251 @@
+/* ------------------------------------------------------------------
+   Agape Infosys / Qreate Digital Design Schema for SRS Genie
+   ------------------------------------------------------------------ */
+
+:root {
+  --color-ink: #0c0c0c;
+  --color-surface: #141414;
+  --color-box: #2c2c2c;
+  --color-line: #383838;
+  --color-muted: #828282;
+  --color-body: #d8d8d8;
+  --color-headline: #ffffff;
+  --color-accent: #d90429;
+  --color-accent-soft: rgba(217, 4, 41, 0.14);
+  --color-on-accent: #ffffff;
+
+  --font-display: 'Akshar', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Roboto', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Custom scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) var(--color-ink);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-ink);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+
+/* Layout Container */
+.shell {
+  width: 100%;
+  max-width: 1300px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .shell {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .shell {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+}
+
+/* Eyebrow - Signature Agape Infosys Red Line + Uppercase Tracked Label */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.34em;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.eyebrow::before {
+  content: '';
+  display: inline-block;
+  height: 1px;
+  width: 2.5rem;
+  background-color: var(--color-accent);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border: 0;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  transition: all 0.25s ease-in-out;
+  padding: 10px 22px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+}
+
+.btn--accent {
+  background-color: var(--color-accent);
+  color: #ffffff;
+}
+
+.btn--accent:hover {
+  background-color: #ffffff;
+  color: #0c0c0c;
+}
+
+.btn--solid {
+  background-color: var(--color-box);
+  color: #ffffff;
+}
+
+.btn--solid:hover {
+  background-color: var(--color-accent);
+  color: #ffffff;
+}
+
+.btn--ghost {
+  border: 1px solid var(--color-line);
+  background-color: transparent;
+  color: #ffffff;
+}
+
+.btn--ghost:hover {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: #ffffff;
+}
+
+/* Secondary Button compatibility */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  background-color: var(--color-surface);
+  color: var(--color-body);
+  border: 1px solid var(--color-line);
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  border-color: var(--color-accent);
+  color: #ffffff;
+}
+
+/* Badges */
+.badge--on {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent);
+  border: 1px solid rgba(217, 4, 41, 0.3);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+}
+
+.badge--off {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: var(--color-box);
+  color: var(--color-muted);
+  border: 1px solid var(--color-line);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+}
+
+/* Stat Widget */
+.stat {
+  border-bottom: 1px solid var(--color-line);
+  padding-bottom: 1.25rem;
+}
+
+.stat__value {
+  display: block;
+  font-family: var(--font-display);
+  color: #ffffff;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.stat__label {
+  margin-top: 0.5rem;
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  text-transform: uppercase;
+}
+
+/* Agape Inputs */
+.agape-input {
+  width: 100%;
+  background-color: transparent;
+  border-bottom: 1px solid var(--color-line);
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  padding-bottom: 0.5rem;
+  font-family: var(--font-body);
+  color: #ffffff;
+  outline: none;
+  transition: border-color 0.25s;
+}
+
+.agape-input:focus {
+  border-color: var(--color-accent);
+}
+
+.agape-input::placeholder {
+  color: var(--color-muted);
+}
+
+/* Card primitives */
+.agape-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-line);
+  transition: border-color 0.25s ease;
+}
+
+.agape-card:hover {
+  border-color: rgba(217, 4, 41, 0.4);
+}

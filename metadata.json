@@ -1,0 +1,6 @@
+{
+  "name": "SRS Genie",
+  "description": "A SaaS platform for developers to generate comprehensive Software Requirement Specification documents and AI-ready coding tasks using Gemini 2.5.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
