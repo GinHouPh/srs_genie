@@ -186,4 +186,46 @@ if ($action === 'users' || strpos($requestUri, '/users') !== false) {
     sendJson(200, ['success' => true, 'users' => $clean]);
 }
 
+// 5. UPDATE PROFILE
+if ($action === 'update-profile' || strpos($requestUri, '/update-profile') !== false) {
+    $userId = $body['userId'] ?? null;
+    $name = trim($body['name'] ?? '');
+    $company = trim($body['company'] ?? '');
+    $avatarUrl = trim($body['avatarUrl'] ?? '');
+
+    if (!$userId) {
+        sendJson(400, ['success' => false, 'error' => 'User ID is required.']);
+    }
+
+    $stmt = $pdo->prepare("UPDATE users SET name = COALESCE(NULLIF(?, ''), name), company = COALESCE(NULLIF(?, ''), company), avatar_url = COALESCE(NULLIF(?, ''), avatar_url), updated_at = NOW() WHERE id = ?");
+    $stmt->execute([$name, $company, $avatarUrl, $userId]);
+
+    // Also update customers table if present
+    $stmtCust = $pdo->prepare("UPDATE customers SET name = COALESCE(NULLIF(?, ''), name), company = COALESCE(NULLIF(?, ''), company) WHERE id = ?");
+    $stmtCust->execute([$name, $company, $userId]);
+
+    sendJson(200, ['success' => true, 'message' => 'Profile updated successfully.']);
+}
+
+// 6. UPDATE PASSWORD
+if ($action === 'update-password' || strpos($requestUri, '/update-password') !== false) {
+    $userId = $body['userId'] ?? null;
+    $email = trim(strtolower($body['email'] ?? ''));
+    $newPassword = $body['newPassword'] ?? '';
+
+    if (!$userId || empty($newPassword)) {
+        sendJson(400, ['success' => false, 'error' => 'User ID and new password are required.']);
+    }
+
+    if (strlen($newPassword) < 6) {
+        sendJson(400, ['success' => false, 'error' => 'Password must be at least 6 characters.']);
+    }
+
+    $newHash = computePasswordHash($newPassword, $email);
+    $stmt = $pdo->prepare("UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?");
+    $stmt->execute([$newHash, $userId]);
+
+    sendJson(200, ['success' => true, 'message' => 'Password updated successfully.']);
+}
+
 sendJson(404, ['error' => 'Auth endpoint not found']);

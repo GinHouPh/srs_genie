@@ -419,53 +419,50 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({ onBackToDashboard })
         </div>
       )}
 
-      {/* Top Header Bar */}
-      <div className="agape-card p-8 relative overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div>
-            <div className="eyebrow mb-3">SaaS Governance & Ops</div>
-            <h1 className="font-display text-3xl sm:text-4xl font-semibold text-white tracking-[0.04em] uppercase">
-              Business Operations Console
-            </h1>
-            <p className="font-body text-xs text-muted mt-2 max-w-2xl">
-              Complete administrative authority over client workspaces, staff access roles, subscription pricing tiers, billing ledger, and MCP agent gateway tokens.
-            </p>
-          </div>
+      {/* Sleek, Low-Profile Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-line">
+        <div className="flex items-center gap-3">
+          <span className="font-display text-sm tracking-[0.16em] uppercase text-white font-semibold flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+            Operations Console
+          </span>
+          <span className="text-[10px] font-mono px-2 py-0.5 bg-box border border-line text-muted">
+            MySQL Server Live
+          </span>
+        </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onBackToDashboard}
-              className="btn btn-sm btn--ghost"
-            >
-              ← Dashboard
-            </button>
-            <button
-              onClick={() => {
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            onClick={onBackToDashboard}
+            className="btn btn-sm btn--ghost text-xs py-1"
+          >
+            ← Workspace
+          </button>
+          <button
+            onClick={() => {
+              refreshAll();
+              showToast('Synchronized data store with MySQL.');
+            }}
+            className="p-1.5 bg-box border border-line text-muted hover:text-accent hover:border-accent transition-colors"
+            title="Refresh Data Store"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => {
+              if (confirm('Purge all demo data, mock invoices, and test customers? Your live Cashfree credentials will be preserved.')) {
+                saasStore.clearMockData();
+                authService.clearAllMockData();
                 refreshAll();
-                showToast('Synchronized data store.');
-              }}
-              className="p-2 bg-box border border-line text-muted hover:text-accent hover:border-accent transition-colors"
-              title="Refresh Store"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => {
-                if (confirm('Purge all demo data, mock invoices, and test customers? Your live Cashfree credentials will be preserved.')) {
-                  saasStore.clearMockData();
-                  authService.clearAllMockData();
-                  refreshAll();
-                  showToast('All mock data purged. System is clean for live testing.');
-                }
-              }}
-              className="px-3 py-1.5 bg-box border border-line text-muted hover:text-accent hover:border-accent transition-colors text-xs font-display uppercase tracking-[0.1em] flex items-center gap-1.5"
-              title="Purge Mock Data"
-            >
-              <Trash2 className="w-3.5 h-3.5 text-accent" />
-              <span>Purge Test Data</span>
-            </button>
-          </div>
+                showToast('All mock data purged.');
+              }
+            }}
+            className="px-2.5 py-1 bg-box border border-line text-muted hover:text-accent hover:border-accent transition-colors text-[11px] font-display uppercase tracking-[0.08em] flex items-center gap-1.5"
+            title="Purge Mock Data"
+          >
+            <Trash2 className="w-3 h-3 text-accent" />
+            <span>Purge Test Data</span>
+          </button>
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import { Dashboard } from './components/Dashboard';
 import { AdminConsole } from './components/admin/AdminConsole';
 import { McpHub } from './components/McpHub';
 import { ClientBillingPage } from './components/ClientBillingPage';
+import { UserProfilePage } from './components/UserProfilePage';
 import { AppState, ProjectInput, GeneratedContent, User, SubscriptionTier } from './types';
 import { generateComprehensiveSpecPackage } from './services/specGeneratorService';
 import { authService } from './services/authService';
@@ -183,6 +184,7 @@ export default function App() {
         }}
         onNavigateToLanding={() => setAppState(AppState.LANDING)}
         onOpenClientSubscription={() => setAppState(AppState.BILLING)}
+        onNavigateToProfile={() => setAppState(AppState.PROFILE)}
         onOpenAuth={(mode) => handleOpenAuth(mode)}
       />
 
@@ -348,6 +350,28 @@ export default function App() {
               onBack={handleBackToDash}
               onPlanUpdated={handlePlanUpdated}
               onNavigateToAdmin={() => setAppState(AppState.ADMIN_CONSOLE)}
+            />
+          </div>
+        )}
+
+        {/* State: User Profile Page */}
+        {appState === AppState.PROFILE && user && (
+          <div className="w-full animate-in fade-in duration-500">
+            <UserProfilePage
+              user={user}
+              onUpdateUser={(updated) => setUser(updated)}
+              onNavigateToDashboard={handleBackToDash}
+              onNavigateToBilling={() => setAppState(AppState.BILLING)}
+              onOpenProject={(proj) => {
+                if (proj.content) {
+                  setGeneratedContent(proj.content);
+                  setActiveProjectName(proj.name);
+                  setAppState(AppState.RESULT);
+                } else {
+                  handleBackToDash();
+                }
+              }}
+              onLogout={handleLogout}
             />
           </div>
         )}

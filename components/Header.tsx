@@ -11,6 +11,7 @@ interface HeaderProps {
   onNavigateToDashboard?: () => void;
   onNavigateToLanding?: () => void;
   onOpenClientSubscription?: () => void;
+  onNavigateToProfile?: () => void;
   onOpenAuth?: (mode: 'login' | 'register') => void;
 }
 
@@ -23,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateToDashboard,
   onNavigateToLanding,
   onOpenClientSubscription,
+  onNavigateToProfile,
   onOpenAuth
 }) => {
   const isBusinessOwnerOrStaff = user?.role === 'admin' || user?.role === 'staff';
@@ -108,6 +110,21 @@ export const Header: React.FC<HeaderProps> = ({
                 Billing
               </button>
             )}
+
+            {/* Profile Page Link */}
+            {onNavigateToProfile && (
+              <button
+                onClick={onNavigateToProfile}
+                className={`flex items-center gap-2 px-3 py-1.5 font-display text-xs tracking-[0.16em] uppercase transition-all border-l border-line ${
+                  currentAppState === AppState.PROFILE
+                    ? 'bg-accent text-white font-semibold'
+                    : 'text-muted hover:text-white hover:bg-box'
+                }`}
+              >
+                <UserIcon className="w-3.5 h-3.5 text-accent" />
+                Profile
+              </button>
+            )}
           </nav>
         ) : (
           /* Public Storefront Navigation for Visitors */
@@ -159,21 +176,25 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </div>
 
-              {/* User Identity */}
-              <div className="flex items-center gap-2 pl-3 border-l border-line">
+              {/* User Identity (Clickable to open Profile) */}
+              <div
+                onClick={onNavigateToProfile}
+                className="flex items-center gap-2 pl-3 border-l border-line cursor-pointer group select-none hover:opacity-90 transition-opacity"
+                title="View & Edit Profile"
+              >
                 <div className="text-right hidden sm:block">
-                  <div className="font-display text-xs font-semibold tracking-[0.08em] text-white uppercase leading-tight">
+                  <div className="font-display text-xs font-semibold tracking-[0.08em] text-white uppercase leading-tight group-hover:text-accent transition-colors">
                     {user.name}
                   </div>
                   <div className="font-body text-[11px] text-muted tracking-normal">
                     {user.email}
                   </div>
                 </div>
-                <div className="w-8 h-8 bg-surface border border-line flex items-center justify-center overflow-hidden">
+                <div className="w-8 h-8 bg-surface border border-line group-hover:border-accent flex items-center justify-center overflow-hidden transition-colors">
                   {user.avatarUrl ? (
                     <img src={user.avatarUrl} alt="User" className="w-full h-full object-cover" />
                   ) : (
-                    <UserIcon className="w-4 h-4 text-muted" />
+                    <UserIcon className="w-4 h-4 text-muted group-hover:text-white" />
                   )}
                 </div>
               </div>

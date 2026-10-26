@@ -309,7 +309,8 @@ export enum AppState {
   RESULT = 'RESULT',
   ADMIN_CONSOLE = 'ADMIN_CONSOLE',
   MCP_HUB = 'MCP_HUB',
-  BILLING = 'BILLING'
+  BILLING = 'BILLING',
+  PROFILE = 'PROFILE'
 }
 
 // Fraud & Blacklist Types

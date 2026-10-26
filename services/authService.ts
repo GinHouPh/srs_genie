@@ -585,6 +585,56 @@ class AuthService {
     return this.currentUser;
   }
 
+  async updateUserProfile(userId: string, updates: { name?: string; company?: string; avatarUrl?: string }): Promise<User | null> {
+    const updated = this.updateUser(userId, updates);
+    try {
+      await fetch('/api/auth/update-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, ...updates })
+      });
+    } catch {}
+    return updated;
+  }
+
+  async changePassword(userId: string, currentPass: string, newPass: string): Promise<{ success: boolean; error?: string }> {
+    const idx = this.users.findIndex(u => u.id === userId);
+    if (idx === -1) return { success: false, error: 'User not found.' };
+
+    const user = this.users[idx];
+    if (!this.verifyPassword(currentPass, user)) {
+      return { success: false, error: 'Current password is incorrect.' };
+    }
+
+    if (newPass.length < 6) {
+      return { success: false, error: 'New password must be at least 6 characters.' };
+    }
+
+    const newHash = this.hashPassword(newPass, user.email);
+    user.passwordHash = newHash;
+    this.saveUsers();
+
+    try {
+      await fetch('/api/auth/update-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, email: user.email, newPassword: newPass })
+      });
+    } catch {}
+
+    auditLogger.log({
+      actorId: user.id,
+      actorEmail: user.email,
+      actorRole: user.role,
+      tenantId: user.tenantId || 'unknown',
+      action: 'auth.password.updated',
+      status: 'SUCCESS',
+      details: 'User updated their security password.'
+    });
+
+    return { success: true };
+  }
+
   deleteAccount(userId: string): boolean {
     const target = this.users.find(u => u.id === userId);
     if (target) {
