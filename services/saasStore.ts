@@ -444,7 +444,7 @@ class SaasStateStore {
       const saved = localStorage.getItem('srs_genie_saas_store_v2');
       if (saved) {
         const data = JSON.parse(saved);
-        if (data.plans) this.plans = data.plans;
+        if (data.plans) this.plans = this.sortPlans(data.plans);
         if (data.customers) this.customers = data.customers;
         if (data.staff) this.staff = data.staff;
         if (data.invoices) this.invoices = data.invoices;
@@ -649,13 +649,34 @@ class SaasStateStore {
     return this.staff.length < initial;
   }
 
+  // Auto-sorts subscription plans from lower to higher price
+  sortPlans(plans: PricingPlan[]): PricingPlan[] {
+    return [...plans].sort((a, b) => {
+      const priceA = Number(a.priceMonthly) || 0;
+      const priceB = Number(b.priceMonthly) || 0;
+      if (priceA !== priceB) {
+        return priceA - priceB;
+      }
+      // For $0 plans, 100% free comes first, then trial with post-trial price
+      const postA = Number(a.postTrialMonthlyPrice) || 0;
+      const postB = Number(b.postTrialMonthlyPrice) || 0;
+      if (postA !== postB) {
+        return postA - postB;
+      }
+      // Secondary: Quota specs ascending
+      const quotaA = Number(a.quotaSpecsPerMonth) || 0;
+      const quotaB = Number(b.quotaSpecsPerMonth) || 0;
+      return quotaA - quotaB;
+    });
+  }
+
   // --- PLANS CRUD ---
   getPlans(): PricingPlan[] {
-    return [...this.plans];
+    return this.sortPlans(this.plans);
   }
 
   addPlan(plan: PricingPlan): PricingPlan {
-    this.plans = [...this.plans, plan];
+    this.plans = this.sortPlans([...this.plans, plan]);
     this.saveToStorage();
     auditLogger.log({
       action: 'saas.plan.created',
@@ -669,6 +690,7 @@ class SaasStateStore {
     const idx = this.plans.findIndex(p => p.id === planId);
     if (idx === -1) return null;
     this.plans[idx] = { ...this.plans[idx], ...updates };
+    this.plans = this.sortPlans(this.plans);
     this.saveToStorage();
     auditLogger.log({
       action: 'saas.plan.updated',
@@ -676,6 +698,17 @@ class SaasStateStore {
       details: { planId, updates }
     });
     return this.plans[idx];
+  }
+
+  resetPlansToDefault(): PricingPlan[] {
+    this.plans = this.sortPlans([...BASELINE_PLANS]);
+    this.saveToStorage();
+    auditLogger.log({
+      action: 'saas.plans.reset',
+      status: 'SUCCESS',
+      details: { planCount: BASELINE_PLANS.length }
+    });
+    return [...this.plans];
   }
 
   deletePlan(planId: string): boolean {
@@ -987,18 +1020,6 @@ class SaasStateStore {
     });
 
     return { invoice, transaction };
-  }
-
-  // --- PLANS CRUD HELPERS ---
-  resetPlansToDefault(): PricingPlan[] {
-    this.plans = [...BASELINE_PLANS];
-    this.saveToStorage();
-    auditLogger.log({
-      action: 'saas.plans.reset',
-      status: 'SUCCESS',
-      details: { planCount: BASELINE_PLANS.length }
-    });
-    return [...this.plans];
   }
 
   // --- AI MODEL PROVIDERS CRUD ---

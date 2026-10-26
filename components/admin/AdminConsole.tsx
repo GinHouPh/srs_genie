@@ -818,7 +818,12 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({ onBackToDashboard })
         <div className="space-y-6 animate-in fade-in duration-300">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h2 className="font-display text-xl font-semibold text-white tracking-[0.06em] uppercase">Pricing Plans & Feature Tiers</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-display text-xl font-semibold text-white tracking-[0.06em] uppercase">Pricing Plans & Feature Tiers</h2>
+                <span className="text-[10px] font-mono px-2 py-0.5 bg-box border border-line text-accent flex items-center gap-1">
+                  ↑ Sorted: Low to High
+                </span>
+              </div>
               <p className="font-body text-xs text-muted">Configure quotas, monthly billing prices, team seats, and MCP limits with full CRUD capability</p>
             </div>
             <div className="flex items-center gap-2">
