@@ -197,7 +197,7 @@ export default function App() {
 
       {/* Global Business Announcement Banner (Hidden for Admin & Staff & Admin Console) */}
       {isAnnouncementVisible && (
-        <div className="w-full bg-accent/90 text-white py-2 px-4 text-xs font-display uppercase tracking-wider flex items-center justify-center gap-2 relative z-40 border-b border-accent/40 shadow-sm mt-16">
+        <div className="w-full bg-accent/90 text-white py-2 px-4 text-xs font-display uppercase tracking-wider flex items-center justify-center gap-2 relative z-40 border-b border-accent/40 shadow-sm">
           <span className="font-semibold">{businessSettings.announcementBannerText}</span>
         </div>
       )}
@@ -209,7 +209,7 @@ export default function App() {
         </div>
       )}
 
-      <main className={`flex-1 flex flex-col items-center justify-center relative z-10 w-full ${!isAnnouncementVisible && !businessSettings.maintenanceMode ? 'mt-16' : ''}`}>
+      <main className="flex-1 flex flex-col items-center justify-start relative z-10 w-full">
         {/* Error notification banner if any */}
         {error && (
           <div className="w-full max-w-4xl mx-auto my-4 p-4 border-l-2 border-accent bg-box border border-line text-white text-xs flex items-center justify-between">
