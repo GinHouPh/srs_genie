@@ -3,6 +3,7 @@ import { saasStore } from './saasStore';
 import { cryptoService } from './cryptoService';
 import { auditLogger } from './auditLogger';
 import { fraudDetectionService } from './fraudDetectionService';
+import { apiService } from './apiService';
 
 export interface StoredUser extends User {
   passwordHash: string;
@@ -260,6 +261,13 @@ class AuthService {
     this.users.push(newUser);
     this.saveUsers();
 
+    // Sync registration directly to Serverbyt MySQL database
+    try {
+      await apiService.register(params.name, emailNormalized, params.password, params.company);
+    } catch (e) {
+      console.warn('Server registration sync fallback:', e);
+    }
+
     // Record registration event in velocity window tracker
     fraudDetectionService.recordRegistrationSuccess();
 
@@ -334,6 +342,11 @@ class AuthService {
     delete user.verificationCode;
     this.saveUsers();
 
+    // Sync verification to MySQL database
+    try {
+      apiService.verifyEmail(emailNormalized, code);
+    } catch {}
+
     const userSafe = this.sanitizeUser(user);
     this.currentUser = userSafe;
     this.saveSession(userSafe);
@@ -407,10 +420,36 @@ class AuthService {
     return affectedCount;
   }
 
-  login(email: string, password: string): { success: boolean; user?: User; error?: string; requiresVerification?: boolean; verificationCode?: string } {
+  async login(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string; requiresVerification?: boolean; verificationCode?: string }> {
     const emailNormalized = email.trim().toLowerCase();
 
-    // 1. Check blacklist status
+    // 1. Try server MySQL database first
+    try {
+      const serverRes = await apiService.login(emailNormalized, password);
+      if (serverRes && serverRes.success && serverRes.user) {
+        this.clearFailedAttempts(emailNormalized);
+        const user = serverRes.user;
+        this.currentUser = user;
+        this.saveSession(user);
+
+        // Keep local cache up to date
+        const existingIdx = this.users.findIndex(u => u.email.toLowerCase() === emailNormalized);
+        if (existingIdx >= 0) {
+          this.users[existingIdx] = { ...this.users[existingIdx], ...user };
+        } else {
+          this.users.push(user);
+        }
+        this.saveUsers();
+        return { success: true, user };
+      } else if (serverRes && serverRes.error && serverRes.error.includes('credentials')) {
+        this.recordFailedAttempt(emailNormalized);
+        return { success: false, error: serverRes.error };
+      }
+    } catch (e) {
+      // Fallback to local
+    }
+
+    // 2. Check blacklist status
     const blacklistCheck = fraudDetectionService.isLoginBlocked(emailNormalized);
     if (blacklistCheck.blocked) {
       auditLogger.log({
@@ -428,7 +467,7 @@ class AuthService {
       };
     }
 
-    // 2. Check brute-force rate limit
+    // 3. Check brute-force rate limit
     const bruteCheck = this.checkBruteForce(emailNormalized);
     if (!bruteCheck.allowed) {
       auditLogger.log({

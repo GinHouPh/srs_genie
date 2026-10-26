@@ -1,6 +1,7 @@
 import { ProjectInput, GeneratedContent, User } from '../types';
 import { synthesizeSpecsSuite } from './specGeneratorService';
 import { auditLogger } from './auditLogger';
+import { apiService } from './apiService';
 
 const STORAGE_PROJECTS_KEY = 'srs_genie_saved_projects';
 const STORAGE_SPECS_KEY = 'srs_genie_specs_hierarchies';
@@ -18,6 +19,37 @@ class ProjectStore {
 
   constructor() {
     this.loadFromStorage();
+    this.syncFromServer();
+  }
+
+  async syncFromServer() {
+    try {
+      const serverProjects = await apiService.fetchProjects();
+      if (serverProjects && serverProjects.length > 0) {
+        for (const sp of serverProjects) {
+          const idx = this.projects.findIndex(p => p.id === sp.id);
+          const mapped: SavedProjectRecord = {
+            id: sp.id,
+            name: sp.title || 'Untitled',
+            userId: sp.userId,
+            tenantId: sp.tenantId,
+            status: sp.status || 'draft',
+            createdAt: sp.createdAt,
+            updatedAt: sp.updatedAt,
+            lastModified: new Date(sp.updatedAt || Date.now()),
+            formData: sp.formData,
+            content: sp.content,
+            vibeTasks: sp.vibeTasks
+          };
+          if (idx >= 0) {
+            this.projects[idx] = { ...this.projects[idx], ...mapped };
+          } else {
+            this.projects.push(mapped);
+          }
+        }
+        localStorage.setItem(STORAGE_PROJECTS_KEY, JSON.stringify(this.projects));
+      }
+    } catch {}
   }
 
   private loadFromStorage() {
@@ -65,9 +97,24 @@ class ProjectStore {
     }
   }
 
-  private saveToStorage() {
+  private saveToStorage(projectToSync?: SavedProjectRecord) {
     try {
       localStorage.setItem(STORAGE_PROJECTS_KEY, JSON.stringify(this.projects));
+      const target = projectToSync || this.projects[0];
+      if (target) {
+        apiService.saveProject({
+          id: target.id,
+          userId: target.userId,
+          tenantId: target.tenantId,
+          title: target.name,
+          description: target.formData?.project_overview?.industry || '',
+          status: target.status,
+          tierCompletion: 100,
+          formData: target.formData,
+          content: target.content,
+          vibeTasks: target.vibeTasks
+        }).catch(() => {});
+      }
     } catch (e) {}
   }
 
@@ -229,6 +276,7 @@ class ProjectStore {
     const initialLen = this.projects.length;
     this.projects = this.projects.filter(p => p.id !== id);
     this.saveToStorage();
+    apiService.deleteProject(id).catch(() => {});
     return this.projects.length < initialLen;
   }
 

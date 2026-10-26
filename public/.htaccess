@@ -7,19 +7,21 @@
   RewriteEngine On
   RewriteBase /
 
-  # 1. Route Cashfree API endpoints to PHP handler
+  # 1. Route API endpoints to PHP handlers
+  RewriteRule ^api/health$ api/health.php [L,QSA]
+  RewriteRule ^api/auth(/.*)?$ api/auth.php [L,QSA]
+  RewriteRule ^api/projects(/.*)?$ api/projects.php [L,QSA]
+  RewriteRule ^api/saas(/.*)?$ api/saas.php [L,QSA]
   RewriteRule ^api/cashfree(/.*)?$ api/cashfree.php [L,QSA]
 
   # 2. Prevent directory listing
   Options -Indexes
 
   # 3. Handle Single Page Application (React Router / HTML5 History)
-  # If request is an existing file or directory, serve it directly
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Otherwise, route all requests to index.html
   RewriteRule ^ index.html [L]
 </IfModule>
 

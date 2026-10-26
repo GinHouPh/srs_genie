@@ -45,7 +45,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login', init
 
     try {
       if (isLogin) {
-        const result = authService.login(email, password);
+        const result = await authService.login(email, password);
         if (!result.success) {
           if (result.requiresVerification) {
             setPendingVerifyEmail(result.email || email);

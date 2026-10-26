@@ -19,6 +19,7 @@ import {
 } from '../types';
 import { auditLogger } from './auditLogger';
 import { cryptoService } from './cryptoService';
+import { apiService } from './apiService';
 
 const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
   companyName: 'SRS Genie Inc.',
@@ -736,6 +737,7 @@ class SaasStateStore {
       updatedAt: new Date().toISOString()
     };
     this.saveToStorage();
+    apiService.saveSetting('business_settings', this.businessSettings).catch(() => {});
     auditLogger.log({
       action: 'saas.business_settings.updated',
       status: 'SUCCESS',

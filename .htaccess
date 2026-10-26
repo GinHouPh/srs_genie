@@ -1,13 +1,17 @@
 # ----------------------------------------------------------------------
 # SRS Genie - Root Apache Configuration (.htaccess) for Serverbyt / StackCP
-# Directs all web traffic into the compiled production React app in /dist
+# Directs all web traffic and API routes into the compiled production app in /dist
 # ----------------------------------------------------------------------
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # 1. Forward Cashfree API calls to PHP handler in dist/api/
+  # 1. Forward API calls to PHP handlers in dist/api/
+  RewriteRule ^api/health$ dist/api/health.php [L,QSA]
+  RewriteRule ^api/auth(/.*)?$ dist/api/auth.php [L,QSA]
+  RewriteRule ^api/projects(/.*)?$ dist/api/projects.php [L,QSA]
+  RewriteRule ^api/saas(/.*)?$ dist/api/saas.php [L,QSA]
   RewriteRule ^api/cashfree(/.*)?$ dist/api/cashfree.php [L,QSA]
 
   # 2. Prevent directory listing
