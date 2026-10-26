@@ -1,56 +1,77 @@
-﻿param(
-  [string]$Message = "build: update frontend assets",
+param(
+  [string]$Message = "build: update frontend and production assets",
   [string]$SshKey = "",
   [string]$DeployTarget = "tongdon.com@ssh.gb.stackcp.com",
+  [string]$RemoteDir = "~/srsgenie",
   [switch]$SkipDeploy
 )
-cd $PSScriptRoot
 
-Write-Host "[1/5] Building frontend assets..." -ForegroundColor Cyan
+$ErrorActionPreference = "Stop"
+Set-Location $PSScriptRoot
+
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "🚀 SRS Genie - Production Build & Deploy" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
+
+# Step 1: Build the Vite production bundle
+Write-Host "[1/5] Building production bundle (npm run build)..." -ForegroundColor Cyan
 npm run build
 if ($LASTEXITCODE -ne 0) {
-  Write-Host "Build failed!" -ForegroundColor Red
+  Write-Host "❌ Build failed!" -ForegroundColor Red
   exit $LASTEXITCODE
 }
 
-Write-Host "[2/5] Force-adding public/build..." -ForegroundColor Cyan
-git add -f public/build
+# Step 2: Stage changed files, including dist/ and public/
+Write-Host "[2/5] Staging changes (including dist/)..." -ForegroundColor Cyan
+git add .
 
+# Step 3: Commit if there are changes
 Write-Host "[3/5] Committing..." -ForegroundColor Cyan
-git commit -m $Message
+$gitStatus = git status --porcelain
+if ($gitStatus) {
+  git commit -m $Message
+} else {
+  Write-Host "  No uncommitted changes." -ForegroundColor Yellow
+}
 
-Write-Host "[4/5] Pushing to origin main..." -ForegroundColor Cyan
+# Step 4: Push to GitHub origin main
+Write-Host "[4/5] Pushing to GitHub (origin main)..." -ForegroundColor Cyan
 git push origin main
 if ($LASTEXITCODE -ne 0) {
-  Write-Host "Push failed!" -ForegroundColor Red
+  Write-Host "❌ Git push failed!" -ForegroundColor Red
   exit $LASTEXITCODE
 }
 
 if ($SkipDeploy) {
-  Write-Host "Pushed only (deploy skipped)." -ForegroundColor Green
+  Write-Host "✅ Pushed to GitHub only (deploy skipped)." -ForegroundColor Green
   exit 0
 }
 
-# Step 5: pull the latest commit on the server and run its deploy script.
-# StackCP cannot auto-run deploy.sh on push, so this does it over SSH.
+# Step 5: Deploy directly to Serverbyt over SSH
+Write-Host "[5/5] Connecting to Serverbyt via SSH to deploy..." -ForegroundColor Cyan
 $key = $SshKey
 if (-not $key) {
   $key = @(
+    "$env:TEMP\opencode\agapeinfosys_key",
     "$PSScriptRoot\.deploy_key",
-    "$env:TEMP\opencode\agapeinfosys_key"
+    "$HOME\.ssh\id_rsa"
   ) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
 }
 
 if (-not $key) {
-  Write-Host "[5/5] No SSH key found - deploy manually in Serverbyt (Repository > Deploy)." -ForegroundColor Yellow
+  Write-Host "⚠️ No SSH key found. Please deploy manually via Serverbyt StackCP." -ForegroundColor Yellow
   exit 0
 }
 
-Write-Host "[5/5] Deploying to the server..." -ForegroundColor Cyan
-ssh -i $key -o StrictHostKeyChecking=no $DeployTarget "cd ~/agapeinfosys && git fetch origin main && git reset --hard origin/main && bash deploy.sh"
+Write-Host "  Using SSH key: $key" -ForegroundColor DarkGray
+Write-Host "  Target: $DeployTarget -> $RemoteDir" -ForegroundColor DarkGray
+
+ssh -i $key -o StrictHostKeyChecking=no $DeployTarget "cd $RemoteDir && git fetch origin main && git reset --hard origin/main && bash deploy.sh"
 if ($LASTEXITCODE -ne 0) {
-  Write-Host "Deploy failed!" -ForegroundColor Red
+  Write-Host "❌ Remote deployment script failed!" -ForegroundColor Red
   exit $LASTEXITCODE
 }
 
-Write-Host "Deployed." -ForegroundColor Green
+Write-Host "==========================================" -ForegroundColor Green
+Write-Host "🎉 SUCCESS: SRS Genie is LIVE at https://srsgenie.agapeinfosys.com/" -ForegroundColor Green
+Write-Host "==========================================" -ForegroundColor Green
