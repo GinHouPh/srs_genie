@@ -410,7 +410,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({ onBackToDashboard })
   });
 
   return (
-    <div className="shell py-8 space-y-8 animate-in fade-in duration-300">
+    <div className="shell pt-2 pb-8 space-y-2.5 animate-in fade-in duration-300">
       {/* Toast Alert */}
       {feedbackMsg && (
         <div className="fixed bottom-6 right-6 z-50 bg-box border border-accent text-white px-5 py-3 shadow-2xl flex items-center gap-3">
@@ -419,22 +419,22 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({ onBackToDashboard })
         </div>
       )}
 
-      {/* Sleek, Low-Profile Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-line">
-        <div className="flex items-center gap-3">
-          <span className="font-display text-sm tracking-[0.16em] uppercase text-white font-semibold flex items-center gap-2">
+      {/* Sleek, Ultra-Compact Header Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-line">
+        <div className="flex items-center gap-2.5">
+          <span className="font-display text-xs tracking-[0.16em] uppercase text-white font-semibold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
             Operations Console
           </span>
-          <span className="text-[10px] font-mono px-2 py-0.5 bg-box border border-line text-muted">
+          <span className="text-[10px] font-mono px-1.5 py-0.5 bg-box border border-line text-muted">
             MySQL Server Live
           </span>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={onBackToDashboard}
-            className="btn btn-sm btn--ghost text-xs py-1"
+            className="btn btn-sm btn--ghost text-xs py-0.5 px-2.5"
           >
             ← Workspace
           </button>
@@ -443,10 +443,10 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({ onBackToDashboard })
               refreshAll();
               showToast('Synchronized data store with MySQL.');
             }}
-            className="p-1.5 bg-box border border-line text-muted hover:text-accent hover:border-accent transition-colors"
+            className="p-1 bg-box border border-line text-muted hover:text-accent hover:border-accent transition-colors"
             title="Refresh Data Store"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-3 h-3" />
           </button>
           <button
             onClick={() => {
@@ -457,17 +457,17 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({ onBackToDashboard })
                 showToast('All mock data purged.');
               }
             }}
-            className="px-2.5 py-1 bg-box border border-line text-muted hover:text-accent hover:border-accent transition-colors text-[11px] font-display uppercase tracking-[0.08em] flex items-center gap-1.5"
+            className="px-2 py-0.5 bg-box border border-line text-muted hover:text-accent hover:border-accent transition-colors text-[10px] font-display uppercase tracking-[0.08em] flex items-center gap-1"
             title="Purge Mock Data"
           >
             <Trash2 className="w-3 h-3 text-accent" />
-            <span>Purge Test Data</span>
+            <span>Purge Data</span>
           </button>
         </div>
       </div>
 
       {/* Admin Tab Navigation */}
-      <div className="flex flex-wrap gap-1.5 p-1.5 bg-surface border border-line">
+      <div className="flex flex-wrap gap-1 p-1 bg-surface border border-line">
         {[
           { id: 'overview', label: 'Overview & KPIs', icon: BarChart3 },
           { id: 'analytics', label: 'Analytics', icon: TrendingUp },
