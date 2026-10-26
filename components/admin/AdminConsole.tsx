@@ -60,7 +60,21 @@ interface AdminConsoleProps {
 type AdminTab = 'overview' | 'analytics' | 'customers' | 'staff' | 'plans' | 'ai_providers' | 'billing' | 'cashfree_gateway' | 'mcp_telemetry' | 'security_audit' | 'blacklist' | 'business_settings';
 
 export const AdminConsole: React.FC<AdminConsoleProps> = ({ onBackToDashboard }) => {
-  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+  const [activeTab, setActiveTabState] = useState<AdminTab>(() => {
+    try {
+      const saved = sessionStorage.getItem('srs_admin_active_tab') as AdminTab;
+      const validTabs = ['overview', 'analytics', 'customers', 'staff', 'plans', 'ai_providers', 'billing', 'cashfree_gateway', 'mcp_telemetry', 'security_audit', 'blacklist', 'business_settings'];
+      if (saved && validTabs.includes(saved)) return saved;
+    } catch {}
+    return 'overview';
+  });
+
+  const setActiveTab = (tab: AdminTab) => {
+    setActiveTabState(tab);
+    try {
+      sessionStorage.setItem('srs_admin_active_tab', tab);
+    } catch {}
+  };
   const [metrics, setMetrics] = useState<SaasMetrics>(saasStore.getMetrics());
   const [customers, setCustomers] = useState<SaaSCustomer[]>(saasStore.getCustomers());
   const [staff, setStaff] = useState<StaffMember[]>(saasStore.getStaff());

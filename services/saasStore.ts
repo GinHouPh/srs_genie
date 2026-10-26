@@ -1169,10 +1169,33 @@ class SaasStateStore {
       { tool: 'append_decision_record', count: 38, pct: 6 }
     ];
 
+    const metrics = this.getMetrics();
+    const summary = {
+      mrr: metrics.mrr,
+      growthRate: metrics.mrrGrowthPct || 12.5,
+      specsGenerated: this.specsGeneratedTotal,
+      tokensConsumed: this.geminiTokensConsumed
+    };
+
+    const tierDistributionWithAliases = tierDistribution.map(td => ({
+      ...td,
+      tierName: td.tier
+    }));
+
+    const mcpToolUsage = mcpToolCalls.map(tool => ({
+      ...tool,
+      toolName: tool.tool,
+      invocations: tool.count
+    }));
+
     return {
+      points,
       timePoints: points,
+      summary,
+      modelShare: modelShares,
       modelShares,
-      tierDistribution,
+      tierDistribution: tierDistributionWithAliases,
+      mcpToolUsage,
       mcpToolCalls,
       slaMetrics: {
         avgLatencySeconds: 2.1,

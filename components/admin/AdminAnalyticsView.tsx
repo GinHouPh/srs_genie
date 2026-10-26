@@ -17,7 +17,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { saasStore } from '../../services/saasStore';
-import { SaasMetrics, AnalyticsDataPoint, ModelShareMetric } from '../../types';
+import { SaasMetrics } from '../../types';
 
 interface AdminAnalyticsViewProps {
   metrics: SaasMetrics;
@@ -27,8 +27,47 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ metrics 
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   const analyticsData = saasStore.getAnalyticsData(timeframe);
 
-  const maxRevenue = Math.max(...analyticsData.points.map(p => p.revenue), 100);
-  const maxSpecs = Math.max(...analyticsData.points.map(p => p.specsCount), 10);
+  const points = (analyticsData?.points || analyticsData?.timePoints || []) as Array<{
+    date: string;
+    specsCount: number;
+    tokens: number;
+    revenue: number;
+    activeAgents: number;
+  }>;
+
+  const summary = analyticsData?.summary || {
+    mrr: metrics?.mrr || 0,
+    growthRate: metrics?.mrrGrowthPct || 12.5,
+    specsGenerated: metrics?.specsGeneratedTotal || 0,
+    tokensConsumed: metrics?.geminiTokensConsumed || 0
+  };
+
+  const modelShare = (analyticsData?.modelShare || analyticsData?.modelShares || []) as Array<{
+    modelName: string;
+    provider: string;
+    percentage: number;
+    tokenCount: number;
+    requestCount?: number;
+  }>;
+
+  const tierDistribution = (analyticsData?.tierDistribution || []) as Array<{
+    tierName?: string;
+    tier?: string;
+    count: number;
+    percentage: number;
+    color?: string;
+  }>;
+
+  const mcpToolUsage = (analyticsData?.mcpToolUsage || (analyticsData?.mcpToolCalls || []).map((m: any) => ({
+    toolName: m.toolName || m.tool || 'Tool',
+    invocations: m.invocations || m.count || 0
+  }))) as Array<{
+    toolName: string;
+    invocations: number;
+  }>;
+
+  const maxRevenue = Math.max(...points.map(p => p.revenue || 0), 100);
+  const maxSpecs = Math.max(...points.map(p => p.specsCount || 0), 10);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -70,18 +109,18 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ metrics 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="stat">
           <span className="stat__value text-white font-mono">
-            ${analyticsData.summary.mrr.toLocaleString()}
+            ${summary.mrr.toLocaleString()}
           </span>
           <span className="stat__label">Monthly Recurring Revenue</span>
           <div className="text-[11px] text-accent mt-2 font-mono flex items-center gap-1">
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>+{analyticsData.summary.growthRate}% Trajectory</span>
+            <span>+{summary.growthRate}% Trajectory</span>
           </div>
         </div>
 
         <div className="stat">
           <span className="stat__value text-accent font-mono">
-            {analyticsData.summary.specsGenerated.toLocaleString()}
+            {summary.specsGenerated.toLocaleString()}
           </span>
           <span className="stat__label">Total Specs Synthesized</span>
           <div className="text-[11px] text-muted mt-2 font-body">
@@ -91,7 +130,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ metrics 
 
         <div className="stat">
           <span className="stat__value text-white font-mono">
-            {(analyticsData.summary.tokensConsumed / 1000000).toFixed(2)}M
+            {(summary.tokensConsumed / 1000000).toFixed(2)}M
           </span>
           <span className="stat__label">Total AI Tokens Consumed</span>
           <div className="text-[11px] text-muted mt-2 font-body">
@@ -133,7 +172,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ metrics 
 
         {/* Interactive SVG Bar/Line Chart */}
         <div className="h-64 w-full flex items-end gap-2 sm:gap-4 pt-8 pb-4 border-b border-line">
-          {analyticsData.points.map((pt, idx) => {
+          {points.map((pt, idx) => {
             const specHeightPct = Math.max(12, Math.round((pt.specsCount / maxSpecs) * 100));
             const revHeightPct = Math.max(10, Math.round((pt.revenue / maxRevenue) * 100));
 
@@ -167,9 +206,9 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ metrics 
           })}
         </div>
         <div className="flex justify-between text-[11px] font-mono text-muted mt-3">
-          <span>{analyticsData.points[0]?.date || 'Start'}</span>
+          <span>{points[0]?.date || 'Start'}</span>
           <span>Baseline Telemetry // Verified Daily</span>
-          <span>{analyticsData.points[analyticsData.points.length - 1]?.date || 'End'}</span>
+          <span>{points[points.length - 1]?.date || 'End'}</span>
         </div>
       </div>
 
@@ -189,7 +228,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ metrics 
           </div>
 
           <div className="space-y-4">
-            {analyticsData.modelShare.map((model, idx) => (
+            {modelShare.map((model, idx) => (
               <div key={idx} className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-display text-white font-semibold uppercase tracking-wider">
@@ -231,11 +270,11 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ metrics 
           </div>
 
           <div className="space-y-4">
-            {analyticsData.tierDistribution.map((td, idx) => (
+            {tierDistribution.map((td, idx) => (
               <div key={idx} className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-display text-white font-semibold uppercase tracking-wider">
-                    {td.tierName}
+                    {td.tierName || td.tier || 'Tier'}
                   </span>
                   <div className="font-mono text-xs space-x-2">
                     <span className="text-muted">{td.count} workspaces</span>
@@ -260,7 +299,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ metrics 
               <span>MCP Agent Protocol Tool Invocations</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {analyticsData.mcpToolUsage.map((tool, idx) => (
+              {mcpToolUsage.map((tool, idx) => (
                 <div key={idx} className="p-2.5 bg-ink border border-line">
                   <div className="font-mono text-[10px] text-muted truncate">{tool.toolName}</div>
                   <div className="font-mono text-xs font-semibold text-accent mt-1">

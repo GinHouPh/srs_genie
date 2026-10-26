@@ -19,9 +19,28 @@ export default function App() {
   // Real persistent session
   const [user, setUser] = useState<User | null>(() => authService.getCurrentUser());
   const [businessSettings] = useState(() => saasStore.getBusinessSettings());
-  const [appState, setAppState] = useState<AppState>(() =>
-    authService.getCurrentUser() ? AppState.DASHBOARD : AppState.LANDING
-  );
+  const [appState, setAppStateState] = useState<AppState>(() => {
+    const cur = authService.getCurrentUser();
+    if (!cur) return AppState.LANDING;
+    try {
+      const saved = sessionStorage.getItem('srs_active_app_state') as AppState;
+      if (saved && Object.values(AppState).includes(saved)) {
+        if (saved === AppState.ADMIN_CONSOLE && cur.role !== 'admin' && cur.role !== 'staff') {
+          return AppState.DASHBOARD;
+        }
+        return saved;
+      }
+    } catch {}
+    return AppState.DASHBOARD;
+  });
+
+  const setAppState = (nextState: AppState) => {
+    setAppStateState(nextState);
+    try {
+      sessionStorage.setItem('srs_active_app_state', nextState);
+    } catch {}
+  };
+
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionTier>('pro');
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
@@ -44,6 +63,10 @@ export default function App() {
   const handleLogout = () => {
     authService.logout();
     setUser(null);
+    try {
+      sessionStorage.removeItem('srs_active_app_state');
+      sessionStorage.removeItem('srs_admin_active_tab');
+    } catch {}
     setAppState(AppState.LANDING);
   };
 
