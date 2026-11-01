@@ -112,6 +112,20 @@ export const apiService = {
   },
 
   // SAAS SETTINGS
+  async getAllSettings(): Promise<Record<string, any>> {
+    try {
+      const res = await fetch('/api/saas/settings');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.settings)) return {};
+        return data.settings || {};
+      }
+      return {};
+    } catch {
+      return {};
+    }
+  },
+
   async getSetting<T>(key: string): Promise<T | null> {
     try {
       const res = await fetch(`/api/saas/settings?key=${encodeURIComponent(key)}`);

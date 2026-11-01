@@ -219,11 +219,16 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({ onBackToDashboard })
       const data = await res.json();
       if (res.ok && data.success) {
         setTestConnStatus({ testing: false, success: true, message: data.message });
+        showToast(data.message || 'Successfully connected to Cashfree Payment Gateway!');
       } else {
-        setTestConnStatus({ testing: false, success: false, message: data.message || 'Connection failed: Check App ID & Secret Key.' });
+        const errMsg = data.message || 'Connection failed: Check App ID & Secret Key.';
+        setTestConnStatus({ testing: false, success: false, message: errMsg });
+        showToast(errMsg);
       }
     } catch (err: any) {
-      setTestConnStatus({ testing: false, success: false, message: err?.message || 'Network test error' });
+      const errMsg = err?.message || 'Network test error connecting to Cashfree.';
+      setTestConnStatus({ testing: false, success: false, message: errMsg });
+      showToast(errMsg);
     }
   };
 
@@ -1314,47 +1319,70 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({ onBackToDashboard })
                     <span>Webhook Notify URL</span>
                     <span className="text-[10px] text-muted font-mono">HMAC-SHA256 signature</span>
                   </label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       type="text"
-                      readOnly
                       value={cfConfig.webhookUrl || `${window.location.origin}/api/cashfree/webhook`}
-                      className="w-full bg-box border border-line px-3.5 py-2 text-xs text-muted font-mono outline-none cursor-default"
+                      onChange={e => setCfConfig({ ...cfConfig, webhookUrl: e.target.value })}
+                      placeholder={`${window.location.origin}/api/cashfree/webhook`}
+                      className="w-full bg-ink border border-line px-3.5 py-2 text-xs text-white font-mono focus:border-accent outline-none"
                     />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(cfConfig.webhookUrl || `${window.location.origin}/api/cashfree/webhook`);
-                        setCopiedWebhook(true);
-                        setTimeout(() => setCopiedWebhook(false), 2000);
-                      }}
-                      className="btn btn-sm btn--ghost shrink-0"
-                    >
-                      {copiedWebhook ? <CheckCircle2 className="w-4 h-4 text-accent" /> : <Copy className="w-4 h-4" />}
-                      <span>{copiedWebhook ? 'Copied' : 'Copy'}</span>
-                    </button>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCfConfig({ ...cfConfig, webhookUrl: `${window.location.origin}/api/cashfree/webhook` });
+                          showToast('Webhook URL set to current origin domain.');
+                        }}
+                        className="btn btn-sm btn--ghost text-[11px]"
+                        title="Set to current website origin domain"
+                      >
+                        Use Current Domain
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(cfConfig.webhookUrl || `${window.location.origin}/api/cashfree/webhook`);
+                          setCopiedWebhook(true);
+                          setTimeout(() => setCopiedWebhook(false), 2000);
+                          showToast('Webhook URL copied to clipboard.');
+                        }}
+                        className="btn btn-sm btn--ghost"
+                      >
+                        {copiedWebhook ? <CheckCircle2 className="w-4 h-4 text-accent" /> : <Copy className="w-4 h-4" />}
+                        <span>{copiedWebhook ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-line">
-                  <button
-                    type="button"
-                    disabled={testConnStatus?.testing}
-                    onClick={handleTestConnection}
-                    className="btn btn-sm btn--ghost"
-                  >
-                    {testConnStatus?.testing ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-                        <span>Validating...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Activity className="w-3.5 h-3.5 mr-1" />
-                        <span>Test Connection</span>
-                      </>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      disabled={testConnStatus?.testing}
+                      onClick={handleTestConnection}
+                      className="btn btn-sm btn--ghost"
+                    >
+                      {testConnStatus?.testing ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                          <span>Validating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Activity className="w-3.5 h-3.5 mr-1" />
+                          <span>Test Connection</span>
+                        </>
+                      )}
+                    </button>
+                    {testConnStatus && !testConnStatus.testing && (
+                      <div className={`text-xs flex items-center gap-1.5 font-medium ${testConnStatus.success ? 'text-green-400' : 'text-red-400'}`}>
+                        {testConnStatus.success ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
+                        <span>{testConnStatus.message}</span>
+                      </div>
                     )}
-                  </button>
+                  </div>
 
                   <button
                     type="submit"

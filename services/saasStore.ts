@@ -54,7 +54,7 @@ const DEFAULT_CASHFREE_CONFIG: CashfreeGatewayConfig = {
   currency: 'INR',
   apiVersion: '2023-08-01',
   isActive: true,
-  webhookUrl: 'https://api.srsgenie.ai/api/cashfree/webhook'
+  webhookUrl: typeof window !== 'undefined' ? `${window.location.origin}/api/cashfree/webhook` : 'https://srsgenie.agapeinfosys.com/api/cashfree/webhook'
 };
 
 const BASELINE_AI_PROVIDERS: AIModelProvider[] = [
@@ -402,10 +402,64 @@ class SaasStateStore {
   private transactions: PaymentTransactionRecord[] = [];
   private aiProviders: AIModelProvider[] = [...BASELINE_AI_PROVIDERS];
   private businessSettings: BusinessSettings = { ...DEFAULT_BUSINESS_SETTINGS };
+  private listeners: Set<() => void> = new Set();
 
   constructor() {
     this.loadFromStorage();
     this.initCryptoMigration();
+    this.syncFromServer();
+  }
+
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  notifyListeners() {
+    this.listeners.forEach(fn => {
+      try { fn(); } catch {}
+    });
+  }
+
+  async syncFromServer() {
+    try {
+      const settings = await apiService.getAllSettings();
+      if (settings && typeof settings === 'object' && Object.keys(settings).length > 0) {
+        if (settings.business_settings) {
+          this.businessSettings = { ...DEFAULT_BUSINESS_SETTINGS, ...settings.business_settings };
+        }
+        if (settings.plans && Array.isArray(settings.plans) && settings.plans.length > 0) {
+          this.plans = this.sortPlans(settings.plans);
+        }
+        if (settings.cashfree_config) {
+          this.cashfreeConfig = { ...DEFAULT_CASHFREE_CONFIG, ...settings.cashfree_config };
+        }
+        if (settings.ai_providers && Array.isArray(settings.ai_providers) && settings.ai_providers.length > 0) {
+          this.aiProviders = settings.ai_providers;
+        }
+        this.saveToStorage();
+        this.notifyListeners();
+      }
+
+      // Sync registered customers from database
+      const serverCustomers = await apiService.getCustomers();
+      if (serverCustomers && Array.isArray(serverCustomers) && serverCustomers.length > 0) {
+        for (const sc of serverCustomers) {
+          const idx = this.customers.findIndex(c => c.id === sc.id || c.email === sc.email);
+          if (idx >= 0) {
+            this.customers[idx] = { ...this.customers[idx], ...sc };
+          } else {
+            this.customers.push(sc);
+          }
+        }
+        this.saveToStorage();
+        this.notifyListeners();
+      }
+    } catch (e) {
+      console.warn('[SaasStore] Server sync notice:', e);
+    }
   }
 
   private async initCryptoMigration() {
@@ -458,6 +512,9 @@ class SaasStateStore {
             this.cashfreeConfig.appId = DEFAULT_CASHFREE_CONFIG.appId;
             this.cashfreeConfig.secretKey = DEFAULT_CASHFREE_CONFIG.secretKey;
             this.cashfreeConfig.environment = DEFAULT_CASHFREE_CONFIG.environment;
+          }
+          if (this.cashfreeConfig.webhookUrl && this.cashfreeConfig.webhookUrl.includes('api.srsgenie.ai')) {
+            this.cashfreeConfig.webhookUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/cashfree/webhook` : 'https://srsgenie.agapeinfosys.com/api/cashfree/webhook';
           }
         }
         if (data.transactions) this.transactions = data.transactions;
@@ -560,6 +617,8 @@ class SaasStateStore {
     }
 
     this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveCustomer(newCust).catch(() => {});
     return newCust;
   }
 
@@ -574,6 +633,8 @@ class SaasStateStore {
 
     this.customers[idx] = { ...this.customers[idx], ...updates };
     this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveCustomer(this.customers[idx]).catch(() => {});
     return this.customers[idx];
   }
 
@@ -599,6 +660,7 @@ class SaasStateStore {
     const initial = this.customers.length;
     this.customers = this.customers.filter(c => c.id !== id);
     this.saveToStorage();
+    this.notifyListeners();
     if (this.customers.length < initial) {
       auditLogger.log({
         action: 'saas.customer.deleted',
@@ -678,6 +740,8 @@ class SaasStateStore {
   addPlan(plan: PricingPlan): PricingPlan {
     this.plans = this.sortPlans([...this.plans, plan]);
     this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveSetting('plans', this.plans).catch(() => {});
     auditLogger.log({
       action: 'saas.plan.created',
       status: 'SUCCESS',
@@ -692,6 +756,8 @@ class SaasStateStore {
     this.plans[idx] = { ...this.plans[idx], ...updates };
     this.plans = this.sortPlans(this.plans);
     this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveSetting('plans', this.plans).catch(() => {});
     auditLogger.log({
       action: 'saas.plan.updated',
       status: 'SUCCESS',
@@ -703,6 +769,8 @@ class SaasStateStore {
   resetPlansToDefault(): PricingPlan[] {
     this.plans = this.sortPlans([...BASELINE_PLANS]);
     this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveSetting('plans', this.plans).catch(() => {});
     auditLogger.log({
       action: 'saas.plans.reset',
       status: 'SUCCESS',
@@ -715,6 +783,8 @@ class SaasStateStore {
     const initial = this.plans.length;
     this.plans = this.plans.filter(p => p.id !== planId);
     this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveSetting('plans', this.plans).catch(() => {});
     if (this.plans.length < initial) {
       auditLogger.log({
         action: 'saas.plan.deleted',
@@ -770,6 +840,7 @@ class SaasStateStore {
       updatedAt: new Date().toISOString()
     };
     this.saveToStorage();
+    this.notifyListeners();
     apiService.saveSetting('business_settings', this.businessSettings).catch(() => {});
     auditLogger.log({
       action: 'saas.business_settings.updated',
@@ -922,6 +993,8 @@ class SaasStateStore {
   updateCashfreeConfig(updates: Partial<CashfreeGatewayConfig>): CashfreeGatewayConfig {
     this.cashfreeConfig = { ...this.cashfreeConfig, ...updates };
     this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveSetting('cashfree_config', this.cashfreeConfig).catch(() => {});
     auditLogger.log({
       action: 'saas.gateway.config_updated',
       status: 'SUCCESS',
@@ -1048,6 +1121,8 @@ class SaasStateStore {
     }
     this.aiProviders = [...this.aiProviders, newProv];
     this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveSetting('ai_providers', this.aiProviders).catch(() => {});
     auditLogger.log({
       action: 'saas.provider.created',
       status: 'SUCCESS',
@@ -1068,6 +1143,8 @@ class SaasStateStore {
       updatedAt: new Date().toISOString().split('T')[0]
     };
     this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveSetting('ai_providers', this.aiProviders).catch(() => {});
     auditLogger.log({
       action: 'saas.provider.updated',
       status: 'SUCCESS',
@@ -1081,6 +1158,8 @@ class SaasStateStore {
     const initial = this.aiProviders.length;
     this.aiProviders = this.aiProviders.filter(p => p.id !== id);
     this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveSetting('ai_providers', this.aiProviders).catch(() => {});
     if (this.aiProviders.length < initial) {
       auditLogger.log({
         action: 'saas.provider.deleted',

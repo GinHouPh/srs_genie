@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building2,
   Mail,
@@ -27,6 +27,12 @@ interface AdminBusinessSettingsViewProps {
 export const AdminBusinessSettingsView: React.FC<AdminBusinessSettingsViewProps> = ({ onToast }) => {
   const [settings, setSettings] = useState<BusinessSettings>(saasStore.getBusinessSettings());
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    return saasStore.subscribe(() => {
+      setSettings(saasStore.getBusinessSettings());
+    });
+  }, []);
 
   const handleChange = <K extends keyof BusinessSettings>(key: K, value: BusinessSettings[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));

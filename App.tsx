@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { LandingPage } from './components/LandingPage';
 import { WizardForm } from './components/WizardForm';
@@ -18,7 +18,13 @@ import { saasStore } from './services/saasStore';
 export default function App() {
   // Real persistent session
   const [user, setUser] = useState<User | null>(() => authService.getCurrentUser());
-  const [businessSettings] = useState(() => saasStore.getBusinessSettings());
+  const [businessSettings, setBusinessSettings] = useState(() => saasStore.getBusinessSettings());
+
+  useEffect(() => {
+    return saasStore.subscribe(() => {
+      setBusinessSettings(saasStore.getBusinessSettings());
+    });
+  }, []);
   const [appState, setAppStateState] = useState<AppState>(() => {
     const cur = authService.getCurrentUser();
     if (!cur) {

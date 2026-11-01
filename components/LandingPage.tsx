@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FolderTree,
   Network,
@@ -29,7 +29,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onSignIn,
   onSelectPlan
 }) => {
-  const plans = saasStore.getPlans();
+  const [plans, setPlans] = useState(() => saasStore.getPlans());
+
+  useEffect(() => {
+    return saasStore.subscribe(() => {
+      setPlans(saasStore.getPlans());
+    });
+  }, []);
 
   return (
     <div className="w-full space-y-24 py-8 animate-in fade-in duration-500">
