@@ -21,7 +21,13 @@ export default function App() {
   const [businessSettings] = useState(() => saasStore.getBusinessSettings());
   const [appState, setAppStateState] = useState<AppState>(() => {
     const cur = authService.getCurrentUser();
-    if (!cur) return AppState.LANDING;
+    if (!cur) {
+      try {
+        sessionStorage.removeItem('srs_active_app_state');
+        sessionStorage.removeItem('srs_admin_active_tab');
+      } catch {}
+      return AppState.LANDING;
+    }
     try {
       const saved = sessionStorage.getItem('srs_active_app_state') as AppState;
       if (saved && Object.values(AppState).includes(saved)) {

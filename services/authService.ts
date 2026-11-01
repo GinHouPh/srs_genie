@@ -10,7 +10,7 @@ export interface StoredUser extends User {
 }
 
 const STORAGE_USERS_KEY = 'srs_genie_registered_users_v2';
-const STORAGE_SESSION_KEY = 'srs_genie_active_session_v2';
+const STORAGE_SESSION_KEY = 'srs_genie_active_session_v3';
 
 class AuthService {
   private users: StoredUser[] = [];
@@ -82,6 +82,12 @@ class AuthService {
         this.saveUsers();
       }
 
+      // Purge any legacy auto-saved sessions from older versions
+      try {
+        localStorage.removeItem('srs_genie_active_session_v2');
+        localStorage.removeItem('srs_genie_active_session');
+      } catch {}
+
       const activeSession = localStorage.getItem(STORAGE_SESSION_KEY);
       if (activeSession) {
         let parsed = JSON.parse(activeSession);
@@ -93,11 +99,8 @@ class AuthService {
         }
         this.currentUser = parsed;
       } else {
-        // Default to admin on first run
-        this.currentUser = this.users[0] || null;
-        if (this.currentUser) {
-          this.saveSession(this.currentUser);
-        }
+        // Visitors start unauthenticated; they must explicitly sign in
+        this.currentUser = null;
       }
     } catch (e) {
       console.warn('Storage unavailable in auth service:', e);
@@ -116,6 +119,8 @@ class AuthService {
         localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(user));
       } else {
         localStorage.removeItem(STORAGE_SESSION_KEY);
+        localStorage.removeItem('srs_genie_active_session_v2');
+        localStorage.removeItem('srs_genie_active_session');
       }
     } catch (e) {}
   }
