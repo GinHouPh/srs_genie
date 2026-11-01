@@ -156,7 +156,7 @@ export const apiService = {
     try {
       const res = await fetch('/api/saas/settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' },
         body: JSON.stringify({ key, value })
       });
       return res.ok;

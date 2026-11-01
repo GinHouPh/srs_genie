@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   CreditCard,
@@ -36,8 +36,14 @@ export const ClientBillingPage: React.FC<ClientBillingPageProps> = ({
   onNavigateToAdmin
 }) => {
   const isAdmin = user.role === 'admin';
-  const plans = saasStore.getPlans();
+  const [plans, setPlans] = useState<PricingPlan[]>(() => saasStore.getPlans());
   const cfConfig = cashfreeService.getConfig();
+
+  useEffect(() => {
+    return saasStore.subscribe(() => {
+      setPlans(saasStore.getPlans());
+    });
+  }, []);
 
   const [currentPlanId, setCurrentPlanId] = useState<SubscriptionTier>(user.plan || 'free');
   const [isProcessing, setIsProcessing] = useState(false);

@@ -45,7 +45,7 @@ if [ -d "dist" ]; then
     if [ -d "../public_html" ] && [ "$(pwd)" != "$(readlink -f ../public_html 2>/dev/null || echo '')" ]; then
         echo "==> Syncing files to ../public_html..."
         cp -r dist/* ../public_html/
-        cp .htaccess ../public_html/.htaccess 2>/dev/null || true
+        cp dist/.htaccess ../public_html/.htaccess 2>/dev/null || cp .htaccess ../public_html/.htaccess 2>/dev/null || true
     fi
 
     echo "✅ Application successfully prepared for Serverbyt Apache!"

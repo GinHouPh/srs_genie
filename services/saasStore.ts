@@ -426,12 +426,15 @@ class SaasStateStore {
   async syncFromServer() {
     try {
       const settings = await apiService.getAllSettings();
-      if (settings && typeof settings === 'object' && Object.keys(settings).length > 0) {
+      if (settings && typeof settings === 'object') {
         if (settings.business_settings) {
           this.businessSettings = { ...DEFAULT_BUSINESS_SETTINGS, ...settings.business_settings };
         }
         if (settings.plans && Array.isArray(settings.plans) && settings.plans.length > 0) {
           this.plans = this.sortPlans(settings.plans);
+        } else if (!settings.plans) {
+          // If server database doesn't have plans yet, sync our active plans to the server
+          apiService.saveSetting('plans', this.plans).catch(() => {});
         }
         if (settings.cashfree_config) {
           this.cashfreeConfig = { ...DEFAULT_CASHFREE_CONFIG, ...settings.cashfree_config };
@@ -737,11 +740,15 @@ class SaasStateStore {
     return this.sortPlans(this.plans);
   }
 
-  addPlan(plan: PricingPlan): PricingPlan {
+  async addPlan(plan: PricingPlan): Promise<PricingPlan> {
     this.plans = this.sortPlans([...this.plans, plan]);
     this.saveToStorage();
     this.notifyListeners();
-    apiService.saveSetting('plans', this.plans).catch(() => {});
+    try {
+      await apiService.saveSetting('plans', this.plans);
+    } catch (e) {
+      console.warn('[SaasStore] Failed to save plan to server:', e);
+    }
     auditLogger.log({
       action: 'saas.plan.created',
       status: 'SUCCESS',
@@ -750,14 +757,18 @@ class SaasStateStore {
     return plan;
   }
 
-  updatePlan(planId: SubscriptionTier | string, updates: Partial<PricingPlan>): PricingPlan | null {
+  async updatePlan(planId: SubscriptionTier | string, updates: Partial<PricingPlan>): Promise<PricingPlan | null> {
     const idx = this.plans.findIndex(p => p.id === planId);
     if (idx === -1) return null;
     this.plans[idx] = { ...this.plans[idx], ...updates };
     this.plans = this.sortPlans(this.plans);
     this.saveToStorage();
     this.notifyListeners();
-    apiService.saveSetting('plans', this.plans).catch(() => {});
+    try {
+      await apiService.saveSetting('plans', this.plans);
+    } catch (e) {
+      console.warn('[SaasStore] Failed to save updated plan to server:', e);
+    }
     auditLogger.log({
       action: 'saas.plan.updated',
       status: 'SUCCESS',
@@ -766,11 +777,15 @@ class SaasStateStore {
     return this.plans[idx];
   }
 
-  resetPlansToDefault(): PricingPlan[] {
+  async resetPlansToDefault(): Promise<PricingPlan[]> {
     this.plans = this.sortPlans([...BASELINE_PLANS]);
     this.saveToStorage();
     this.notifyListeners();
-    apiService.saveSetting('plans', this.plans).catch(() => {});
+    try {
+      await apiService.saveSetting('plans', this.plans);
+    } catch (e) {
+      console.warn('[SaasStore] Failed to reset plans on server:', e);
+    }
     auditLogger.log({
       action: 'saas.plans.reset',
       status: 'SUCCESS',
@@ -779,12 +794,16 @@ class SaasStateStore {
     return [...this.plans];
   }
 
-  deletePlan(planId: string): boolean {
+  async deletePlan(planId: string): Promise<boolean> {
     const initial = this.plans.length;
     this.plans = this.plans.filter(p => p.id !== planId);
     this.saveToStorage();
     this.notifyListeners();
-    apiService.saveSetting('plans', this.plans).catch(() => {});
+    try {
+      await apiService.saveSetting('plans', this.plans);
+    } catch (e) {
+      console.warn('[SaasStore] Failed to delete plan on server:', e);
+    }
     if (this.plans.length < initial) {
       auditLogger.log({
         action: 'saas.plan.deleted',

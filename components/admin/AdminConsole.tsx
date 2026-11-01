@@ -357,13 +357,13 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({ onBackToDashboard })
     }
   };
 
-  const handleSavePlanEdit = (e: React.FormEvent) => {
+  const handleSavePlanEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPlan) return;
-    saasStore.updatePlan(editingPlan.id, editingPlan);
+    await saasStore.updatePlan(editingPlan.id, editingPlan);
     setEditingPlan(null);
     refreshAll();
-    showToast('Plan tier updated.');
+    showToast('Plan tier updated and synced to database.');
   };
 
   // --- INVOICES ACTIONS ---

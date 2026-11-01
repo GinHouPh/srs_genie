@@ -52,7 +52,13 @@ if ($action === 'settings' || strpos($requestUri, '/settings') !== false) {
         $key = $body['key'] ?? null;
         $value = $body['value'] ?? null;
         if (!$key) {
-            sendJson(400, ['success' => false, 'error' => 'Settings key is required.']);
+            sendJson(400, [
+                'success' => false,
+                'error' => 'Settings key is required.',
+                'raw' => $rawInput,
+                'json_error' => json_last_error_msg(),
+                'method' => $method
+            ]);
         }
 
         $json = json_encode($value);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CheckCircle2,
   X,
@@ -9,7 +9,7 @@ import {
   ExternalLink,
   Sparkles
 } from 'lucide-react';
-import { User, SubscriptionTier } from '../types';
+import { User, SubscriptionTier, PricingPlan } from '../types';
 import { saasStore } from '../services/saasStore';
 import { authService } from '../services/authService';
 import { cashfreeService } from '../services/cashfreeService';
@@ -25,9 +25,15 @@ export const ClientSubscriptionModal: React.FC<ClientSubscriptionModalProps> = (
   onClose,
   onPlanUpdated
 }) => {
-  const plans = saasStore.getPlans();
+  const [plans, setPlans] = useState<PricingPlan[]>(() => saasStore.getPlans());
   const cfConfig = cashfreeService.getConfig();
   const [currentPlan, setCurrentPlan] = useState<SubscriptionTier>(user.plan || 'free');
+
+  useEffect(() => {
+    return saasStore.subscribe(() => {
+      setPlans(saasStore.getPlans());
+    });
+  }, []);
   const [toast, setToast] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);

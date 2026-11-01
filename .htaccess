@@ -1,35 +1,27 @@
 # ----------------------------------------------------------------------
-# SRS Genie - Root Apache Configuration (.htaccess) for Serverbyt / StackCP
-# Directs all web traffic and API routes into the compiled production app in /dist
+# SRS Genie - Apache Configuration (.htaccess) for Serverbyt / StackCP
 # ----------------------------------------------------------------------
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # 1. Forward API calls to PHP handlers in dist/api/
-  RewriteRule ^api/health$ dist/api/health.php [L,QSA]
-  RewriteRule ^api/auth(/.*)?$ dist/api/auth.php [L,QSA]
-  RewriteRule ^api/projects(/.*)?$ dist/api/projects.php [L,QSA]
-  RewriteRule ^api/saas(/.*)?$ dist/api/saas.php [L,QSA]
-  RewriteRule ^api/cashfree(/.*)?$ dist/api/cashfree.php [L,QSA]
+  # 1. Forward API calls to PHP handlers
+  RewriteRule ^api/health$ api/health.php [L,QSA]
+  RewriteRule ^api/auth(/.*)?$ api/auth.php [L,QSA]
+  RewriteRule ^api/projects(/.*)?$ api/projects.php [L,QSA]
+  RewriteRule ^api/saas(/.*)?$ api/saas.php [L,QSA]
+  RewriteRule ^api/cashfree(/.*)?$ api/cashfree.php [L,QSA]
 
   # 2. Prevent directory listing
   Options -Indexes
 
-  # 3. If the requested file or directory exists inside dist/, serve it from dist/
-  RewriteCond %{REQUEST_URI} !^/dist/
-  RewriteCond %{DOCUMENT_ROOT}/dist/%{REQUEST_URI} -f [OR]
-  RewriteCond %{DOCUMENT_ROOT}/dist/%{REQUEST_URI} -d
-  RewriteRule ^(.*)$ dist/$1 [L]
-
-  # 4. If request is already inside dist/ and is a real file, do not rewrite
+  # 3. Handle Single Page Application (React Router / HTML5 History)
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # 5. Route all SPA client-side routes (e.g. /, /admin, /billing) to dist/index.html
-  RewriteRule ^ dist/index.html [L]
+  RewriteRule ^ index.html [L]
 </IfModule>
 
 # ----------------------------------------------------------------------

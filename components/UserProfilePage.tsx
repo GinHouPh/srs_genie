@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   User as UserIcon,
   Shield,
@@ -56,7 +56,13 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
 
   // Active user's projects
   const myProjects = projectStore.getAllProjects(user);
-  const plans = saasStore.getPlans();
+  const [plans, setPlans] = useState<PricingPlan[]>(() => saasStore.getPlans());
+
+  useEffect(() => {
+    return saasStore.subscribe(() => {
+      setPlans(saasStore.getPlans());
+    });
+  }, []);
   const activePlan = plans.find(p => p.id === user.plan) || {
     id: user.plan,
     name: user.plan.toUpperCase(),

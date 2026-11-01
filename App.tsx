@@ -25,6 +25,11 @@ export default function App() {
       setBusinessSettings(saasStore.getBusinessSettings());
     });
   }, []);
+
+  // Sync latest SaaS store settings (plans, business configs) on navigation and auth transitions
+  useEffect(() => {
+    saasStore.syncFromServer();
+  }, [appState, user]);
   const [appState, setAppStateState] = useState<AppState>(() => {
     const cur = authService.getCurrentUser();
     if (!cur) {
