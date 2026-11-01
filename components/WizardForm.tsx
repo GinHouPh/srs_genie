@@ -1,7 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ProjectInput, SRSFormData, AIModelDefinition } from '../types';
-import { ChevronRight, ChevronLeft, FileText, Save, Eye, CheckCircle, ArrowLeft, Sparkles, HelpCircle, Cpu } from 'lucide-react';
+import { ChevronRight, ChevronLeft, FileText, Save, Eye, CheckCircle, ArrowLeft, Sparkles, HelpCircle, Cpu, Check, Layers } from 'lucide-react';
 import { saasStore } from '../services/saasStore';
+
+const SECTION_SHORT_TITLES: Record<string, string> = {
+  project_overview: 'Overview',
+  system_type: 'System Type',
+  core_features: 'Core Features',
+  architecture: 'Architecture',
+  ui_ux: 'UI / UX',
+  technical_requirements: 'Tech Stack',
+  database_data: 'Database',
+  security: 'Security',
+  integrations: 'Integrations',
+  scalability_performance: 'Scalability',
+  testing_quality: 'Testing & QA',
+  deployment: 'Deployment',
+  timeline_budget: 'Timeline',
+  risks_assumptions: 'Risks',
+  additional: 'Additional'
+};
 
 interface WizardFormProps {
   onSubmit: (data: ProjectInput, selectedModelId?: string) => void;
@@ -998,31 +1016,62 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
     }
 
     if (field.type === 'choice_with_text') {
+      const isSelected = (opt: string) => value === opt;
+      const hasLongOptions = field.options?.some((opt: string) => opt.length > 55);
+      const gridClass = hasLongOptions
+        ? 'grid grid-cols-1 md:grid-cols-2 gap-2'
+        : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2';
+
       return (
-        <div className="space-y-4">
-          <div className="space-y-1.5 bg-surface p-4 border border-line">
-            {field.options?.map((option: string) => (
-              <label key={option} className="flex items-start space-x-3 p-2.5 hover:bg-box cursor-pointer transition-colors group">
-                <input
-                  type="radio"
-                  name={`${sectionId}_${fieldId}`}
-                  value={option}
-                  checked={value === option}
-                  onChange={(e) => handleInputChange(sectionId, fieldId, e.target.value)}
-                  className="mt-1 accent-[#d90429]"
-                />
-                <span className="text-sm font-body text-body group-hover:text-white transition-colors flex-1">{option}</span>
-              </label>
-            ))}
+        <div className="space-y-3">
+          <div className={gridClass}>
+            {field.options?.map((option: string) => {
+              const selected = isSelected(option);
+              return (
+                <label
+                  key={option}
+                  className={`flex items-start gap-2.5 p-3 border cursor-pointer transition-all duration-150 select-none group text-left ${
+                    selected
+                      ? 'border-accent bg-accent/10 text-white shadow-sm ring-1 ring-accent/30'
+                      : 'border-line bg-surface hover:border-line-hover hover:bg-box text-body'
+                  }`}
+                >
+                  <div className="pt-0.5 flex-shrink-0">
+                    <input
+                      type="radio"
+                      name={`${sectionId}_${fieldId}`}
+                      value={option}
+                      checked={selected}
+                      onChange={(e) => handleInputChange(sectionId, fieldId, e.target.value)}
+                      className="sr-only"
+                    />
+                    <div
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
+                        selected ? 'border-accent bg-accent' : 'border-line group-hover:border-muted'
+                      }`}
+                    >
+                      {selected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    </div>
+                  </div>
+                  <span
+                    className={`text-xs font-body leading-snug flex-1 transition-colors ${
+                      selected ? 'text-white font-medium' : 'text-muted group-hover:text-white'
+                    }`}
+                  >
+                    {option}
+                  </span>
+                </label>
+              );
+            })}
           </div>
           {field.hasTextInput && (value && value !== 'Not needed' && value !== 'Not applicable' && value !== 'None') && (
-            <div className="animate-fadeIn">
-              <label className="block font-display text-xs tracking-[0.2em] uppercase text-muted mb-2">
-                Additional Details:
+            <div className="animate-fadeIn mt-3 pt-3 border-t border-line/60">
+              <label className="block font-display text-[11px] tracking-[0.16em] uppercase text-accent mb-1.5 font-semibold">
+                Additional Details for: <span className="text-white normal-case">{value}</span>
               </label>
               <textarea
-                className="w-full px-4 py-3 bg-ink border border-line focus:border-accent resize-y transition-all text-white placeholder:text-muted font-body outline-none text-sm"
-                rows={3}
+                className="w-full px-3.5 py-2.5 bg-ink border border-line focus:border-accent resize-y transition-all text-white placeholder:text-muted font-body outline-none text-xs leading-relaxed"
+                rows={2}
                 placeholder={field.textPlaceholder}
                 value={textValue as string}
                 onChange={(e) => handleInputChange(sectionId, `${fieldId}_text`, e.target.value)}
@@ -1035,32 +1084,67 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
 
     if (field.type === 'multiple_choice_with_text') {
       const selectedValues = (value as string[]) || [];
+      const hasLongOptions = field.options?.some((opt: string) => opt.length > 55);
+      const gridClass = hasLongOptions
+        ? 'grid grid-cols-1 md:grid-cols-2 gap-2'
+        : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2';
+
       return (
-        <div className="space-y-4">
-          <div className="space-y-1.5 bg-surface p-4 border border-line">
-            {field.options?.map((option: string) => (
-              <label key={option} className="flex items-start space-x-3 p-2.5 hover:bg-box cursor-pointer transition-colors group">
-                <input
-                  type="checkbox"
-                  checked={selectedValues.includes(option)}
-                  onChange={(e) => handleCheckboxChange(sectionId, fieldId, option, e.target.checked)}
-                  className="mt-1 accent-[#d90429]"
-                />
-                <span className="text-sm font-body text-body group-hover:text-white transition-colors flex-1">{option}</span>
-                {selectedValues.includes(option) && (
-                  <CheckCircle className="w-4 h-4 text-accent flex-shrink-0" />
-                )}
-              </label>
-            ))}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-[11px] font-display uppercase tracking-wider text-muted mb-1 px-0.5">
+            <span>Select all that apply</span>
+            {selectedValues.length > 0 && (
+              <span className="text-accent font-semibold">
+                {selectedValues.length} selected
+              </span>
+            )}
+          </div>
+          <div className={gridClass}>
+            {field.options?.map((option: string) => {
+              const isChecked = selectedValues.includes(option);
+              return (
+                <label
+                  key={option}
+                  className={`flex items-start gap-2.5 p-3 border cursor-pointer transition-all duration-150 select-none group text-left ${
+                    isChecked
+                      ? 'border-accent bg-accent/10 text-white shadow-sm ring-1 ring-accent/30'
+                      : 'border-line bg-surface hover:border-line-hover hover:bg-box text-body'
+                  }`}
+                >
+                  <div className="pt-0.5 flex-shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => handleCheckboxChange(sectionId, fieldId, option, e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div
+                      className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-colors ${
+                        isChecked ? 'border-accent bg-accent' : 'border-line group-hover:border-muted'
+                      }`}
+                    >
+                      {isChecked && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                    </div>
+                  </div>
+                  <span
+                    className={`text-xs font-body leading-snug flex-1 transition-colors ${
+                      isChecked ? 'text-white font-medium' : 'text-muted group-hover:text-white'
+                    }`}
+                  >
+                    {option}
+                  </span>
+                </label>
+              );
+            })}
           </div>
           {field.hasTextInput && selectedValues.length > 0 && (
-            <div className="animate-fadeIn">
-              <label className="block font-display text-xs tracking-[0.2em] uppercase text-muted mb-2">
+            <div className="animate-fadeIn mt-3 pt-3 border-t border-line/60">
+              <label className="block font-display text-[11px] tracking-[0.16em] uppercase text-accent mb-1.5 font-semibold">
                 Additional Details:
               </label>
               <textarea
-                className="w-full px-4 py-3 bg-ink border border-line focus:border-accent resize-y transition-all text-white placeholder:text-muted font-body outline-none text-sm"
-                rows={3}
+                className="w-full px-3.5 py-2.5 bg-ink border border-line focus:border-accent resize-y transition-all text-white placeholder:text-muted font-body outline-none text-xs leading-relaxed"
+                rows={2}
                 placeholder={field.textPlaceholder}
                 value={textValue as string}
                 onChange={(e) => handleInputChange(sectionId, `${fieldId}_text`, e.target.value)}
@@ -1071,6 +1155,20 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
       );
     }
     return null;
+  };
+
+  const getSectionFieldCounts = (sectionId: string) => {
+    const sec = formSections.find(s => s.id === sectionId);
+    if (!sec) return { completed: 0, total: 0 };
+    const secData = formData[sectionId] || {};
+    let completed = 0;
+    sec.fields.forEach(f => {
+      const val = secData[f.id];
+      if (val && (Array.isArray(val) ? val.length > 0 : (typeof val === 'string' ? val.trim().length > 0 : true))) {
+        completed++;
+      }
+    });
+    return { completed, total: sec.fields.length };
   };
 
   const getCompletionStats = () => {
@@ -1170,11 +1268,16 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
                           <dt className="font-display text-xs uppercase tracking-[0.16em] text-muted mb-1">{field.label}</dt>
                           <dd className="text-body text-sm font-body">
                             {Array.isArray(value) ? (
-                              <ul className="list-disc list-inside space-y-1 text-white">
-                                {value.map((item, idx) => <li key={idx}>{item}</li>)}
-                              </ul>
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {value.map((item, idx) => (
+                                  <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 bg-ink border border-line text-xs font-body text-white">
+                                    <Check className="w-3 h-3 text-accent flex-shrink-0" />
+                                    {item}
+                                  </span>
+                                ))}
+                              </div>
                             ) : (
-                              <p className="whitespace-pre-wrap text-white">{value as string}</p>
+                              <p className="whitespace-pre-wrap text-white text-xs">{value as string}</p>
                             )}
                             {textValue && (
                               <div className="mt-2 p-3 bg-ink border border-line">
@@ -1327,6 +1430,42 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
            </div>
          </div>
 
+         {/* 15-Section Navigation Ribbon */}
+         <div className="bg-box border-b border-line px-4 py-2.5 overflow-x-auto">
+            <div className="flex items-center gap-1.5 min-w-max">
+              {formSections.map((sec, idx) => {
+                const isActive = idx === activeStep;
+                const counts = getSectionFieldCounts(sec.id);
+                const isFilled = counts.completed > 0;
+                const shortTitle = SECTION_SHORT_TITLES[sec.id] || sec.title.replace(/^\d+\.\s*/, '');
+                return (
+                  <button
+                    key={sec.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveStep(idx);
+                      scrollRef.current?.scrollTo(0, 0);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-display tracking-wider uppercase transition-all select-none border ${
+                      isActive
+                        ? 'bg-accent text-white border-accent font-semibold shadow-sm'
+                        : isFilled
+                        ? 'bg-surface text-white border-line hover:border-line-hover hover:bg-box'
+                        : 'bg-ink text-muted border-line/60 hover:text-white hover:border-line'
+                    }`}
+                    title={`${sec.title} (${counts.completed}/${counts.total} completed)`}
+                  >
+                    <span className="text-xs">{sec.icon}</span>
+                    <span>{idx + 1}. {shortTitle}</span>
+                    {isFilled && (
+                      <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : 'bg-accent'}`} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+         </div>
+
          {/* Form Body */}
          <div className="p-6 md:p-10 bg-ink" ref={scrollRef}>
             <div className="max-w-4xl mx-auto">
@@ -1342,13 +1481,15 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
                  </div>
               </div>
 
-              <div className="space-y-8 animate-fadeIn">
+              <div className="space-y-6 animate-fadeIn">
                   {currentSection.fields.map((field) => (
-                    <div key={field.id} className="space-y-2">
-                      <label htmlFor={`${currentSection.id}_${field.id}`} className="block font-display text-xs uppercase tracking-[0.16em] text-white">
-                        {field.label}
-                        {field.required && <span className="text-accent ml-1">*</span>}
-                      </label>
+                    <div key={field.id} className="p-4 sm:p-5 bg-box/40 border border-line/80 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <label htmlFor={`${currentSection.id}_${field.id}`} className="block font-display text-xs uppercase tracking-[0.16em] text-white font-semibold">
+                          {field.label}
+                          {field.required && <span className="text-accent ml-1">*</span>}
+                        </label>
+                      </div>
                       {renderField(currentSection.id, field)}
                     </div>
                   ))}
@@ -1357,16 +1498,37 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
          </div>
 
          {/* Footer Navigation */}
-         <div className="p-6 border-t border-line bg-surface flex justify-between items-center">
-            <button
-              onClick={handlePrev}
-              className="btn btn-sm btn--ghost"
-            >
-               {activeStep === 0 ? <ArrowLeft className="w-4 h-4 mr-1.5" /> : <ChevronLeft className="w-4 h-4 mr-1.5" />}
-               {activeStep === 0 ? 'Dashboard' : 'Previous'}
-            </button>
+         <div className="p-4 sm:p-6 border-t border-line bg-surface flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+              <button
+                onClick={handlePrev}
+                className="btn btn-sm btn--ghost"
+              >
+                 {activeStep === 0 ? <ArrowLeft className="w-4 h-4 mr-1.5" /> : <ChevronLeft className="w-4 h-4 mr-1.5" />}
+                 {activeStep === 0 ? 'Dashboard' : 'Previous'}
+              </button>
 
-            <div className="flex gap-4">
+              {/* Quick Jump Dropdown */}
+              <div className="flex items-center gap-2 text-xs font-display text-muted">
+                <span className="hidden md:inline uppercase tracking-wider text-[11px]">Jump to:</span>
+                <select
+                  value={activeStep}
+                  onChange={(e) => {
+                    setActiveStep(Number(e.target.value));
+                    scrollRef.current?.scrollTo(0, 0);
+                  }}
+                  className="bg-box border border-line px-2.5 py-1.5 text-white text-xs font-display uppercase tracking-wider outline-none cursor-pointer hover:border-line-hover"
+                >
+                  {formSections.map((sec, idx) => (
+                    <option key={sec.id} value={idx} className="bg-surface text-white">
+                      {sec.title} ({getSectionFieldCounts(sec.id).completed}/{getSectionFieldCounts(sec.id).total})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-4 w-full sm:w-auto justify-end">
                {activeStep === formSections.length - 1 ? (
                   <button
                     onClick={handleNext}
