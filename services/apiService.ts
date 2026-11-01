@@ -57,6 +57,19 @@ export const apiService = {
     }
   },
 
+  async resendVerificationCode(email: string): Promise<any> {
+    try {
+      const res = await fetch('/api/auth/resend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      return await res.json();
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Network error resending verification code.' };
+    }
+  },
+
   async getAllUsers(): Promise<any[]> {
     try {
       const res = await fetch('/api/auth/users');

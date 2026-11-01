@@ -41,6 +41,55 @@ function computePasswordHash($password, $email) {
     return "sha256_" . abs($hash);
 }
 
+function sendVerificationEmail($toEmail, $name, $code) {
+    $subject = "Your SRS Genie Activation Code: $code";
+    
+    $htmlContent = '<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #0c0c0c; color: #d8d8d8; padding: 24px; margin: 0; }
+    .card { max-width: 520px; margin: 20px auto; background-color: #141414; border: 1px solid #383838; padding: 32px; border-radius: 6px; }
+    .logo { font-size: 20px; font-weight: bold; color: #ffffff; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 24px; }
+    .logo span { color: #d90429; }
+    .badge { display: inline-block; background-color: rgba(217, 4, 41, 0.15); color: #d90429; border: 1px solid rgba(217, 4, 41, 0.4); font-size: 11px; padding: 3px 8px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; }
+    h2 { color: #ffffff; margin-top: 0; font-size: 22px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    p { font-size: 14px; line-height: 1.6; color: #a0a0a0; margin-bottom: 20px; }
+    .code-box { background-color: #2c2c2c; border: 1px solid #d90429; border-radius: 6px; padding: 18px; text-align: center; margin: 24px 0; }
+    .code { font-family: monospace; font-size: 32px; font-weight: bold; color: #ffffff; letter-spacing: 0.3em; }
+    .footer { font-size: 11px; color: #666; margin-top: 32px; border-top: 1px solid #282828; padding-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">SRS <span>GENIE</span></div>
+    <div class="badge">Account Activation</div>
+    <h2>Verify Your Email</h2>
+    <p>Hello ' . htmlspecialchars($name) . ',</p>
+    <p>Thank you for registering with SRS Genie. To activate your workspace and start generating autonomous software specifications, please enter this 6-digit confirmation code:</p>
+    <div class="code-box">
+      <div class="code">' . htmlspecialchars($code) . '</div>
+    </div>
+    <p>This code will expire in 15 minutes. If you did not create an account on SRS Genie, you can safely ignore this email.</p>
+    <div class="footer">
+      SRS Genie Inc. &bull; Autonomous Architecture & Spec Synthesis Control Plane
+    </div>
+  </div>
+</body>
+</html>';
+
+    $headers = [
+        'MIME-Version: 1.0',
+        'Content-Type: text/html; charset=UTF-8',
+        'From: SRS Genie <noreply@srsgenie.ai>',
+        'Reply-To: support@srsgenie.ai',
+        'X-Mailer: PHP/' . phpversion()
+    ];
+
+    return @mail($toEmail, $subject, $htmlContent, implode("\r\n", $headers));
+}
+
 // 1. LOGIN
 if ($action === 'login' || strpos($requestUri, '/login') !== false) {
     $email = trim(strtolower($body['email'] ?? ''));
@@ -96,17 +145,34 @@ if ($action === 'register' || strpos($requestUri, '/register') !== false) {
         sendJson(400, ['success' => false, 'error' => 'An account with this email already exists.']);
     }
 
+    // Check if email verification is enforced in saas_settings
+    $enforceVerification = true;
+    try {
+        $settingsStmt = $pdo->prepare("SELECT value_json FROM saas_settings WHERE key_name = 'business_settings' LIMIT 1");
+        $settingsStmt->execute();
+        $bsRow = $settingsStmt->fetch();
+        if ($bsRow) {
+            $bs = json_decode($bsRow['value_json'], true);
+            if (isset($bs['enforceEmailVerification'])) {
+                $enforceVerification = boolval($bs['enforceEmailVerification']);
+            }
+        }
+    } catch (Exception $e) {}
+
     $userId = 'usr_client_' . round(microtime(true) * 1000);
     $tenantId = 'tenant_' . round(microtime(true) * 1000) . '_' . substr(bin2hex(random_bytes(4)), 0, 5);
     $passwordHash = computePasswordHash($password, $email);
     $verificationCode = (string)random_int(100000, 900000);
     $avatarUrl = "https://api.dicebear.com/7.x/avataaars/svg?seed=" . urlencode($name);
 
+    $isVerified = $enforceVerification ? 0 : 1;
+    $vCode = $enforceVerification ? $verificationCode : null;
+
     $insert = $pdo->prepare("
         INSERT INTO users (id, tenant_id, name, email, password_hash, role, company, plan, avatar_url, is_email_verified, verification_code)
-        VALUES (?, ?, ?, ?, ?, 'client', ?, 'free', ?, 0, ?)
+        VALUES (?, ?, ?, ?, ?, 'client', ?, 'free', ?, ?, ?)
     ");
-    $insert->execute([$userId, $tenantId, $name, $email, $passwordHash, $company, $avatarUrl, $verificationCode]);
+    $insert->execute([$userId, $tenantId, $name, $email, $passwordHash, $company, $avatarUrl, $isVerified, $vCode]);
 
     // Also register as customer
     $insCust = $pdo->prepare("
@@ -115,10 +181,14 @@ if ($action === 'register' || strpos($requestUri, '/register') !== false) {
     ");
     $insCust->execute([$userId, $tenantId, $name, $email, $company]);
 
+    // If verification is enforced, dispatch real email
+    if ($enforceVerification) {
+        sendVerificationEmail($email, $name, $verificationCode);
+    }
+
     sendJson(201, [
         'success' => true,
-        'requiresVerification' => true,
-        'verificationCode' => $verificationCode,
+        'requiresVerification' => $enforceVerification,
         'user' => [
             'id' => $userId,
             'tenantId' => $tenantId,
@@ -128,7 +198,7 @@ if ($action === 'register' || strpos($requestUri, '/register') !== false) {
             'company' => $company,
             'plan' => 'free',
             'avatarUrl' => $avatarUrl,
-            'isEmailVerified' => false
+            'isEmailVerified' => !$enforceVerification
         ]
     ]);
 }
@@ -162,7 +232,35 @@ if ($action === 'verify' || strpos($requestUri, '/verify') !== false) {
     sendJson(200, ['success' => true, 'user' => $user]);
 }
 
-// 4. GET ALL USERS (ADMIN)
+// 4. RESEND VERIFICATION CODE
+if ($action === 'resend' || strpos($requestUri, '/resend') !== false) {
+    $email = trim(strtolower($body['email'] ?? ''));
+    if (empty($email)) {
+        sendJson(400, ['success' => false, 'error' => 'Email is required.']);
+    }
+
+    $stmt = $pdo->prepare("SELECT id, name, is_email_verified FROM users WHERE LOWER(email) = ? LIMIT 1");
+    $stmt->execute([$email]);
+    $user = $stmt->fetch();
+
+    if (!$user) {
+        sendJson(404, ['success' => false, 'error' => 'Account not found.']);
+    }
+
+    if ($user['is_email_verified']) {
+        sendJson(200, ['success' => true, 'alreadyVerified' => true, 'message' => 'Email is already verified.']);
+    }
+
+    $newCode = (string)random_int(100000, 900000);
+    $upd = $pdo->prepare("UPDATE users SET verification_code = ? WHERE id = ?");
+    $upd->execute([$newCode, $user['id']]);
+
+    sendVerificationEmail($email, $user['name'], $newCode);
+
+    sendJson(200, ['success' => true, 'message' => 'A fresh verification code has been dispatched to your email.']);
+}
+
+// 5. GET ALL USERS (ADMIN)
 if ($action === 'users' || strpos($requestUri, '/users') !== false) {
     $stmt = $pdo->query("SELECT id, tenant_id, name, email, role, staff_role, company, plan, avatar_url, is_email_verified, created_at FROM users ORDER BY created_at DESC");
     $users = $stmt->fetchAll();

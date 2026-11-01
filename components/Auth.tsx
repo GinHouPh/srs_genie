@@ -35,7 +35,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login', init
   const [showVerifyStep, setShowVerifyStep] = useState(false);
   const [verifyCodeInput, setVerifyCodeInput] = useState('');
   const [pendingVerifyEmail, setPendingVerifyEmail] = useState('');
-  const [devSimCode, setDevSimCode] = useState('');
   const [resendNotice, setResendNotice] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,7 +48,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login', init
         if (!result.success) {
           if (result.requiresVerification) {
             setPendingVerifyEmail(result.email || email);
-            setDevSimCode(result.verificationCode || '');
             setShowVerifyStep(true);
             setLoading(false);
             return;
@@ -84,7 +82,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login', init
 
         if (result.requiresVerification) {
           setPendingVerifyEmail(email);
-          setDevSimCode(result.verificationCode || '');
           setShowVerifyStep(true);
           setLoading(false);
           return;
@@ -118,13 +115,14 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login', init
     onLogin(result.user);
   };
 
-  const handleResendCode = () => {
+  const handleResendCode = async () => {
     setError(null);
-    const res = authService.resendVerificationCode(pendingVerifyEmail);
-    if (res.success && res.code) {
-      setDevSimCode(res.code);
-      setResendNotice('A fresh verification code has been generated.');
-      setTimeout(() => setResendNotice(null), 4000);
+    const res = await authService.resendVerificationCode(pendingVerifyEmail);
+    if (res.success) {
+      setResendNotice(res.message || 'A fresh verification code has been dispatched to your email.');
+      setTimeout(() => setResendNotice(null), 5000);
+    } else {
+      setError(res.error || 'Failed to resend code. Please try again.');
     }
   };
 
@@ -154,26 +152,13 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login', init
                 Confirm Your Email
               </h2>
               <p className="mt-2 font-body text-xs text-muted leading-relaxed">
-                We need to verify that your email address is active and available. Enter the 6-digit activation code sent to:
+                Please enter the 6-digit activation code sent to:
                 <strong className="block text-white font-mono mt-1 text-sm">{pendingVerifyEmail}</strong>
+                <span className="block mt-1 text-muted text-[11px]">
+                  Please check your inbox (and spam or junk folder) for your activation code.
+                </span>
               </p>
             </div>
-
-            {/* Simulated Mailbox Dispatch Banner for Dev/Testing */}
-            {devSimCode && (
-              <div className="p-3.5 bg-box border border-accent/40 rounded space-y-1">
-                <div className="flex items-center gap-2 text-xs font-display uppercase tracking-wider text-accent font-bold">
-                  <KeyRound className="w-4 h-4" />
-                  <span>Simulated Mailbox Dispatch</span>
-                </div>
-                <p className="text-xs font-body text-muted">
-                  Development notice: Verification token dispatched to inbox:
-                </p>
-                <div className="font-mono text-lg font-bold text-white tracking-[0.25em] bg-ink/70 px-3 py-1.5 border border-line rounded inline-block">
-                  {devSimCode}
-                </div>
-              </div>
-            )}
 
             {resendNotice && (
               <div className="p-3 bg-emerald-950/40 border border-emerald-800/40 text-xs text-emerald-300 flex items-center gap-2">

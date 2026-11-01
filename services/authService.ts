@@ -244,6 +244,9 @@ class AuthService {
       return { success: false, error: 'Password must be at least 6 characters for enterprise compliance.' };
     }
 
+    const businessSettings = saasStore.getBusinessSettings();
+    const enforceVerification = businessSettings.enforceEmailVerification !== false;
+
     const tenantId = `tenant_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -259,16 +262,28 @@ class AuthService {
       plan: 'free',
       avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(params.name)}`,
       createdAt: new Date().toISOString(),
-      isEmailVerified: false,
-      verificationCode: verificationCode
+      isEmailVerified: !enforceVerification,
+      verificationCode: enforceVerification ? verificationCode : undefined
     };
 
     this.users.push(newUser);
     this.saveUsers();
 
     // Sync registration directly to Serverbyt MySQL database
+    let serverRequiresVerification = enforceVerification;
     try {
-      await apiService.register(params.name, emailNormalized, params.password, params.company);
+      const serverRes = await apiService.register(params.name, emailNormalized, params.password, params.company);
+      if (serverRes && serverRes.success) {
+        if (typeof serverRes.requiresVerification === 'boolean') {
+          serverRequiresVerification = serverRes.requiresVerification;
+        }
+        if (serverRes.user) {
+          newUser.id = serverRes.user.id || newUser.id;
+          newUser.tenantId = serverRes.user.tenantId || newUser.tenantId;
+          newUser.isEmailVerified = !serverRequiresVerification;
+          this.saveUsers();
+        }
+      }
     } catch (e) {
       console.warn('Server registration sync fallback:', e);
     }
@@ -278,7 +293,7 @@ class AuthService {
 
     // Register as a customer in the SaaS Business Store
     saasStore.addCustomer({
-      tenantId: tenantId,
+      tenantId: newUser.tenantId,
       name: newUser.name,
       email: newUser.email,
       company: newUser.company || 'Independent',
@@ -292,22 +307,41 @@ class AuthService {
       mcpApiKeyCount: 0
     });
 
+    const userSafe = this.sanitizeUser(newUser);
+
+    if (!serverRequiresVerification) {
+      // Direct instant activation: save session and log user in immediately
+      this.currentUser = userSafe;
+      this.saveSession(userSafe);
+      auditLogger.log({
+        actorId: newUser.id,
+        actorEmail: newUser.email,
+        actorRole: 'client',
+        tenantId: newUser.tenantId,
+        action: 'auth.register.direct_activation',
+        status: 'SUCCESS',
+        details: `New workspace registered and instantly activated without email barrier.`
+      });
+      return {
+        success: true,
+        user: userSafe,
+        requiresVerification: false
+      };
+    }
+
     auditLogger.log({
       actorId: newUser.id,
       actorEmail: newUser.email,
       actorRole: 'client',
-      tenantId: tenantId,
+      tenantId: newUser.tenantId,
       action: 'auth.register.pending_verification',
       status: 'SUCCESS',
-      details: `New workspace registered with tenant ID ${tenantId}. Verification code generated.`
+      details: `New workspace registered with tenant ID ${newUser.tenantId}. Verification email dispatched.`
     });
-
-    const userSafe = this.sanitizeUser(newUser);
 
     return {
       success: true,
       user: userSafe,
-      verificationCode,
       requiresVerification: true
     };
   }
@@ -372,10 +406,16 @@ class AuthService {
   /**
    * Resends or generates a fresh 6-digit verification code
    */
-  resendVerificationCode(email: string): { success: boolean; code?: string; error?: string } {
+  async resendVerificationCode(email: string): Promise<{ success: boolean; message?: string; error?: string }> {
     const emailNormalized = email.trim().toLowerCase();
-    const user = this.users.find(u => u.email.toLowerCase() === emailNormalized);
+    try {
+      const serverRes = await apiService.resendVerificationCode(emailNormalized);
+      if (serverRes && serverRes.success) {
+        return { success: true, message: serverRes.message || 'Verification code resent.' };
+      }
+    } catch {}
 
+    const user = this.users.find(u => u.email.toLowerCase() === emailNormalized);
     if (!user) {
       return { success: false, error: 'Account not found.' };
     }
@@ -384,7 +424,7 @@ class AuthService {
     user.verificationCode = newCode;
     this.saveUsers();
 
-    return { success: true, code: newCode };
+    return { success: true, message: 'A fresh verification code has been dispatched to your email.' };
   }
 
   /**
