@@ -41,7 +41,12 @@ fi
 if [ -d "dist" ]; then
     echo "==> Production build 'dist' is ready."
     
-    # If Apache is pointing to an external public_html directory outside this repo:
+    # Sync compiled production files directly into current repo root (DocumentRoot for srsgenie subdomain)
+    echo "==> Deploying dist/ to root..."
+    cp -r dist/* .
+    cp dist/.htaccess .htaccess 2>/dev/null || true
+
+    # Also sync to ../public_html if present
     if [ -d "../public_html" ] && [ "$(pwd)" != "$(readlink -f ../public_html 2>/dev/null || echo '')" ]; then
         echo "==> Syncing files to ../public_html..."
         cp -r dist/* ../public_html/
