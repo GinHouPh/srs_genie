@@ -20,16 +20,6 @@ export default function App() {
   const [user, setUser] = useState<User | null>(() => authService.getCurrentUser());
   const [businessSettings, setBusinessSettings] = useState(() => saasStore.getBusinessSettings());
 
-  useEffect(() => {
-    return saasStore.subscribe(() => {
-      setBusinessSettings(saasStore.getBusinessSettings());
-    });
-  }, []);
-
-  // Sync latest SaaS store settings (plans, business configs) on navigation and auth transitions
-  useEffect(() => {
-    saasStore.syncFromServer();
-  }, [appState, user]);
   const [appState, setAppStateState] = useState<AppState>(() => {
     const cur = authService.getCurrentUser();
     if (!cur) {
@@ -57,6 +47,17 @@ export default function App() {
       sessionStorage.setItem('srs_active_app_state', nextState);
     } catch {}
   };
+
+  useEffect(() => {
+    return saasStore.subscribe(() => {
+      setBusinessSettings(saasStore.getBusinessSettings());
+    });
+  }, []);
+
+  // Sync latest SaaS store settings (plans, business configs) on navigation and auth transitions
+  useEffect(() => {
+    saasStore.syncFromServer();
+  }, [appState, user]);
 
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionTier>('pro');

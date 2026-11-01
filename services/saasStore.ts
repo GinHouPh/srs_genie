@@ -716,23 +716,26 @@ class SaasStateStore {
 
   // Auto-sorts subscription plans from lower to higher price
   sortPlans(plans: PricingPlan[]): PricingPlan[] {
-    return [...plans].sort((a, b) => {
-      const priceA = Number(a.priceMonthly) || 0;
-      const priceB = Number(b.priceMonthly) || 0;
-      if (priceA !== priceB) {
-        return priceA - priceB;
-      }
-      // For $0 plans, 100% free comes first, then trial with post-trial price
-      const postA = Number(a.postTrialMonthlyPrice) || 0;
-      const postB = Number(b.postTrialMonthlyPrice) || 0;
-      if (postA !== postB) {
-        return postA - postB;
-      }
-      // Secondary: Quota specs ascending
-      const quotaA = Number(a.quotaSpecsPerMonth) || 0;
-      const quotaB = Number(b.quotaSpecsPerMonth) || 0;
-      return quotaA - quotaB;
-    });
+    if (!Array.isArray(plans)) return [];
+    return [...plans]
+      .filter((p): p is PricingPlan => Boolean(p && typeof p === 'object' && p.id))
+      .sort((a, b) => {
+        const priceA = Number(a.priceMonthly) || 0;
+        const priceB = Number(b.priceMonthly) || 0;
+        if (priceA !== priceB) {
+          return priceA - priceB;
+        }
+        // For $0 plans, 100% free comes first, then trial with post-trial price
+        const postA = Number(a.postTrialMonthlyPrice) || 0;
+        const postB = Number(b.postTrialMonthlyPrice) || 0;
+        if (postA !== postB) {
+          return postA - postB;
+        }
+        // Secondary: Quota specs ascending
+        const quotaA = Number(a.quotaSpecsPerMonth) || 0;
+        const quotaB = Number(b.quotaSpecsPerMonth) || 0;
+        return quotaA - quotaB;
+      });
   }
 
   // --- PLANS CRUD ---
