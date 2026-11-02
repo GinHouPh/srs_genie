@@ -50,6 +50,30 @@ export interface ModelShareMetric {
 }
 
 
+export interface BillingAddress {
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  gstin?: string;
+}
+
+export interface CustomerBillingData {
+  name: string;
+  email: string;
+  phone: string;
+  company?: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  gstin?: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -59,6 +83,9 @@ export interface User {
   tenantId?: string;
   avatarUrl?: string;
   company?: string;
+  phone?: string;
+  billingAddress?: BillingAddress;
+  gstin?: string;
   plan?: SubscriptionTier;
   createdAt?: string;
   specsCount?: number;
@@ -79,7 +106,10 @@ export interface SaaSCustomer {
   tenantId?: string;
   name: string;
   email: string;
+  phone?: string;
   company: string;
+  billingAddress?: BillingAddress;
+  gstin?: string;
   plan: SubscriptionTier;
   status: 'active' | 'suspended' | 'trialing';
   joinedDate: string;
@@ -135,6 +165,10 @@ export interface SaaSInvoice {
   customerId: string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
+  company?: string;
+  billingAddress?: BillingAddress;
+  gstin?: string;
   amount: number;
   status: PaymentStatus;
   date: string;
@@ -165,6 +199,10 @@ export interface PaymentTransactionRecord {
   customerId: string;
   customerEmail: string;
   customerName?: string;
+  customerPhone?: string;
+  company?: string;
+  billingAddress?: BillingAddress;
+  gstin?: string;
   amount: number;
   currency: string;
   planId: SubscriptionTier;

@@ -15,12 +15,14 @@ import {
   Layers,
   Lock,
   ExternalLink,
-  Printer
+  Printer,
+  FileText
 } from 'lucide-react';
-import { User, SubscriptionTier, SaaSInvoice, PaymentTransactionRecord } from '../types';
+import { User, SubscriptionTier, SaaSInvoice, PaymentTransactionRecord, PricingPlan, BillingAddress } from '../types';
 import { saasStore } from '../services/saasStore';
 import { authService } from '../services/authService';
 import { cashfreeService } from '../services/cashfreeService';
+import { CashfreeCustomerCheckoutModal } from './CashfreeCustomerCheckoutModal';
 
 interface ClientBillingPageProps {
   user: User;
@@ -56,8 +58,15 @@ export const ClientBillingPage: React.FC<ClientBillingPageProps> = ({
     planName: string;
     amount: number;
     currency: string;
+    customerName?: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    company?: string;
+    billingAddress?: BillingAddress;
+    gstin?: string;
     date: string;
   } | null>(null);
+  const [checkoutPlan, setCheckoutPlan] = useState<PricingPlan | null>(null);
 
   const activePlan = plans.find(p => p.id === currentPlanId) || plans[0];
 
@@ -96,6 +105,9 @@ export const ClientBillingPage: React.FC<ClientBillingPageProps> = ({
         setTimeout(() => setToastMsg(null), 4000);
         return;
       }
+      // If trial requires card, open Customer Checkout
+      setCheckoutPlan(targetPlan);
+      return;
     }
 
     // 2. FREE BASELINE PLAN: Instant downgrade / upgrade
@@ -113,107 +125,150 @@ export const ClientBillingPage: React.FC<ClientBillingPageProps> = ({
       return;
     }
 
-    // 2. PAID PLANS: Initiate Cashfree Payment Gateway Checkout
-    try {
-      setIsProcessing(true);
-      setProcessingPlanId(planId);
+    // 3. PAID PLANS: Open Required Customer Data Entry Modal before Cashfree Checkout
+    setCheckoutPlan(targetPlan);
+  };
 
-      const order = await cashfreeService.createOrder({
-        customerId: user.id,
-        customerEmail: user.email,
-        customerName: user.name,
-        planId: planId,
-        amount: targetPlan.priceMonthly,
-        currency: cfConfig.currency || 'INR'
-      });
-
-      const result = await cashfreeService.openCheckout(order.paymentSessionId);
-
-      if (result.success) {
-        const paymentRecord = saasStore.recordCashfreePaymentSuccess({
-          customerId: user.id,
-          customerEmail: user.email,
-          customerName: user.name,
-          planId: planId,
-          amount: order.orderAmount,
-          currency: order.orderCurrency,
-          orderId: result.orderId || order.orderId,
-          cfOrderId: result.cfOrderId || order.cfOrderId,
-          paymentMethod: 'Cashfree PG (UPI / Cards / NetBanking)'
-        });
-
-        authService.updateProfile(user.id, { plan: planId });
-        setCurrentPlanId(planId);
-        onPlanUpdated(planId);
-
-        setPaidReceipt({
-          orderId: paymentRecord.transaction.orderId,
-          cfOrderId: paymentRecord.transaction.cfOrderId,
-          planName: targetPlan.name,
-          amount: paymentRecord.transaction.amount,
-          currency: paymentRecord.transaction.currency,
-          date: new Date().toISOString()
-        });
-
-        setToastMsg(`Payment confirmed! Your subscription is upgraded to ${targetPlan.name}.`);
-      } else {
-        setErrorMsg(result.error || 'Payment was cancelled or closed.');
-      }
-    } catch (err: any) {
-      console.error('[Cashfree Checkout Error]', err);
-      setErrorMsg(err?.message || 'Failed to initialize Cashfree checkout.');
-    } finally {
-      setIsProcessing(false);
-      setProcessingPlanId(null);
+  const handlePaymentSuccess = (receipt: {
+    orderId: string;
+    cfOrderId?: string;
+    planName: string;
+    amount: number;
+    currency: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    company?: string;
+    billingAddress?: BillingAddress;
+    gstin?: string;
+    date: string;
+  }) => {
+    if (checkoutPlan) {
+      setCurrentPlanId(checkoutPlan.id);
+      onPlanUpdated(checkoutPlan.id);
     }
+    setPaidReceipt(receipt);
+    setToastMsg(`Payment confirmed! Your subscription is upgraded to ${receipt.planName}.`);
+    setCheckoutPlan(null);
   };
 
   const handlePrintReceipt = (inv: SaaSInvoice) => {
     const printWin = window.open('', '_blank', 'width=800,height=600');
     if (!printWin) return;
+    const bSettings = saasStore.getBusinessSettings();
+    const subtotal = Math.round(inv.amount / 1.18);
+    const gstAmount = inv.amount - subtotal;
+
     printWin.document.write(`
       <html>
         <head>
-          <title>Receipt - ${inv.invoiceNumber}</title>
+          <title>GST Tax Invoice - ${inv.invoiceNumber}</title>
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #111; }
-            .header { border-bottom: 2px solid #d90429; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; }
-            .brand { font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #111; line-height: 1.5; }
+            .header { border-bottom: 2px solid #d90429; padding-bottom: 20px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-start; }
+            .brand { font-size: 26px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
             .brand span { color: #d90429; }
-            .badge { background: #111; color: #fff; padding: 4px 10px; font-size: 12px; text-transform: uppercase; font-weight: bold; }
-            .table { width: 100%; border-collapse: collapse; margin-top: 30px; }
-            .table th, .table td { border-bottom: 1px solid #ddd; padding: 12px; text-align: left; }
-            .table th { background: #f8f8f8; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
-            .total { margin-top: 20px; text-align: right; font-size: 18px; font-weight: bold; }
-            .footer { margin-top: 50px; font-size: 11px; color: #888; border-top: 1px solid #eee; padding-top: 20px; }
+            .badge { background: #111; color: #fff; padding: 5px 12px; font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; font-size: 13px; }
+            .card { background: #fafafa; border: 1px solid #eee; padding: 15px; }
+            .card-title { font-weight: bold; text-transform: uppercase; font-size: 11px; color: #666; margin-bottom: 8px; letter-spacing: 0.5px; }
+            .table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 25px; }
+            .table th, .table td { border-bottom: 1px solid #ddd; padding: 12px; text-align: left; font-size: 13px; }
+            .table th { background: #f4f4f4; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #444; }
+            .total-box { margin-left: auto; width: 280px; font-size: 13px; }
+            .total-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; }
+            .total-row.grand { font-size: 16px; font-weight: bold; border-top: 2px solid #111; border-bottom: none; padding-top: 10px; margin-top: 6px; }
+            .footer { margin-top: 40px; font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 15px; text-align: center; }
           </style>
         </head>
         <body>
           <div class="header">
-            <div class="brand">SRS <span>GENIE</span></div>
-            <div class="badge">Official Receipt</div>
+            <div>
+              <div class="brand">SRS <span>GENIE</span></div>
+              <div style="font-size: 12px; color: #444; margin-top: 4px; font-weight: 600;">${bSettings.legalEntityName}</div>
+              <div style="font-size: 11px; color: #666;">GSTIN: ${bSettings.taxRegistrationNumber}</div>
+              <div style="font-size: 11px; color: #666;">${bSettings.headquartersAddress}</div>
+            </div>
+            <div style="text-align: right;">
+              <div class="badge">Original Tax Invoice</div>
+              <div style="font-size: 13px; font-weight: bold; margin-top: 8px;">${inv.invoiceNumber}</div>
+              <div style="font-size: 12px; color: #666;">Date: ${inv.date}</div>
+            </div>
           </div>
-          <p><strong>Invoice Number:</strong> ${inv.invoiceNumber}</p>
-          <p><strong>Date:</strong> ${inv.date}</p>
-          <p><strong>Billed To:</strong> ${inv.customerName} (${inv.customerEmail})</p>
-          <p><strong>Payment Gateway:</strong> ${inv.paymentGateway ? inv.paymentGateway.toUpperCase() : 'CASHFREE PG'}</p>
-          ${inv.transactionId ? `<p><strong>Transaction Ref:</strong> ${inv.transactionId}</p>` : ''}
+
+          <div class="grid">
+            <div class="card">
+              <div class="card-title">Billed To (Customer Details)</div>
+              <div><strong>${inv.customerName}</strong></div>
+              <div>Email: ${inv.customerEmail}</div>
+              ${inv.customerPhone ? `<div>Mobile: +91 ${inv.customerPhone}</div>` : ''}
+              ${inv.company ? `<div>Company: ${inv.company}</div>` : ''}
+              ${inv.billingAddress?.addressLine1 ? `
+                <div style="margin-top: 4px; color: #555;">
+                  ${inv.billingAddress.addressLine1}${inv.billingAddress.addressLine2 ? ', ' + inv.billingAddress.addressLine2 : ''}<br/>
+                  ${inv.billingAddress.city}, ${inv.billingAddress.state} - ${inv.billingAddress.postalCode}<br/>
+                  ${inv.billingAddress.country || 'India'}
+                </div>
+              ` : ''}
+              ${inv.gstin ? `<div style="margin-top: 6px; font-weight: bold; color: #111;">Customer GSTIN: ${inv.gstin}</div>` : ''}
+            </div>
+
+            <div class="card">
+              <div class="card-title">Payment & Gateway Details</div>
+              <div>Gateway: <strong>Cashfree Payments</strong></div>
+              <div>Status: <span style="color: #059669; font-weight: bold;">PAID & SETTLED</span></div>
+              ${inv.transactionId ? `<div style="margin-top: 4px;">Txn Reference: <code style="background: #eef; padding: 2px 4px;">${inv.transactionId}</code></div>` : ''}
+              <div style="margin-top: 4px; font-size: 11px; color: #777;">Mode: UPI / Cards / NetBanking</div>
+              <div style="font-size: 11px; color: #777;">Supply: Software Specification Services (SAC 998314)</div>
+            </div>
+          </div>
+
           <table class="table">
             <thead>
-              <tr><th>Description</th><th>Period</th><th>Status</th><th style="text-align:right;">Amount</th></tr>
+              <tr>
+                <th>Description</th>
+                <th>SAC Code</th>
+                <th>Qty</th>
+                <th style="text-align: right;">Rate</th>
+                <th style="text-align: right;">Amount</th>
+              </tr>
             </thead>
             <tbody>
               <tr>
-                <td>SRS Genie Subscription Tier - ${inv.plan.toUpperCase()}</td>
-                <td>Monthly Access</td>
-                <td><span style="color: #059669; font-weight: bold;">PAID</span></td>
-                <td style="text-align:right;">$${inv.amount.toLocaleString()}</td>
+                <td>
+                  <strong>SRS Genie Platform Subscription — ${inv.plan.toUpperCase()} Tier</strong><br/>
+                  <span style="font-size: 11px; color: #666;">Autonomous AI software specification generator & MCP live gateway key.</span>
+                </td>
+                <td>998314</td>
+                <td>1 Month</td>
+                <td style="text-align: right;">₹${subtotal.toLocaleString()}</td>
+                <td style="text-align: right;">₹${subtotal.toLocaleString()}</td>
               </tr>
             </tbody>
           </table>
-          <div class="total">Total Paid: $${inv.amount.toLocaleString()}</div>
+
+          <div class="total-box">
+            <div class="total-row">
+              <span>Taxable Subtotal:</span>
+              <span>₹${subtotal.toLocaleString()}</span>
+            </div>
+            <div class="total-row">
+              <span>CGST (9%):</span>
+              <span>₹${Math.round(gstAmount / 2).toLocaleString()}</span>
+            </div>
+            <div class="total-row">
+              <span>SGST / UTGST (9%):</span>
+              <span>₹${Math.round(gstAmount / 2).toLocaleString()}</span>
+            </div>
+            <div class="total-row grand">
+              <span>Total Paid:</span>
+              <span>₹${inv.amount.toLocaleString()}</span>
+            </div>
+          </div>
+
           <div class="footer">
-            Powered by Cashfree Payments. PCI-DSS Level 1 compliant secure payment gateway. Thank you for building with SRS Genie.
+            This is an electronically generated and digitally authorized GST Tax Invoice issued via Cashfree PG.<br/>
+            ${bSettings.invoiceFooterNote}
           </div>
         </body>
       </html>
@@ -271,34 +326,78 @@ export const ClientBillingPage: React.FC<ClientBillingPageProps> = ({
 
         {paidReceipt && (
           <div className="p-6 bg-surface border border-accent relative overflow-hidden animate-in fade-in duration-300">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+              <div className="space-y-2">
                 <div className="eyebrow mb-1">Cashfree Transaction Confirmed</div>
                 <h3 className="font-display text-xl font-semibold text-white uppercase tracking-[0.04em]">
                   Upgraded to {paidReceipt.planName}
                 </h3>
-                <p className="font-body text-xs text-muted mt-1">
+                <p className="font-body text-xs text-muted">
                   Order Ref: <code className="text-accent font-mono">{paidReceipt.orderId}</code>
                   {paidReceipt.cfOrderId && (
                     <span> · Cashfree ID: <code className="text-white font-mono">{paidReceipt.cfOrderId}</code></span>
                   )}
                 </p>
+                <div className="text-xs text-muted font-body pt-2 border-t border-line/60 space-y-0.5">
+                  <div className="text-white font-medium">Billed To: {paidReceipt.customerName || user.name} ({paidReceipt.customerEmail || user.email})</div>
+                  {paidReceipt.customerPhone && (
+                    <div>Mobile: <span className="font-mono text-white">+91 {paidReceipt.customerPhone}</span></div>
+                  )}
+                  {paidReceipt.billingAddress?.addressLine1 && (
+                    <div>
+                      Address: {paidReceipt.billingAddress.addressLine1}, {paidReceipt.billingAddress.city}, {paidReceipt.billingAddress.state} - {paidReceipt.billingAddress.postalCode}
+                    </div>
+                  )}
+                  {paidReceipt.gstin && (
+                    <div>GSTIN: <span className="font-mono text-white">{paidReceipt.gstin}</span></div>
+                  )}
+                </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="text-right">
+              <div className="flex flex-col sm:items-end gap-3 shrink-0">
+                <div className="sm:text-right">
                   <span className="badge--on text-[11px]">Settled & Active</span>
-                  <div className="font-display text-xl font-mono text-white mt-1">
+                  <div className="font-display text-2xl font-mono text-white mt-1">
                     {paidReceipt.currency} {paidReceipt.amount.toLocaleString()}
                   </div>
                 </div>
 
-                <button
-                  onClick={() => setPaidReceipt(null)}
-                  className="btn btn-sm btn--ghost"
-                >
-                  Close Notice
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const mockInv: SaaSInvoice = {
+                        id: `inv_${Date.now()}`,
+                        customerId: user.id,
+                        customerName: paidReceipt.customerName || user.name || 'Customer',
+                        customerEmail: paidReceipt.customerEmail || user.email,
+                        customerPhone: paidReceipt.customerPhone || user.phone,
+                        company: paidReceipt.company || user.company,
+                        billingAddress: paidReceipt.billingAddress || user.billingAddress,
+                        gstin: paidReceipt.gstin || user.gstin,
+                        amount: paidReceipt.amount,
+                        status: 'paid',
+                        date: new Date().toISOString().split('T')[0],
+                        plan: (currentPlanId || 'pro') as SubscriptionTier,
+                        invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+                        paymentGateway: 'cashfree',
+                        transactionId: paidReceipt.cfOrderId || paidReceipt.orderId,
+                        currency: paidReceipt.currency
+                      };
+                      handlePrintReceipt(mockInv);
+                    }}
+                    className="btn btn-sm btn--accent flex items-center gap-1.5 text-xs"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Print Tax Invoice</span>
+                  </button>
+
+                  <button
+                    onClick={() => setPaidReceipt(null)}
+                    className="btn btn-sm btn--ghost text-xs"
+                  >
+                    Close Notice
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -692,6 +791,17 @@ export const ClientBillingPage: React.FC<ClientBillingPageProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Required Customer Data Entry Modal before Cashfree Checkout */}
+      {checkoutPlan && (
+        <CashfreeCustomerCheckoutModal
+          isOpen={Boolean(checkoutPlan)}
+          onClose={() => setCheckoutPlan(null)}
+          plan={checkoutPlan}
+          user={user}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
     </div>
   );
 };

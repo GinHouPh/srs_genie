@@ -1,4 +1,4 @@
-import { CashfreeGatewayConfig, SubscriptionTier, PaymentTransactionRecord } from '../types';
+import { CashfreeGatewayConfig, SubscriptionTier, PaymentTransactionRecord, BillingAddress } from '../types';
 import { saasStore } from './saasStore';
 
 declare const Cashfree: any;
@@ -11,6 +11,9 @@ export interface CreateOrderParams {
   planId: SubscriptionTier;
   amount: number;
   currency?: 'INR' | 'USD';
+  company?: string;
+  billingAddress?: BillingAddress;
+  gstin?: string;
 }
 
 export interface CashfreeOrderResult {
@@ -63,7 +66,10 @@ class CashfreeService {
   private sanitizePhone(phone?: string): string {
     if (!phone) return '9999999999';
     const digits = phone.replace(/\D/g, '');
-    return digits.length >= 10 ? digits.slice(-10) : '9999999999';
+    if (digits.length === 10) return digits;
+    if (digits.length > 10 && digits.startsWith('91')) return digits.slice(-10);
+    if (digits.length >= 10) return digits.slice(-10);
+    return digits.padEnd(10, '0');
   }
 
   /**
@@ -86,6 +92,13 @@ class CashfreeService {
       else payableAmount = Math.round(params.amount * 85);
     }
 
+    const noteDetails = [
+      `Plan: ${params.planId.toUpperCase()}`,
+      params.customerName ? `Client: ${params.customerName}` : null,
+      params.company ? `Company: ${params.company}` : null,
+      params.gstin ? `GSTIN: ${params.gstin}` : null
+    ].filter(Boolean).join(' | ');
+
     const payload = {
       order_id: orderId,
       order_amount: payableAmount,
@@ -100,7 +113,7 @@ class CashfreeService {
         return_url: `${window.location.origin}/?order_id=${orderId}`,
         notify_url: config.webhookUrl || `${window.location.origin}/api/cashfree/webhook`
       },
-      order_note: `SRS Genie Subscription: ${params.planId.toUpperCase()}`
+      order_note: noteDetails || `SRS Genie Subscription: ${params.planId.toUpperCase()}`
     };
 
     // If API credentials are not yet entered, provide an intuitive simulator mode with instant sandbox session

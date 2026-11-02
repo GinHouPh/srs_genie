@@ -143,6 +143,26 @@ function ensureDatabaseSchema(PDO $pdo) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
 
+    // 7. Schema Migrations: Support Customer Details & Billing for Cashfree & Invoicing
+    $migrations = [
+        "ALTER TABLE users ADD COLUMN phone VARCHAR(32) NULL AFTER company",
+        "ALTER TABLE users ADD COLUMN billing_address TEXT NULL AFTER phone",
+        "ALTER TABLE users ADD COLUMN gstin VARCHAR(32) NULL AFTER billing_address",
+        "ALTER TABLE customers ADD COLUMN phone VARCHAR(32) NULL AFTER company",
+        "ALTER TABLE customers ADD COLUMN billing_address TEXT NULL AFTER phone",
+        "ALTER TABLE customers ADD COLUMN gstin VARCHAR(32) NULL AFTER billing_address",
+        "ALTER TABLE payment_transactions ADD COLUMN customer_name VARCHAR(255) NULL AFTER customer_email",
+        "ALTER TABLE payment_transactions ADD COLUMN customer_phone VARCHAR(32) NULL AFTER customer_name",
+        "ALTER TABLE payment_transactions ADD COLUMN billing_details TEXT NULL AFTER customer_phone"
+    ];
+    foreach ($migrations as $sql) {
+        try {
+            $pdo->exec($sql);
+        } catch (Exception $e) {
+            // Column already exists or table updated
+        }
+    }
+
     // Seed default admin if not exists
     $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? LIMIT 1");
     $stmt->execute(['admin@srsgenie.ai']);

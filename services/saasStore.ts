@@ -15,7 +15,8 @@ import {
   AnalyticsDataPoint,
   ModelShareMetric,
   BusinessSettings,
-  User
+  User,
+  BillingAddress
 } from '../types';
 import { auditLogger } from './auditLogger';
 import { cryptoService } from './cryptoService';
@@ -1040,6 +1041,10 @@ class SaasStateStore {
     customerId: string;
     customerEmail: string;
     customerName?: string;
+    customerPhone?: string;
+    company?: string;
+    billingAddress?: BillingAddress;
+    gstin?: string;
     planId: SubscriptionTier;
     amount: number;
     currency: string;
@@ -1062,6 +1067,10 @@ class SaasStateStore {
       customerId: params.customerId,
       customerEmail: params.customerEmail,
       customerName: params.customerName,
+      customerPhone: params.customerPhone,
+      company: params.company,
+      billingAddress: params.billingAddress,
+      gstin: params.gstin,
       amount: params.amount,
       currency: params.currency,
       planId: params.planId,
@@ -1078,6 +1087,10 @@ class SaasStateStore {
       customerId: params.customerId,
       customerName: params.customerName || 'Customer',
       customerEmail: params.customerEmail,
+      customerPhone: params.customerPhone,
+      company: params.company,
+      billingAddress: params.billingAddress,
+      gstin: params.gstin,
       amount: params.amount,
       status: 'paid',
       date: new Date().toISOString().split('T')[0],
@@ -1087,7 +1100,7 @@ class SaasStateStore {
       currency: params.currency
     });
 
-    // 3. Update Customer's plan and monthlySpend
+    // 3. Update Customer's plan, phone, and monthlySpend
     if (customer) {
       const planObj = this.plans.find(p => p.id === params.planId);
       const monthlySpend = planObj?.priceMonthly || params.amount;
@@ -1095,7 +1108,11 @@ class SaasStateStore {
         plan: params.planId,
         monthlySpend,
         paymentStatus: 'paid',
-        status: 'active'
+        status: 'active',
+        phone: params.customerPhone || customer.phone,
+        company: params.company || customer.company,
+        billingAddress: params.billingAddress || customer.billingAddress,
+        gstin: params.gstin || customer.gstin
       });
     }
 

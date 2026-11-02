@@ -1,4 +1,4 @@
-import { User, UserRole, StaffRole, BlacklistEntry } from '../types';
+import { User, UserRole, StaffRole, BlacklistEntry, BillingAddress } from '../types';
 import { saasStore } from './saasStore';
 import { cryptoService } from './cryptoService';
 import { auditLogger } from './auditLogger';
@@ -630,8 +630,18 @@ class AuthService {
     return this.currentUser;
   }
 
-  async updateUserProfile(userId: string, updates: { name?: string; company?: string; avatarUrl?: string }): Promise<User | null> {
-    const updated = this.updateUser(userId, updates);
+  async updateUserProfile(
+    userId: string,
+    updates: {
+      name?: string;
+      company?: string;
+      avatarUrl?: string;
+      phone?: string;
+      billingAddress?: BillingAddress;
+      gstin?: string;
+    }
+  ): Promise<User | null> {
+    const updated = this.updateProfile(userId, updates);
     try {
       await fetch('/api/auth/update-profile', {
         method: 'POST',

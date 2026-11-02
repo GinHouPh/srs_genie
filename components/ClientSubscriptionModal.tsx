@@ -9,10 +9,11 @@ import {
   ExternalLink,
   Sparkles
 } from 'lucide-react';
-import { User, SubscriptionTier, PricingPlan } from '../types';
+import { User, SubscriptionTier, PricingPlan, BillingAddress } from '../types';
 import { saasStore } from '../services/saasStore';
 import { authService } from '../services/authService';
 import { cashfreeService } from '../services/cashfreeService';
+import { CashfreeCustomerCheckoutModal } from './CashfreeCustomerCheckoutModal';
 
 interface ClientSubscriptionModalProps {
   user: User;
@@ -38,6 +39,7 @@ export const ClientSubscriptionModal: React.FC<ClientSubscriptionModalProps> = (
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [processingPlanId, setProcessingPlanId] = useState<SubscriptionTier | null>(null);
+  const [checkoutPlan, setCheckoutPlan] = useState<PricingPlan | null>(null);
   const [paidReceipt, setPaidReceipt] = useState<{
     orderId: string;
     cfOrderId?: string;
@@ -68,63 +70,37 @@ export const ClientSubscriptionModal: React.FC<ClientSubscriptionModalProps> = (
       return;
     }
 
-    // 2. PAID PLANS: Initiate Cashfree Payment Gateway Checkout
-    try {
-      setIsProcessing(true);
-      setProcessingPlanId(planId);
+    // 2. PAID PLANS: Open Required Customer Data Entry Modal before Cashfree Checkout
+    setCheckoutPlan(targetPlan);
+  };
 
-      // Create Order on Cashfree PG
-      const order = await cashfreeService.createOrder({
-        customerId: user.id,
-        customerEmail: user.email,
-        customerName: user.name,
-        planId: planId,
-        amount: targetPlan.priceMonthly,
-        currency: cfConfig.currency || 'INR'
-      });
-
-      // Launch Cashfree Hosted / Modal Checkout
-      const result = await cashfreeService.openCheckout(order.paymentSessionId);
-
-      if (result.success) {
-        // Record verified payment in saasStore ledger
-        const paymentRecord = saasStore.recordCashfreePaymentSuccess({
-          customerId: user.id,
-          customerEmail: user.email,
-          customerName: user.name,
-          planId: planId,
-          amount: order.orderAmount,
-          currency: order.orderCurrency,
-          orderId: result.orderId || order.orderId,
-          cfOrderId: result.cfOrderId || order.cfOrderId,
-          paymentMethod: 'Cashfree PG (UPI / Cards / NetBanking)'
-        });
-
-        // Update active profile in authService
-        authService.updateProfile(user.id, { plan: planId });
-        setCurrentPlan(planId);
-        onPlanUpdated(planId);
-
-        // Display transaction receipt
-        setPaidReceipt({
-          orderId: paymentRecord.transaction.orderId,
-          cfOrderId: paymentRecord.transaction.cfOrderId,
-          planName: targetPlan.name,
-          amount: paymentRecord.transaction.amount,
-          currency: paymentRecord.transaction.currency
-        });
-
-        setToast(`Payment completed! Your account is now upgraded to ${targetPlan.name}.`);
-      } else {
-        setErrorMsg(result.error || 'The checkout process was closed or was incomplete.');
-      }
-    } catch (err: any) {
-      console.error('[Cashfree Checkout Error]', err);
-      setErrorMsg(err?.message || 'Failed to initiate Cashfree checkout. Please check gateway configuration.');
-    } finally {
-      setIsProcessing(false);
-      setProcessingPlanId(null);
+  const handlePaymentSuccess = (receipt: {
+    orderId: string;
+    cfOrderId?: string;
+    planName: string;
+    amount: number;
+    currency: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    company?: string;
+    billingAddress?: BillingAddress;
+    gstin?: string;
+    date: string;
+  }) => {
+    if (checkoutPlan) {
+      setCurrentPlan(checkoutPlan.id);
+      onPlanUpdated(checkoutPlan.id);
     }
+    setPaidReceipt({
+      orderId: receipt.orderId,
+      cfOrderId: receipt.cfOrderId,
+      planName: receipt.planName,
+      amount: receipt.amount,
+      currency: receipt.currency
+    });
+    setToast(`Payment completed! Your account is now upgraded to ${receipt.planName}.`);
+    setCheckoutPlan(null);
   };
 
   return (
@@ -315,6 +291,17 @@ export const ClientSubscriptionModal: React.FC<ClientSubscriptionModalProps> = (
           </div>
         </div>
       </div>
+
+      {/* Customer Data Entry Modal before Cashfree Checkout */}
+      {checkoutPlan && (
+        <CashfreeCustomerCheckoutModal
+          isOpen={Boolean(checkoutPlan)}
+          onClose={() => setCheckoutPlan(null)}
+          plan={checkoutPlan}
+          user={user}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
     </div>
   );
 };

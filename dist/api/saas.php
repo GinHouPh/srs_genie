@@ -77,12 +77,19 @@ if ($action === 'customers' || strpos($requestUri, '/customers') !== false) {
     if ($method === 'GET') {
         $stmt = $pdo->query("SELECT * FROM customers ORDER BY joined_at DESC");
         $customers = array_map(function($c) {
+            $billing = null;
+            if (!empty($c['billing_address'])) {
+                $billing = json_decode($c['billing_address'], true) ?: $c['billing_address'];
+            }
             return [
                 'id' => $c['id'],
                 'tenantId' => $c['tenant_id'],
                 'name' => $c['name'],
                 'email' => $c['email'],
+                'phone' => $c['phone'] ?? null,
                 'company' => $c['company'],
+                'billingAddress' => $billing,
+                'gstin' => $c['gstin'] ?? null,
                 'plan' => $c['plan'],
                 'status' => $c['status'],
                 'specsCount' => intval($c['specs_count']),
@@ -98,18 +105,32 @@ if ($action === 'customers' || strpos($requestUri, '/customers') !== false) {
         $tenantId = $body['tenantId'] ?? ('tenant_' . round(microtime(true) * 1000));
         $name = $body['name'] ?? '';
         $email = $body['email'] ?? '';
+        $phone = $body['phone'] ?? null;
         $company = $body['company'] ?? '';
+        $billingAddress = isset($body['billingAddress'])
+            ? (is_array($body['billingAddress']) ? json_encode($body['billingAddress']) : $body['billingAddress'])
+            : null;
+        $gstin = $body['gstin'] ?? null;
         $plan = $body['plan'] ?? 'free';
         $status = $body['status'] ?? 'active';
         $specsCount = intval($body['specsCount'] ?? 0);
         $spent = floatval($body['spent'] ?? 0.0);
 
         $stmt = $pdo->prepare("
-            INSERT INTO customers (id, tenant_id, name, email, company, plan, status, specs_count, spent)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE name = VALUES(name), company = VALUES(company), plan = VALUES(plan), status = VALUES(status), specs_count = VALUES(specs_count), spent = VALUES(spent)
+            INSERT INTO customers (id, tenant_id, name, email, phone, company, billing_address, gstin, plan, status, specs_count, spent)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE 
+                name = VALUES(name), 
+                phone = COALESCE(VALUES(phone), phone),
+                company = VALUES(company), 
+                billing_address = COALESCE(VALUES(billing_address), billing_address),
+                gstin = COALESCE(VALUES(gstin), gstin),
+                plan = VALUES(plan), 
+                status = VALUES(status), 
+                specs_count = VALUES(specs_count), 
+                spent = VALUES(spent)
         ");
-        $stmt->execute([$id, $tenantId, $name, $email, $company, $plan, $status, $specsCount, $spent]);
+        $stmt->execute([$id, $tenantId, $name, $email, $phone, $company, $billingAddress, $gstin, $plan, $status, $specsCount, $spent]);
         sendJson(200, ['success' => true, 'id' => $id]);
     }
 }
@@ -119,11 +140,18 @@ if ($action === 'transactions' || strpos($requestUri, '/transactions') !== false
     if ($method === 'GET') {
         $stmt = $pdo->query("SELECT * FROM payment_transactions ORDER BY created_at DESC");
         $txs = array_map(function($t) {
+            $billing = null;
+            if (!empty($t['billing_details'])) {
+                $billing = json_decode($t['billing_details'], true) ?: $t['billing_details'];
+            }
             return [
                 'id' => $t['id'],
                 'tenantId' => $t['tenant_id'],
                 'customerId' => $t['customer_id'],
                 'customerEmail' => $t['customer_email'],
+                'customerName' => $t['customer_name'] ?? null,
+                'customerPhone' => $t['customer_phone'] ?? null,
+                'billingAddress' => $billing,
                 'orderId' => $t['order_id'],
                 'cfOrderId' => $t['cf_order_id'],
                 'amount' => floatval($t['amount']),
@@ -139,16 +167,28 @@ if ($action === 'transactions' || strpos($requestUri, '/transactions') !== false
 
     if ($method === 'POST') {
         $id = $body['id'] ?? ('tx_' . round(microtime(true) * 1000));
+        $billingDetails = isset($body['billingAddress'])
+            ? (is_array($body['billingAddress']) ? json_encode($body['billingAddress']) : $body['billingAddress'])
+            : null;
+
         $stmt = $pdo->prepare("
-            INSERT INTO payment_transactions (id, tenant_id, customer_id, customer_email, order_id, cf_order_id, amount, currency, plan_id, status, payment_method)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE status = VALUES(status), cf_order_id = VALUES(cf_order_id)
+            INSERT INTO payment_transactions (id, tenant_id, customer_id, customer_email, customer_name, customer_phone, billing_details, order_id, cf_order_id, amount, currency, plan_id, status, payment_method)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE 
+                status = VALUES(status), 
+                cf_order_id = VALUES(cf_order_id),
+                customer_name = COALESCE(VALUES(customer_name), customer_name),
+                customer_phone = COALESCE(VALUES(customer_phone), customer_phone),
+                billing_details = COALESCE(VALUES(billing_details), billing_details)
         ");
         $stmt->execute([
             $id,
             $body['tenantId'] ?? '',
             $body['customerId'] ?? '',
             $body['customerEmail'] ?? '',
+            $body['customerName'] ?? null,
+            $body['customerPhone'] ?? null,
+            $billingDetails,
             $body['orderId'] ?? '',
             $body['cfOrderId'] ?? null,
             floatval($body['amount'] ?? 0),

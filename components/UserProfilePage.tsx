@@ -42,6 +42,12 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   // Form state: Profile details
   const [name, setName] = useState(user.name || '');
   const [company, setCompany] = useState(user.company || '');
+  const [phone, setPhone] = useState(user.phone || '');
+  const [addressLine1, setAddressLine1] = useState(user.billingAddress?.addressLine1 || '');
+  const [city, setCity] = useState(user.billingAddress?.city || '');
+  const [state, setState] = useState(user.billingAddress?.state || '');
+  const [postalCode, setPostalCode] = useState(user.billingAddress?.postalCode || '');
+  const [gstin, setGstin] = useState(user.billingAddress?.gstin || user.gstin || '');
   const [avatarSeed, setAvatarSeed] = useState(user.name || 'User');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
@@ -81,6 +87,16 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
     const updated = await authService.updateUserProfile(user.id, {
       name: name.trim(),
       company: company.trim(),
+      phone: phone.trim(),
+      billingAddress: {
+        addressLine1: addressLine1.trim(),
+        city: city.trim(),
+        state: state.trim(),
+        postalCode: postalCode.trim(),
+        country: 'India',
+        gstin: gstin.trim() ? gstin.trim().toUpperCase() : undefined
+      },
+      gstin: gstin.trim() ? gstin.trim().toUpperCase() : undefined,
       avatarUrl: currentAvatarUrl
     });
 
@@ -280,6 +296,89 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
               <p className="text-[11px] text-muted font-body mt-1">
                 To change your email address, please submit a request to support@srsgenie.ai.
               </p>
+            </div>
+
+            <div className="field">
+              <label className="field__label">Mobile Phone (Mandatory for Cashfree PG)</label>
+              <div className="flex gap-2">
+                <span className="inline-flex items-center px-3 bg-ink border border-line text-xs font-mono text-muted select-none">
+                  🇮🇳 +91
+                </span>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  className="flex-1 bg-ink border border-line px-4 py-2.5 text-sm text-white placeholder:text-muted focus:border-accent outline-none font-mono transition-colors"
+                  placeholder="9876543210 (10 Digits)"
+                />
+              </div>
+              <p className="text-[11px] text-muted font-body mt-1">
+                Used for instant SMS payment OTPs and transaction confirmations.
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-line space-y-3">
+              <div className="font-display text-xs uppercase tracking-wider text-muted font-semibold">
+                Billing & Invoicing Address
+              </div>
+
+              <div className="field">
+                <label className="field__label">Street Address</label>
+                <input
+                  type="text"
+                  value={addressLine1}
+                  onChange={e => setAddressLine1(e.target.value)}
+                  className="w-full bg-ink border border-line px-4 py-2.5 text-sm text-white placeholder:text-muted focus:border-accent outline-none font-body transition-colors"
+                  placeholder="Street / Suite / Office Address"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="field">
+                  <label className="field__label">City</label>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={e => setCity(e.target.value)}
+                    className="w-full bg-ink border border-line px-4 py-2 text-sm text-white placeholder:text-muted focus:border-accent outline-none font-body"
+                    placeholder="e.g. Bengaluru"
+                  />
+                </div>
+
+                <div className="field">
+                  <label className="field__label">State</label>
+                  <input
+                    type="text"
+                    value={state}
+                    onChange={e => setState(e.target.value)}
+                    className="w-full bg-ink border border-line px-4 py-2 text-sm text-white placeholder:text-muted focus:border-accent outline-none font-body"
+                    placeholder="e.g. Karnataka"
+                  />
+                </div>
+
+                <div className="field">
+                  <label className="field__label">PIN Code</label>
+                  <input
+                    type="text"
+                    value={postalCode}
+                    onChange={e => setPostalCode(e.target.value)}
+                    className="w-full bg-ink border border-line px-4 py-2 text-sm text-white placeholder:text-muted focus:border-accent outline-none font-mono"
+                    placeholder="560001"
+                  />
+                </div>
+              </div>
+
+              <div className="field">
+                <label className="field__label">GSTIN (Optional // For B2B Input Tax Credit)</label>
+                <input
+                  type="text"
+                  value={gstin}
+                  onChange={e => setGstin(e.target.value.toUpperCase())}
+                  className="w-full bg-ink border border-line px-4 py-2.5 text-sm text-white placeholder:text-muted focus:border-accent outline-none font-mono uppercase transition-colors"
+                  placeholder="29AAAAA0000A1Z5"
+                  maxLength={15}
+                />
+              </div>
             </div>
 
             <div className="field">

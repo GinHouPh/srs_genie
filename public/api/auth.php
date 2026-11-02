@@ -290,17 +290,40 @@ if ($action === 'update-profile' || strpos($requestUri, '/update-profile') !== f
     $name = trim($body['name'] ?? '');
     $company = trim($body['company'] ?? '');
     $avatarUrl = trim($body['avatarUrl'] ?? '');
+    $phone = trim($body['phone'] ?? '');
+    $gstin = trim($body['gstin'] ?? '');
+    $billingAddress = isset($body['billingAddress'])
+        ? (is_array($body['billingAddress']) ? json_encode($body['billingAddress']) : $body['billingAddress'])
+        : null;
 
     if (!$userId) {
         sendJson(400, ['success' => false, 'error' => 'User ID is required.']);
     }
 
-    $stmt = $pdo->prepare("UPDATE users SET name = COALESCE(NULLIF(?, ''), name), company = COALESCE(NULLIF(?, ''), company), avatar_url = COALESCE(NULLIF(?, ''), avatar_url), updated_at = NOW() WHERE id = ?");
-    $stmt->execute([$name, $company, $avatarUrl, $userId]);
+    $stmt = $pdo->prepare("
+        UPDATE users SET 
+            name = COALESCE(NULLIF(?, ''), name), 
+            company = COALESCE(NULLIF(?, ''), company), 
+            avatar_url = COALESCE(NULLIF(?, ''), avatar_url),
+            phone = COALESCE(NULLIF(?, ''), phone),
+            billing_address = COALESCE(NULLIF(?, ''), billing_address),
+            gstin = COALESCE(NULLIF(?, ''), gstin),
+            updated_at = NOW() 
+        WHERE id = ?
+    ");
+    $stmt->execute([$name, $company, $avatarUrl, $phone, $billingAddress, $gstin, $userId]);
 
     // Also update customers table if present
-    $stmtCust = $pdo->prepare("UPDATE customers SET name = COALESCE(NULLIF(?, ''), name), company = COALESCE(NULLIF(?, ''), company) WHERE id = ?");
-    $stmtCust->execute([$name, $company, $userId]);
+    $stmtCust = $pdo->prepare("
+        UPDATE customers SET 
+            name = COALESCE(NULLIF(?, ''), name), 
+            company = COALESCE(NULLIF(?, ''), company),
+            phone = COALESCE(NULLIF(?, ''), phone),
+            billing_address = COALESCE(NULLIF(?, ''), billing_address),
+            gstin = COALESCE(NULLIF(?, ''), gstin)
+        WHERE id = ?
+    ");
+    $stmtCust->execute([$name, $company, $phone, $billingAddress, $gstin, $userId]);
 
     sendJson(200, ['success' => true, 'message' => 'Profile updated successfully.']);
 }
