@@ -40,6 +40,7 @@ export const McpHub: React.FC<McpHubProps> = ({
   // New Key modal
   const [showNewKeyModal, setShowNewKeyModal] = useState<boolean>(false);
   const [newKeyName, setNewKeyName] = useState<string>('');
+  const [newKeyAgent, setNewKeyAgent] = useState<'cursor' | 'claude_desktop' | 'windsurf' | 'antigravity' | 'custom_agent'>('cursor');
   // Transport mode: cloud_sse (live web), npx_portable (universal npx), local_stdio (local dev)
   const [transportMode, setTransportMode] = useState<'cloud_sse' | 'npx_portable' | 'local_stdio'>('cloud_sse');
 

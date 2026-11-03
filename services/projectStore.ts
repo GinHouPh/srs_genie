@@ -10,6 +10,8 @@ export interface SavedProjectRecord extends ProjectInput {
   userId?: string;
   tenantId?: string;
   specsHierarchy?: Record<string, string>;
+  content?: string;
+  vibeTasks?: any[];
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +33,7 @@ class ProjectStore {
           const mapped: SavedProjectRecord = {
             id: sp.id,
             name: sp.title || 'Untitled',
+            version: sp.version || '1.0.0',
             userId: sp.userId,
             tenantId: sp.tenantId,
             status: sp.status || 'draft',

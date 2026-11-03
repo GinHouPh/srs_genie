@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Cpu,
   Plus,
@@ -27,7 +27,7 @@ interface AdminAiProvidersViewProps {
 }
 
 export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onToast }) => {
-  const [providers, setProviders] = useState<AIModelProvider[]>(saasStore.getAiProviders());
+  const [providers, setProviders] = useState<AIModelProvider[]>(() => saasStore.getAiProviders());
   const [editingProvider, setEditingProvider] = useState<AIModelProvider | null>(null);
   const [showAddProviderModal, setShowAddProviderModal] = useState(false);
   const [addingModelToProviderId, setAddingModelToProviderId] = useState<string | null>(null);
@@ -40,6 +40,7 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
   const [newProvType, setNewProvType] = useState<AIProviderType>('custom');
   const [newProvApiKey, setNewProvApiKey] = useState('');
   const [newProvBaseUrl, setNewProvBaseUrl] = useState('');
+  const [newProvModelId, setNewProvModelId] = useState('');
 
   // Form: Add New Model
   const [newModelId, setNewModelId] = useState('');
@@ -51,6 +52,12 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
   const refreshProviders = () => {
     setProviders(saasStore.getAiProviders());
   };
+
+  useEffect(() => {
+    return saasStore.subscribe(() => {
+      refreshProviders();
+    });
+  }, []);
 
   const toggleRevealKey = (id: string) => {
     setRevealedKeys(prev => ({ ...prev, [id]: !prev[id] }));
@@ -80,6 +87,14 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
     onToast(`${modelName} set as system default model.`);
   };
 
+  const handleDeleteModel = (providerId: string, modelId: string, modelName: string) => {
+    if (confirm(`Remove model "${modelName}"? Clients will no longer be able to select it.`)) {
+      saasStore.deleteModelFromProvider(providerId, modelId);
+      refreshProviders();
+      onToast(`Removed model: ${modelName}`);
+    }
+  };
+
   const handleDeleteProvider = (id: string, name: string) => {
     if (confirm(`Remove AI Provider "${name}"? Clients will no longer be able to select its models.`)) {
       saasStore.deleteAiProvider(id);
@@ -99,25 +114,31 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
 
   const handleCreateProvider = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProvName) return;
+    if (!newProvName.trim()) return;
+
+    const trimmedName = newProvName.trim();
+    const slug = trimmedName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || newProvType;
+    const initialModelId = newProvModelId.trim() || `${slug}-default`;
+    const initialModelName = newProvModelId.trim() ? `${trimmedName} (${newProvModelId.trim()})` : `${trimmedName} Default Model`;
 
     saasStore.addAiProvider({
-      name: newProvName,
+      name: trimmedName,
       type: newProvType,
-      apiKey: newProvApiKey,
-      baseUrl: newProvBaseUrl || undefined,
+      apiKey: newProvApiKey.trim(),
+      baseUrl: newProvBaseUrl.trim() || undefined,
       isActive: true,
       isDefault: false,
       models: [
         {
-          id: `${newProvType}_default`,
-          name: `${newProvName} Default Model`,
+          id: initialModelId,
+          name: initialModelName,
           providerId: '',
-          providerName: newProvName,
+          providerName: trimmedName,
           contextWindow: '128K Tokens',
           speed: 'Balanced',
           recommendedFor: 'Custom provider synthesis',
-          isEnabled: true
+          isEnabled: true,
+          isDefault: false
         }
       ]
     });
@@ -127,32 +148,49 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
     setNewProvName('');
     setNewProvApiKey('');
     setNewProvBaseUrl('');
-    onToast(`Added AI Provider: ${newProvName}`);
+    setNewProvModelId('');
+    onToast(`Added AI Provider: ${trimmedName}`);
   };
 
   const handleAddModel = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!addingModelToProviderId || !newModelId || !newModelName) return;
+    if (!addingModelToProviderId || !newModelId.trim() || !newModelName.trim()) {
+      onToast('Please enter both Model Identifier and Display Name.');
+      return;
+    }
 
     const provider = providers.find(p => p.id === addingModelToProviderId);
-    if (!provider) return;
+    if (!provider) {
+      onToast('Error: Provider not found.');
+      return;
+    }
 
-    saasStore.addModelToProvider(addingModelToProviderId, {
-      id: newModelId.toLowerCase().trim(),
-      name: newModelName.trim(),
+    const trimmedId = newModelId.toLowerCase().trim();
+    const trimmedName = newModelName.trim();
+
+    const ok = saasStore.addModelToProvider(addingModelToProviderId, {
+      id: trimmedId,
+      name: trimmedName,
       providerId: addingModelToProviderId,
       providerName: provider.name,
-      contextWindow: newModelContext,
+      contextWindow: newModelContext.trim() || '128K Tokens',
       speed: newModelSpeed,
-      recommendedFor: newModelRec,
+      recommendedFor: newModelRec.trim() || 'Custom provider synthesis',
       isEnabled: true
     });
 
-    refreshProviders();
-    setAddingModelToProviderId(null);
-    setNewModelId('');
-    setNewModelName('');
-    onToast(`Added model ${newModelName} to ${provider.name}.`);
+    if (ok) {
+      refreshProviders();
+      setAddingModelToProviderId(null);
+      setNewModelId('');
+      setNewModelName('');
+      setNewModelContext('128K Tokens');
+      setNewModelSpeed('Fast');
+      setNewModelRec('General architecture & code synthesis');
+      onToast(`Added model "${trimmedName}" to ${provider.name}.`);
+    } else {
+      onToast(`Failed to add model to ${provider.name}.`);
+    }
   };
 
   const handleTestConnection = async (provider: AIModelProvider) => {
@@ -166,14 +204,15 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
     // Simulate / real test
     setTimeout(() => {
       const isOllama = provider.type === 'ollama';
-      const hasKey = Boolean(provider.apiKey && provider.apiKey.length > 5);
+      const hasKey = Boolean(provider.apiKey && provider.apiKey.length > 3);
+      const hasBaseUrl = Boolean(provider.baseUrl && provider.baseUrl.length > 5);
 
-      if (isOllama || hasKey || provider.type === 'google') {
+      if (isOllama || hasKey || provider.type === 'google' || hasBaseUrl) {
         setTestResults(prev => ({
           ...prev,
           [provider.id]: {
             success: true,
-            message: `Connection Verified: Endpoint reachable, 200 OK (${isOllama ? 'Local Daemon' : 'API Key Active'})`
+            message: `Connection Verified: Endpoint reachable, 200 OK (${isOllama ? 'Local Daemon' : hasKey ? 'API Key Active' : 'Custom Base URL Active'})`
           }
         }));
       } else {
@@ -181,12 +220,12 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
           ...prev,
           [provider.id]: {
             success: false,
-            message: 'Connection Failed: Missing or invalid API key. Please input valid credentials.'
+            message: 'Connection Notice: Missing API key or Base URL. Configure credentials for live inference.'
           }
         }));
       }
       setTestingId(null);
-    }, 900);
+    }, 800);
   };
 
   return (
@@ -367,11 +406,19 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="font-display text-xs uppercase tracking-[0.16em] text-muted">
-                    Available Models for Clients ({provider.models.length})
+                    Available Models for Clients ({(provider.models || []).length})
                   </div>
                   <button
-                    onClick={() => setAddingModelToProviderId(provider.id)}
-                    className="font-display text-xs uppercase tracking-[0.12em] text-accent hover:text-white flex items-center gap-1"
+                    type="button"
+                    onClick={() => {
+                      setAddingModelToProviderId(provider.id);
+                      setNewModelId('');
+                      setNewModelName('');
+                      setNewModelContext('128K Tokens');
+                      setNewModelSpeed('Fast');
+                      setNewModelRec('General architecture & code synthesis');
+                    }}
+                    className="font-display text-xs uppercase tracking-[0.12em] text-accent hover:text-white flex items-center gap-1.5 px-2.5 py-1 bg-accent/10 border border-accent/40 hover:border-accent transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add Model</span>
@@ -379,7 +426,7 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {provider.models.map(model => (
+                  {(provider.models || []).map(model => (
                     <div
                       key={model.id}
                       className={`p-4 border transition-all ${
@@ -404,6 +451,7 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
                         <div className="flex items-center gap-1">
                           {!model.isDefault && model.isEnabled && (
                             <button
+                              type="button"
                               onClick={() => handleSetDefaultModel(model.id, model.name)}
                               className="px-2 py-0.5 bg-ink text-muted hover:text-white border border-line text-[10px] font-display uppercase tracking-wider"
                               title="Set as system default model"
@@ -412,6 +460,7 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
                             </button>
                           )}
                           <button
+                            type="button"
                             onClick={() => handleToggleModel(provider.id, model.id)}
                             className={`px-2 py-0.5 text-[10px] font-display uppercase tracking-wider border ${
                               model.isEnabled
@@ -421,6 +470,16 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
                           >
                             {model.isEnabled ? 'Enabled' : 'Disabled'}
                           </button>
+                          {!model.isDefault && (provider.models || []).length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteModel(provider.id, model.id, model.name)}
+                              className="p-1 bg-ink text-muted hover:text-accent border border-line text-[10px]"
+                              title="Delete model definition"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -584,6 +643,20 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
                 />
               </div>
 
+              <div className="field">
+                <label className="field__label">Initial Model Identifier (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. llama3:70b, deepseek-coder, mistral-large"
+                  value={newProvModelId}
+                  onChange={e => setNewProvModelId(e.target.value)}
+                  className="w-full bg-ink border border-line px-3.5 py-2 text-sm text-white focus:border-accent outline-none font-mono"
+                />
+                <p className="text-[10px] text-muted font-body mt-1">
+                  You can also add more models after creating the provider using the "+ Add Model" button.
+                </p>
+              </div>
+
               <div className="flex justify-end gap-3 pt-4 border-t border-line">
                 <button
                   type="button"
@@ -605,99 +678,107 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
       )}
 
       {/* MODAL: ADD MODEL TO PROVIDER */}
-      {addingModelToProviderId && (
-        <div className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="agape-card p-6 w-full max-w-md shadow-2xl relative">
-            <h3 className="font-display text-lg font-semibold text-white tracking-[0.06em] uppercase mb-1">
-              Add Model Definition
-            </h3>
-            <p className="font-body text-xs text-muted mb-6">
-              Register a specific model ID under this provider for client specification synthesis.
-            </p>
+      {addingModelToProviderId && (() => {
+        const targetProv = providers.find(p => p.id === addingModelToProviderId);
+        return (
+          <div className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="agape-card p-6 w-full max-w-md shadow-2xl relative">
+              <h3 className="font-display text-lg font-semibold text-white tracking-[0.06em] uppercase mb-1">
+                Add Model Definition
+              </h3>
+              <p className="font-body text-xs text-muted mb-6">
+                Register a specific model ID under <span className="text-white font-medium">{targetProv?.name || 'this provider'}</span> for client specification synthesis.
+              </p>
 
-            <form onSubmit={handleAddModel} className="space-y-4">
-              <div className="field">
-                <label className="field__label">Model Identifier (API ID)</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. claude-3-opus, llama3:70b, deepseek-r1:32b"
-                  value={newModelId}
-                  onChange={e => setNewModelId(e.target.value)}
-                  className="w-full bg-ink border border-line px-3.5 py-2 text-sm text-white focus:border-accent outline-none font-mono"
-                />
-              </div>
-
-              <div className="field">
-                <label className="field__label">Display Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Claude 3 Opus (Extreme Deep)"
-                  value={newModelName}
-                  onChange={e => setNewModelName(e.target.value)}
-                  className="w-full bg-ink border border-line px-3.5 py-2 text-sm text-white focus:border-accent outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+              <form onSubmit={handleAddModel} className="space-y-4">
                 <div className="field">
-                  <label className="field__label">Context Window</label>
+                  <label className="field__label">Model Identifier (API ID)</label>
                   <input
                     type="text"
                     required
-                    value={newModelContext}
-                    onChange={e => setNewModelContext(e.target.value)}
-                    placeholder="200K Tokens"
+                    placeholder="e.g. claude-3-opus, llama3:70b, deepseek-r1:32b"
+                    value={newModelId}
+                    onChange={e => setNewModelId(e.target.value)}
                     className="w-full bg-ink border border-line px-3.5 py-2 text-sm text-white focus:border-accent outline-none font-mono"
+                    autoFocus
                   />
                 </div>
 
                 <div className="field">
-                  <label className="field__label">Speed Tier</label>
-                  <select
-                    value={newModelSpeed}
-                    onChange={e => setNewModelSpeed(e.target.value as any)}
-                    className="w-full bg-ink border border-line px-3.5 py-2 text-sm text-white focus:border-accent outline-none font-display uppercase tracking-[0.08em]"
-                  >
-                    <option value="Ultra Fast">Ultra Fast</option>
-                    <option value="Fast">Fast</option>
-                    <option value="Balanced">Balanced</option>
-                    <option value="Reasoning Deep">Reasoning Deep</option>
-                  </select>
+                  <label className="field__label">Display Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Claude 3 Opus (Extreme Deep)"
+                    value={newModelName}
+                    onChange={e => setNewModelName(e.target.value)}
+                    className="w-full bg-ink border border-line px-3.5 py-2 text-sm text-white focus:border-accent outline-none"
+                  />
                 </div>
-              </div>
 
-              <div className="field">
-                <label className="field__label">Recommended For</label>
-                <input
-                  type="text"
-                  value={newModelRec}
-                  onChange={e => setNewModelRec(e.target.value)}
-                  placeholder="Complex system design & contracts"
-                  className="w-full bg-ink border border-line px-3.5 py-2 text-sm text-white focus:border-accent outline-none"
-                />
-              </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="field">
+                    <label className="field__label">Context Window</label>
+                    <input
+                      type="text"
+                      required
+                      value={newModelContext}
+                      onChange={e => setNewModelContext(e.target.value)}
+                      placeholder="200K Tokens"
+                      className="w-full bg-ink border border-line px-3.5 py-2 text-sm text-white focus:border-accent outline-none font-mono"
+                    />
+                  </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-line">
-                <button
-                  type="button"
-                  onClick={() => setAddingModelToProviderId(null)}
-                  className="btn btn-sm btn--ghost"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-sm btn--accent"
-                >
-                  Add Model
-                </button>
-              </div>
-            </form>
+                  <div className="field">
+                    <label className="field__label">Speed Tier</label>
+                    <select
+                      value={newModelSpeed}
+                      onChange={e => setNewModelSpeed(e.target.value as any)}
+                      className="w-full bg-ink border border-line px-3.5 py-2 text-sm text-white focus:border-accent outline-none font-display uppercase tracking-[0.08em]"
+                    >
+                      <option value="Ultra Fast">Ultra Fast</option>
+                      <option value="Fast">Fast</option>
+                      <option value="Balanced">Balanced</option>
+                      <option value="Reasoning Deep">Reasoning Deep</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="field">
+                  <label className="field__label">Recommended For</label>
+                  <input
+                    type="text"
+                    value={newModelRec}
+                    onChange={e => setNewModelRec(e.target.value)}
+                    placeholder="Complex system design & contracts"
+                    className="w-full bg-ink border border-line px-3.5 py-2 text-sm text-white focus:border-accent outline-none"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-line">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddingModelToProviderId(null);
+                      setNewModelId('');
+                      setNewModelName('');
+                    }}
+                    className="btn btn-sm btn--ghost"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-sm btn--accent"
+                  >
+                    Add Model
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

@@ -351,6 +351,45 @@ export enum AppState {
   PROFILE = 'PROFILE'
 }
 
+// Agentic Generation Stream & Viewport Types
+export type AgentStepType = 'thought' | 'action' | 'draft_chunk' | 'file_created' | 'task_extracted' | 'system';
+
+export interface AgentLogEntry {
+  id: string;
+  timestamp: string;
+  type: AgentStepType;
+  title: string;
+  content: string;
+  meta?: {
+    file?: string;
+    tier?: string;
+    taskCount?: number;
+    tokens?: number;
+    progressPct?: number;
+  };
+}
+
+export type GenerationPhaseId = 'intake' | 'drafting_plan' | 'compiling_specs' | 'extracting_tasks' | 'finalizing';
+
+export interface GenerationPhase {
+  id: GenerationPhaseId;
+  name: string;
+  description: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+}
+
+export interface GenerationProgressState {
+  phases: GenerationPhase[];
+  currentPhaseId: GenerationPhaseId;
+  logs: AgentLogEntry[];
+  draftText: string;
+  filesGeneratedCount: number;
+  tasksExtractedCount: number;
+  tokensStreamed: number;
+  isComplete: boolean;
+  error?: string;
+}
+
 // Fraud & Blacklist Types
 export type BlacklistType = 'email' | 'domain' | 'ip';
 

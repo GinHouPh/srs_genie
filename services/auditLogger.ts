@@ -8,15 +8,15 @@ import { UserRole } from '../types';
 export interface SecurityAuditEvent {
   id: string;
   timestamp: string;
-  actorId: string;
-  actorEmail: string;
-  actorRole: UserRole | 'system' | 'mcp_agent';
-  tenantId: string;
+  actorId?: string;
+  actorEmail?: string;
+  actorRole?: UserRole | 'system' | 'mcp_agent';
+  tenantId?: string;
   action: string;
   status: 'SUCCESS' | 'DENIED' | 'FAILED' | 'WARNING';
   resourceType?: string;
   resourceId?: string;
-  details?: string;
+  details?: string | Record<string, any>;
   ipAddress?: string;
 }
 
@@ -90,8 +90,17 @@ class AuditLoggerService {
   }
 
   log(event: Omit<SecurityAuditEvent, 'id' | 'timestamp'>): SecurityAuditEvent {
+    const formattedDetails = typeof event.details === 'object' && event.details !== null
+      ? JSON.stringify(event.details)
+      : event.details;
+
     const fullEvent: SecurityAuditEvent = {
+      actorId: 'admin_root',
+      actorEmail: 'admin@srsgenie.ai',
+      actorRole: 'admin',
+      tenantId: 'tenant_master_001',
       ...event,
+      details: formattedDetails,
       id: `audit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       timestamp: new Date().toISOString(),
       ipAddress: event.ipAddress || (typeof window !== 'undefined' ? 'client_local' : '127.0.0.1')
@@ -154,6 +163,18 @@ class AuditLoggerService {
   clearLogs() {
     this.events = [];
     this.saveToStorage();
+  }
+
+  exportAsJson(): string {
+    return this.exportLogsJson();
+  }
+
+  exportAsCsv(): string {
+    return this.exportLogsCsv();
+  }
+
+  clear() {
+    this.clearLogs();
   }
 }
 

@@ -35,7 +35,9 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
 
   const availableModels = saasStore.getAvailableModels();
   const defaultModel = saasStore.getDefaultModel();
-  const [selectedModelId, setSelectedModelId] = useState<string>(defaultModel?.id || 'gemini-2.5-flash');
+  const [selectedModelId, setSelectedModelId] = useState<string>(
+    typeof defaultModel === 'string' ? defaultModel : (defaultModel as any)?.id || 'gemini-2.5-flash'
+  );
 
   const handleInputChange = (section: string, field: string, value: any) => {
     setFormData(prev => ({

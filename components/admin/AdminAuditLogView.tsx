@@ -298,7 +298,7 @@ export const AdminAuditLogView: React.FC<AdminAuditLogViewProps> = ({ onToast })
                   const isSuccess = ev.status === 'SUCCESS';
 
                   return (
-                    <tr key={ev.eventId} className="hover:bg-box/50 transition-colors">
+                    <tr key={ev.id} className="hover:bg-box/50 transition-colors">
                       <td className="py-3 px-4 whitespace-nowrap text-muted text-[11px]">
                         {new Date(ev.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                         <span className="block text-[9px] text-muted/60">{ev.timestamp.split('T')[0]}</span>

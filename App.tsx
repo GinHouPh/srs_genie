@@ -9,8 +9,9 @@ import { AdminConsole } from './components/admin/AdminConsole';
 import { McpHub } from './components/McpHub';
 import { ClientBillingPage } from './components/ClientBillingPage';
 import { UserProfilePage } from './components/UserProfilePage';
-import { AppState, ProjectInput, GeneratedContent, User, SubscriptionTier } from './types';
-import { generateComprehensiveSpecPackage } from './services/specGeneratorService';
+import { AppState, ProjectInput, GeneratedContent, User, SubscriptionTier, GenerationProgressState, GenerationPhase } from './types';
+import { generateComprehensiveSpecPackage, downloadSpecsZip } from './services/specGeneratorService';
+import { AgentGenerationViewport } from './components/AgentGenerationViewport';
 import { authService } from './services/authService';
 import { projectStore, SavedProjectRecord } from './services/projectStore';
 import { saasStore } from './services/saasStore';
@@ -64,6 +65,26 @@ export default function App() {
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [activeProjectName, setActiveProjectName] = useState<string>('My Project');
   const [error, setError] = useState<string | null>(null);
+
+  const initialPhases: GenerationPhase[] = [
+    { id: 'intake', name: 'Intake & Requirement Validation', description: 'Validate 15-section questionnaire', status: 'completed' },
+    { id: 'drafting_plan', name: 'Master Project Plan Synthesis', description: 'Generate comprehensive draft', status: 'pending' },
+    { id: 'compiling_specs', name: 'Multi-Tier .specs Hierarchy Compilation', description: '22 canonical files', status: 'pending' },
+    { id: 'extracting_tasks', name: 'Dynamic Task Extraction & Dependencies', description: 'Formulate bespoke atomic tasks', status: 'pending' },
+    { id: 'finalizing', name: 'Verification & Package Finalization', description: 'Package .specs suite for download and MCP', status: 'pending' }
+  ];
+
+  const [activeModelId, setActiveModelId] = useState<string>('gemini-2.5-flash');
+  const [generationProgress, setGenerationProgress] = useState<GenerationProgressState>({
+    phases: initialPhases,
+    currentPhaseId: 'intake',
+    logs: [],
+    draftText: '',
+    filesGeneratedCount: 0,
+    tasksExtractedCount: 0,
+    tokensStreamed: 28500,
+    isComplete: false
+  });
 
   // Auth Handlers
   const handleOpenAuth = (mode: 'login' | 'register', plan?: SubscriptionTier) => {
@@ -173,19 +194,102 @@ export default function App() {
       return;
     }
 
+    const chosenModel = selectedModelId || 'gemini-2.5-flash';
+    setActiveModelId(chosenModel);
     setAppState(AppState.GENERATING);
     setActiveProjectName(data.name);
+
+    setGenerationProgress({
+      phases: [
+        { id: 'intake', name: 'Intake & Requirement Validation', description: 'Validate 15-section questionnaire', status: 'completed' },
+        { id: 'drafting_plan', name: 'Master Project Plan Synthesis', description: 'Generate comprehensive draft', status: 'in_progress' },
+        { id: 'compiling_specs', name: 'Multi-Tier .specs Hierarchy Compilation', description: '22 canonical files', status: 'pending' },
+        { id: 'extracting_tasks', name: 'Dynamic Task Extraction & Dependencies', description: 'Formulate bespoke atomic tasks', status: 'pending' },
+        { id: 'finalizing', name: 'Verification & Package Finalization', description: 'Package .specs suite for download and MCP', status: 'pending' }
+      ],
+      currentPhaseId: 'drafting_plan',
+      logs: [
+        {
+          id: crypto.randomUUID(),
+          timestamp: new Date().toLocaleTimeString(),
+          type: 'thought',
+          title: 'Initializing Autonomous Spec Generator',
+          content: `Ingested 15-section questionnaire for "${data.name}". Beginning Master Project Plan Draft synthesis.`
+        }
+      ],
+      draftText: '',
+      filesGeneratedCount: 0,
+      tasksExtractedCount: 0,
+      tokensStreamed: 28500,
+      isComplete: false
+    });
+
     try {
       // Associate with current user
       const projectPayload = {
         ...data,
         userId: user.id
       };
-      const packageResult = await generateComprehensiveSpecPackage(projectPayload, selectedModelId);
+
+      const packageResult = await generateComprehensiveSpecPackage(
+        projectPayload,
+        chosenModel,
+        (logEntry) => {
+          setGenerationProgress(prev => {
+            const nextLogs = [...prev.logs, logEntry];
+            let currentPhaseId = prev.currentPhaseId;
+            let filesCount = prev.filesGeneratedCount;
+            let tasksCount = prev.tasksExtractedCount;
+            let draftText = prev.draftText;
+
+            if (logEntry.type === 'file_created') {
+              filesCount = Math.min(22, filesCount + 1);
+              currentPhaseId = 'compiling_specs';
+            } else if (logEntry.type === 'task_extracted') {
+              tasksCount = logEntry.meta?.taskCount || tasksCount;
+              currentPhaseId = 'extracting_tasks';
+            } else if (logEntry.title?.toLowerCase().includes('draft')) {
+              currentPhaseId = 'drafting_plan';
+              if (logEntry.content && logEntry.content.length > 200) {
+                draftText = logEntry.content;
+              }
+            }
+
+            const updatedPhases = prev.phases.map(p => {
+              if (p.id === currentPhaseId) {
+                return { ...p, status: 'in_progress' as const };
+              }
+              if (currentPhaseId === 'compiling_specs' && (p.id === 'intake' || p.id === 'drafting_plan' || p.id === 'extracting_tasks')) {
+                return { ...p, status: 'completed' as const };
+              }
+              return p;
+            });
+
+            return {
+              ...prev,
+              logs: nextLogs,
+              currentPhaseId,
+              filesGeneratedCount: filesCount,
+              tasksExtractedCount: tasksCount,
+              draftText: draftText || prev.draftText,
+              phases: updatedPhases
+            };
+          });
+        }
+      );
+
       // Persist real project to projectStore
       projectStore.saveFullProject(projectPayload, packageResult.specsHierarchy);
       setGeneratedContent(packageResult);
-      setAppState(AppState.RESULT);
+
+      setGenerationProgress(prev => ({
+        ...prev,
+        isComplete: true,
+        currentPhaseId: 'finalizing',
+        filesGeneratedCount: 22,
+        tasksExtractedCount: packageResult.implementationTasks.length,
+        phases: prev.phases.map(p => ({ ...p, status: 'completed' as const }))
+      }));
     } catch (err: any) {
       console.error(err);
       setError(err?.message || 'Failed to generate content. Please try again.');
@@ -360,22 +464,22 @@ export default function App() {
           )
         )}
 
-        {/* State: Generating */}
+        {/* State: Generating Viewport */}
         {appState === AppState.GENERATING && (
-          <div className="flex flex-col items-center justify-center text-center p-12 max-w-lg mx-auto">
-            <div className="relative mb-8">
-              <div className="w-20 h-20 border-2 border-line border-t-accent rounded-full animate-spin"></div>
-              <div className="absolute inset-0 flex items-center justify-center font-display text-xs text-accent uppercase tracking-[0.14em]">
-                .specs
-              </div>
-            </div>
-            <div className="eyebrow mb-2">Autonomous Synthesis</div>
-            <h2 className="font-display text-2xl sm:text-3xl font-semibold text-white mb-2 uppercase tracking-[0.04em]">
-              Forging 6-Tier .specs Suite
-            </h2>
-            <p className="font-body text-xs text-muted leading-relaxed">
-              Synthesizing domain invariants, database migrations, API contracts, and atomic execution tasks for AI coding agents...
-            </p>
+          <div className="w-full animate-in fade-in duration-500">
+            <AgentGenerationViewport
+              projectName={activeProjectName || 'Project'}
+              selectedModelName={saasStore.getAvailableModels().find(m => m.id === activeModelId)?.name || 'Gemini 2.5 Flash'}
+              progressState={generationProgress}
+              onExploreSpecs={() => setAppState(AppState.RESULT)}
+              onDownloadZip={() => {
+                if (generatedContent?.specsHierarchy) {
+                  downloadSpecsZip(generatedContent.specsHierarchy, activeProjectName || 'project');
+                }
+              }}
+              onOpenMcpHub={() => setAppState(AppState.MCP_HUB)}
+              onCancel={() => setAppState(AppState.WIZARD)}
+            />
           </div>
         )}
 
@@ -410,15 +514,7 @@ export default function App() {
               onUpdateUser={(updated) => setUser(updated)}
               onNavigateToDashboard={handleBackToDash}
               onNavigateToBilling={() => setAppState(AppState.BILLING)}
-              onOpenProject={(proj) => {
-                if (proj.content) {
-                  setGeneratedContent(proj.content);
-                  setActiveProjectName(proj.name);
-                  setAppState(AppState.RESULT);
-                } else {
-                  handleBackToDash();
-                }
-              }}
+              onOpenProject={(proj) => handleSelectExistingProject(proj)}
               onLogout={handleLogout}
             />
           </div>

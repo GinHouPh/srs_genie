@@ -526,7 +526,10 @@ class SaasStateStore {
           this.businessSettings = { ...DEFAULT_BUSINESS_SETTINGS, ...data.businessSettings };
         }
         if (data.aiProviders && data.aiProviders.length > 0) {
-          this.aiProviders = data.aiProviders;
+          this.aiProviders = data.aiProviders.map((p: any) => ({
+            ...p,
+            models: Array.isArray(p.models) ? p.models : []
+          }));
         } else {
           this.aiProviders = [...BASELINE_AI_PROVIDERS];
         }
@@ -1149,11 +1152,17 @@ class SaasStateStore {
   }
 
   addAiProvider(provider: Omit<AIModelProvider, 'id' | 'createdAt' | 'updatedAt'>): AIModelProvider {
+    const provId = `prov_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const newProv: AIModelProvider = {
       ...provider,
-      id: `prov_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: provId,
       createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0]
+      updatedAt: new Date().toISOString().split('T')[0],
+      models: (provider.models || []).map(m => ({
+        ...m,
+        providerId: provId,
+        providerName: provider.name
+      }))
     };
     if (newProv.isDefault) {
       this.aiProviders.forEach(p => p.isDefault = false);
@@ -1163,6 +1172,10 @@ class SaasStateStore {
     this.notifyListeners();
     apiService.saveSetting('ai_providers', this.aiProviders).catch(() => {});
     auditLogger.log({
+      actorId: 'admin_root',
+      actorEmail: 'admin@srsgenie.ai',
+      actorRole: 'admin',
+      tenantId: 'tenant_master_001',
       action: 'saas.provider.created',
       status: 'SUCCESS',
       details: { providerId: newProv.id, name: newProv.name, type: newProv.type }
@@ -1185,6 +1198,10 @@ class SaasStateStore {
     this.notifyListeners();
     apiService.saveSetting('ai_providers', this.aiProviders).catch(() => {});
     auditLogger.log({
+      actorId: 'admin_root',
+      actorEmail: 'admin@srsgenie.ai',
+      actorRole: 'admin',
+      tenantId: 'tenant_master_001',
       action: 'saas.provider.updated',
       status: 'SUCCESS',
       details: { providerId: id, name: this.aiProviders[idx].name }
@@ -1201,6 +1218,10 @@ class SaasStateStore {
     apiService.saveSetting('ai_providers', this.aiProviders).catch(() => {});
     if (this.aiProviders.length < initial) {
       auditLogger.log({
+        actorId: 'admin_root',
+        actorEmail: 'admin@srsgenie.ai',
+        actorRole: 'admin',
+        tenantId: 'tenant_master_001',
         action: 'saas.provider.deleted',
         status: 'SUCCESS',
         details: { providerId: id, name: prov?.name }
@@ -1216,6 +1237,10 @@ class SaasStateStore {
     prov.isActive = !prov.isActive;
     this.saveToStorage();
     auditLogger.log({
+      actorId: 'admin_root',
+      actorEmail: 'admin@srsgenie.ai',
+      actorRole: 'admin',
+      tenantId: 'tenant_master_001',
       action: 'saas.provider.toggled',
       status: 'SUCCESS',
       details: { providerId: id, name: prov.name, isActive: prov.isActive }
@@ -1228,16 +1253,175 @@ class SaasStateStore {
       p.isDefault = (p.id === id);
     });
     this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveSetting('ai_providers', this.aiProviders).catch(() => {});
+  }
+
+  // --- AI MODEL MANAGEMENT (Add / Toggle / Default / Delete) ---
+
+  addModelToProvider(providerId: string, model: AIModelDefinition): boolean {
+    const prov = this.aiProviders.find(p => p.id === providerId);
+    if (!prov) return false;
+
+    if (!Array.isArray(prov.models)) {
+      prov.models = [];
+    }
+
+    const trimmedId = model.id.toLowerCase().trim();
+    const existingIdx = prov.models.findIndex(m => m.id.toLowerCase().trim() === trimmedId);
+
+    const completeModel: AIModelDefinition = {
+      ...model,
+      id: trimmedId,
+      name: model.name.trim(),
+      providerId: prov.id,
+      providerName: prov.name,
+      contextWindow: model.contextWindow || '128K Tokens',
+      speed: model.speed || 'Balanced',
+      recommendedFor: model.recommendedFor || 'Custom architecture and code synthesis',
+      isEnabled: model.isEnabled !== undefined ? model.isEnabled : true,
+      isDefault: Boolean(model.isDefault)
+    };
+
+    if (existingIdx >= 0) {
+      prov.models[existingIdx] = {
+        ...prov.models[existingIdx],
+        ...completeModel
+      };
+    } else {
+      prov.models.push(completeModel);
+    }
+
+    prov.updatedAt = new Date().toISOString().split('T')[0];
+    this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveSetting('ai_providers', this.aiProviders).catch(() => {});
+    auditLogger.log({
+      actorId: 'admin_root',
+      actorEmail: 'admin@srsgenie.ai',
+      actorRole: 'admin',
+      tenantId: 'tenant_master_001',
+      action: 'saas.provider.model_added',
+      status: 'SUCCESS',
+      details: { providerId: prov.id, modelId: completeModel.id, modelName: completeModel.name }
+    });
+    return true;
+  }
+
+  toggleModelStatus(providerId: string, modelId: string): boolean {
+    const prov = this.aiProviders.find(p => p.id === providerId);
+    if (!prov || !Array.isArray(prov.models)) return false;
+
+    const model = prov.models.find(m => m.id === modelId);
+    if (!model) return false;
+
+    model.isEnabled = !model.isEnabled;
+
+    // If disabled model was default, assign another default model if available
+    if (!model.isEnabled && model.isDefault) {
+      model.isDefault = false;
+      const otherModel = this.aiProviders.flatMap(p => p.models || []).find(m => m.isEnabled && m.id !== modelId);
+      if (otherModel) {
+        otherModel.isDefault = true;
+      }
+    }
+
+    prov.updatedAt = new Date().toISOString().split('T')[0];
+    this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveSetting('ai_providers', this.aiProviders).catch(() => {});
+    auditLogger.log({
+      actorId: 'admin_root',
+      actorEmail: 'admin@srsgenie.ai',
+      actorRole: 'admin',
+      tenantId: 'tenant_master_001',
+      action: 'saas.provider.model_toggled',
+      status: 'SUCCESS',
+      details: { providerId: prov.id, modelId, isEnabled: model.isEnabled }
+    });
+    return model.isEnabled;
+  }
+
+  setDefaultModel(modelId: string): boolean {
+    let targetModel: AIModelDefinition | null = null;
+    let targetProv: AIModelProvider | null = null;
+
+    for (const prov of this.aiProviders) {
+      if (!Array.isArray(prov.models)) continue;
+      for (const m of prov.models) {
+        if (m.id === modelId) {
+          m.isDefault = true;
+          m.isEnabled = true; // default model must be enabled
+          targetModel = m;
+          targetProv = prov;
+        } else {
+          m.isDefault = false;
+        }
+      }
+    }
+
+    if (targetProv && targetModel) {
+      targetProv.isActive = true; // activate the provider of the default model
+      this.saveToStorage();
+      this.notifyListeners();
+      apiService.saveSetting('ai_providers', this.aiProviders).catch(() => {});
+      auditLogger.log({
+        actorId: 'admin_root',
+        actorEmail: 'admin@srsgenie.ai',
+        actorRole: 'admin',
+        tenantId: 'tenant_master_001',
+        action: 'saas.provider.model_default_set',
+        status: 'SUCCESS',
+        details: { modelId, providerId: targetProv.id }
+      });
+      return true;
+    }
+    return false;
+  }
+
+  deleteModelFromProvider(providerId: string, modelId: string): boolean {
+    const prov = this.aiProviders.find(p => p.id === providerId);
+    if (!prov || !Array.isArray(prov.models)) return false;
+
+    const initialLen = prov.models.length;
+    prov.models = prov.models.filter(m => m.id !== modelId);
+
+    if (prov.models.length < initialLen) {
+      // If deleted model was default, reassign default
+      const allModels = this.aiProviders.flatMap(p => p.models || []);
+      const hasDefault = allModels.some(m => m.isDefault && m.isEnabled);
+      if (!hasDefault) {
+        const fallback = allModels.find(m => m.isEnabled);
+        if (fallback) fallback.isDefault = true;
+      }
+
+      prov.updatedAt = new Date().toISOString().split('T')[0];
+      this.saveToStorage();
+      this.notifyListeners();
+      apiService.saveSetting('ai_providers', this.aiProviders).catch(() => {});
+      auditLogger.log({
+        actorId: 'admin_root',
+        actorEmail: 'admin@srsgenie.ai',
+        actorRole: 'admin',
+        tenantId: 'tenant_master_001',
+        action: 'saas.provider.model_deleted',
+        status: 'SUCCESS',
+        details: { providerId: prov.id, modelId }
+      });
+      return true;
+    }
+    return false;
   }
 
   getAvailableModels(): (AIModelDefinition & { providerName: string; providerType: string; isProviderActive: boolean })[] {
     const modelsList: (AIModelDefinition & { providerName: string; providerType: string; isProviderActive: boolean })[] = [];
     for (const prov of this.aiProviders) {
       if (!prov.isActive) continue;
-      for (const m of prov.models) {
+      for (const m of (prov.models || [])) {
         if (m.isEnabled) {
           modelsList.push({
             ...m,
+            providerId: prov.id,
             providerName: prov.name,
             providerType: prov.type,
             isProviderActive: prov.isActive
@@ -1250,11 +1434,19 @@ class SaasStateStore {
 
   getDefaultModel(): string {
     const defProv = this.aiProviders.find(p => p.isDefault && p.isActive) || this.aiProviders.find(p => p.isActive);
-    if (defProv) {
+    if (defProv && Array.isArray(defProv.models)) {
       const defModel = defProv.models.find(m => m.isDefault && m.isEnabled) || defProv.models.find(m => m.isEnabled);
       if (defModel) return defModel.id;
     }
+    const anyModel = this.aiProviders.flatMap(p => p.models || []).find(m => m.isEnabled);
+    if (anyModel) return anyModel.id;
     return 'gemini-2.5-flash';
+  }
+
+  getDefaultModelDefinition(): (AIModelDefinition & { providerName: string; providerType: string; isProviderActive: boolean }) | null {
+    const available = this.getAvailableModels();
+    const defId = this.getDefaultModel();
+    return available.find(m => m.id === defId) || available[0] || null;
   }
 
   // --- ANALYTICS DASHBOARD ENGINE ---

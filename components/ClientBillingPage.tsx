@@ -15,8 +15,7 @@ import {
   Layers,
   Lock,
   ExternalLink,
-  Printer,
-  FileText
+  Printer
 } from 'lucide-react';
 import { User, SubscriptionTier, SaaSInvoice, PaymentTransactionRecord, PricingPlan, BillingAddress } from '../types';
 import { saasStore } from '../services/saasStore';
