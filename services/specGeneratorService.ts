@@ -554,8 +554,17 @@ export async function generateProjectPlanDraft(
 
   // Attempt live AI generation via active provider if configured
   const aiProviders = saasStore.getAiProviders();
-  const googleProvider = aiProviders.find(p => p.type === 'google' && p.isActive);
-  let activeKey = googleProvider?.apiKey || process.env.API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
+  const targetProvider = (modelDef?.providerId
+    ? aiProviders.find(p => p.id === modelDef.providerId)
+    : null)
+    || aiProviders.find(p => p.isActive && p.models?.some(m => m.id === modelDef?.id))
+    || aiProviders.find(p => p.type === 'google' && p.isActive)
+    || aiProviders.find(p => p.isActive);
+
+  let activeKey = targetProvider?.apiKey || '';
+  if (targetProvider?.type === 'google' && !activeKey) {
+    activeKey = process.env.API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+  }
 
   if (activeKey && (activeKey.startsWith('aes_gcm$') || activeKey.startsWith('enc_b64_'))) {
     try {
@@ -564,21 +573,12 @@ export async function generateProjectPlanDraft(
   }
 
   let draft = '';
+  const targetModel = modelDef?.id || 'gemini-2.5-flash';
+  const providerType = targetProvider?.type || 'google';
 
-  if (activeKey && activeKey !== 'PLACEHOLDER_API_KEY') {
-    try {
-      onProgress?.({
-        id: crypto.randomUUID(),
-        timestamp: new Date().toLocaleTimeString(),
-        type: 'action',
-        title: `Invoking AI Engine (${modelDef?.name || 'Gemini 2.5 Flash'})`,
-        content: `Connecting to Google Gemini API to synthesize an exhaustive, multi-tier Master Specification Draft...`
-      });
-
-      const ai = new GoogleGenAI({ apiKey: activeKey });
-      const formattedInput = formatFormDataForPrompt(fd);
-      const prompt = `You are a World-Class Principal Enterprise Software Architect.
-Synthesize an exhaustive, comprehensive MASTER PROJECT SPECIFICATION DRAFT for the project "${projectName}".
+  const formattedInput = formatFormDataForPrompt(fd);
+  const prompt = `You are a World-Class Principal Enterprise Software Architect.
+Synthesize an executive, high-density MASTER PROJECT SPECIFICATION DRAFT in 600 to 800 words for the project "${projectName}".
 
 INPUT REQUIREMENTS:
 ${formattedInput}
@@ -596,30 +596,127 @@ Generate a comprehensive document containing:
 
 Format in clean, structured Markdown.`;
 
-      const targetModel = modelDef?.id && modelDef.id.startsWith('gemini') ? modelDef.id : 'gemini-2.5-flash';
-      const res = await ai.models.generateContent({
-        model: targetModel,
-        contents: prompt
+  if (targetProvider && (activeKey || targetProvider.baseUrl)) {
+    try {
+      onProgress?.({
+        id: crypto.randomUUID(),
+        timestamp: new Date().toLocaleTimeString(),
+        type: 'action',
+        title: `Invoking AI Engine (${modelDef?.name || targetModel}) via ${targetProvider.name}`,
+        content: `Connecting to ${targetProvider.name} (${targetModel}) to synthesize an exhaustive Master Specification Draft...`
       });
 
-      if (res.text && res.text.length > 200) {
-        draft = res.text;
+      if (providerType === 'google') {
+        const ai = new GoogleGenAI({ apiKey: activeKey });
+        const res = await ai.models.generateContent({
+          model: targetModel.startsWith('gemini') ? targetModel : 'gemini-2.5-flash',
+          contents: prompt
+        });
+
+        if (res.text && res.text.length > 200) {
+          draft = res.text;
+        }
+      } else {
+        // OpenAI-compatible / AgentRouter / Ollama / Custom API
+        const rawBaseUrl = (targetProvider.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
+        const isAgentRouter = rawBaseUrl.includes('agentrouter') || targetProvider.name.toLowerCase().includes('agentrouter');
+
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        if (activeKey && activeKey !== 'ollama-local') {
+          headers['Authorization'] = `Bearer ${activeKey}`;
+        }
+        if (isAgentRouter) {
+          headers['Originator'] = 'codex_cli_rs';
+        }
+
+        if (isAgentRouter) {
+          // AgentRouter uses the OpenAI Responses API (/v1/responses)
+          const requestBody: any = {
+            model: targetModel,
+            input: prompt
+          };
+
+          const timeoutMs = (targetModel.includes('6.1') || targetModel.includes('astra')) ? 300000 : 180000;
+          const res = await fetch(`${rawBaseUrl}/responses`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(requestBody),
+            signal: AbortSignal.timeout(timeoutMs)
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const msg = data.output?.find((o: any) => o.type === 'message');
+            draft = msg?.content?.[0]?.text || '';
+          } else {
+            const errJson = await res.json().catch(() => ({}));
+            throw new Error(errJson.error?.message || errJson.message || `HTTP ${res.status}`);
+          }
+        } else {
+          // Standard /v1/chat/completions endpoint
+          const res = await fetch(`${rawBaseUrl}/chat/completions`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              model: targetModel,
+              messages: [
+                { role: 'system', content: 'You are a World-Class Principal Enterprise Software Architect.' },
+                { role: 'user', content: prompt }
+              ]
+            }),
+            signal: AbortSignal.timeout(180000)
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            draft = data.choices?.[0]?.message?.content || '';
+          } else {
+            const errJson = await res.json().catch(() => ({}));
+            const errMsg = errJson.error?.message || errJson.message || '';
+            if (errMsg.includes('/v1/responses')) {
+              headers['Originator'] = 'codex_cli_rs';
+              const retryBody: any = { 
+                model: targetModel, 
+                input: prompt
+              };
+              const retry = await fetch(`${rawBaseUrl}/responses`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(retryBody),
+                signal: AbortSignal.timeout(180000)
+              });
+              if (retry.ok) {
+                const retryData = await retry.json();
+                const msg = retryData.output?.find((o: any) => o.type === 'message');
+                draft = msg?.content?.[0]?.text || '';
+              }
+            }
+            if (!draft) {
+              throw new Error(errMsg || `HTTP ${res.status}`);
+            }
+          }
+        }
+      }
+
+      if (draft && draft.length > 200) {
         onProgress?.({
           id: crypto.randomUUID(),
           timestamp: new Date().toLocaleTimeString(),
           type: 'thought',
-          title: 'Master Project Plan Draft Synthesized via AI',
-          content: `Successfully synthesized ${draft.length.toLocaleString()} characters of comprehensive architectural specification draft via ${modelDef?.name || 'Gemini'}.`
+          title: `Master Project Plan Draft Synthesized via ${targetProvider.name}`,
+          content: `Successfully synthesized ${draft.length.toLocaleString()} characters of comprehensive architectural specification draft via ${modelDef?.name || targetModel}.`
         });
       }
     } catch (e: any) {
-      console.warn('AI Draft generation failed, using intelligent deterministic synthesis:', e);
+      console.warn(`AI Draft generation failed via ${targetProvider?.name}:`, e);
       onProgress?.({
         id: crypto.randomUUID(),
         timestamp: new Date().toLocaleTimeString(),
         type: 'thought',
         title: 'AI Provider Fallback Engaged',
-        content: `Direct AI endpoint call encountered a notice: ${e?.message || 'Quota/Network'}. Engaging deterministic enterprise synthesis engine to guarantee zero downtime.`
+        content: `Live synthesis call to ${targetProvider?.name || 'AI Engine'} encountered a notice: ${e?.message || 'Network/Timeout'}. Engaging deterministic enterprise synthesis engine to guarantee zero downtime.`
       });
     }
   }

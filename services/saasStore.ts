@@ -275,6 +275,52 @@ const BASELINE_AI_PROVIDERS: AIModelProvider[] = [
         isDefault: false
       }
     ]
+  },
+  {
+    id: 'prov_agentrouter',
+    name: 'AgentRouter',
+    type: 'custom',
+    apiKey: 'sk-2fzyZmibBuOLhqmOzcyyq0UaU9bf2s8LOws0DaIkDim7sy1i',
+    baseUrl: 'https://agentrouter.org/v1',
+    isActive: true,
+    isDefault: false,
+    createdAt: '2026-11-03',
+    updatedAt: '2026-11-03',
+    models: [
+      {
+        id: 'gpt-5.6-sol',
+        name: 'GPT 5.6 Sol (Deep Engineer)',
+        providerId: 'prov_agentrouter',
+        providerName: 'AgentRouter',
+        contextWindow: '128K Tokens',
+        speed: 'Fast',
+        recommendedFor: 'Production SRS generation & rapid specs compilation',
+        isEnabled: true,
+        isDefault: true
+      },
+      {
+        id: 'gpt-6.1-sol',
+        name: 'GPT 6.1 Sol (DevDay 2026)',
+        providerId: 'prov_agentrouter',
+        providerName: 'AgentRouter',
+        contextWindow: '128K Tokens',
+        speed: 'Reasoning Deep',
+        recommendedFor: 'Frontier code synthesis & deep architectural reasoning',
+        isEnabled: true,
+        isDefault: false
+      },
+      {
+        id: 'gpt-6-astra',
+        name: 'GPT 6 Astra (Flagship Reasoning)',
+        providerId: 'prov_agentrouter',
+        providerName: 'AgentRouter',
+        contextWindow: '128K Tokens',
+        speed: 'Reasoning Deep',
+        recommendedFor: 'Complex multi-tier domain invariants & security proofs',
+        isEnabled: true,
+        isDefault: false
+      }
+    ]
   }
 ];
 
@@ -526,10 +572,13 @@ class SaasStateStore {
           this.businessSettings = { ...DEFAULT_BUSINESS_SETTINGS, ...data.businessSettings };
         }
         if (data.aiProviders && data.aiProviders.length > 0) {
-          this.aiProviders = data.aiProviders.map((p: any) => ({
+          const loaded = data.aiProviders.map((p: any) => ({
             ...p,
             models: Array.isArray(p.models) ? p.models : []
           }));
+          const existingIds = new Set(loaded.map((p: any) => p.id));
+          const missingBaselines = BASELINE_AI_PROVIDERS.filter(b => !existingIds.has(b.id));
+          this.aiProviders = [...loaded, ...missingBaselines];
         } else {
           this.aiProviders = [...BASELINE_AI_PROVIDERS];
         }
