@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { MarkdownViewer } from './MarkdownViewer';
 import {
   GenerationProgressState,
   AgentLogEntry,
@@ -377,13 +377,14 @@ export const AgentGenerationViewport: React.FC<AgentGenerationViewportProps> = (
           {activeTab === 'draft' && (
             <div className="flex-1 overflow-y-auto p-6 font-sans text-xs text-gray-200 leading-relaxed custom-scrollbar bg-ink/70">
               {progressState.draftText ? (
-                <div className="prose prose-invert prose-xs max-w-none">
-                  <ReactMarkdown>{progressState.draftText}</ReactMarkdown>
+                <div className="max-w-4xl mx-auto">
+                  <MarkdownViewer content={progressState.draftText} />
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-muted py-12">
-                  <FileText className="w-8 h-8 text-muted mb-2 animate-pulse" />
-                  <p>Synthesizing Master Project Plan Draft...</p>
+                  <FileText className="w-8 h-8 text-accent mb-3 animate-pulse" />
+                  <p className="font-display uppercase tracking-wider text-white">Synthesizing Master Project Plan Draft...</p>
+                  <p className="text-muted text-[11px] mt-1">Connecting to Frontier AI Engine to draft comprehensive architectural foundations.</p>
                 </div>
               )}
             </div>

@@ -1,7 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ProjectInput, SRSFormData, AIModelDefinition } from '../types';
-import { ChevronRight, ChevronLeft, FileText, Save, Eye, CheckCircle, ArrowLeft, Sparkles, HelpCircle, Cpu, Check, Layers } from 'lucide-react';
+import {
+  ChevronRight,
+  ChevronLeft,
+  FileText,
+  Save,
+  Eye,
+  CheckCircle,
+  ArrowLeft,
+  Sparkles,
+  HelpCircle,
+  Cpu,
+  Check,
+  Layers,
+  Upload,
+  Download,
+  Trash2,
+  AlertCircle,
+  CheckCircle2,
+  Clock
+} from 'lucide-react';
 import { saasStore } from '../services/saasStore';
+
+const DRAFT_STORAGE_KEY = 'srs_genie_active_form_draft';
 
 const SECTION_SHORT_TITLES: Record<string, string> = {
   project_overview: 'Overview',
@@ -32,12 +53,197 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
   const [formData, setFormData] = useState<SRSFormData>(initialData?.formData || {});
   const [viewMode, setViewMode] = useState<'form' | 'summary'>('form');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [savedDraftBanner, setSavedDraftBanner] = useState<{
+    timestamp: string;
+    projectName: string;
+    step: number;
+    data: SRSFormData;
+    modelId?: string;
+  } | null>(null);
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
 
   const availableModels = saasStore.getAvailableModels();
   const defaultModel = saasStore.getDefaultModel();
   const [selectedModelId, setSelectedModelId] = useState<string>(
     typeof defaultModel === 'string' ? defaultModel : (defaultModel as any)?.id || 'gemini-2.5-flash'
   );
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // Check for unsaved draft in localStorage on mount
+  useEffect(() => {
+    if (!initialData?.formData || Object.keys(initialData.formData).length === 0) {
+      try {
+        const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.formData && Object.keys(parsed.formData).length > 0) {
+            const pName = parsed.formData?.project_overview?.project_name || 'Untitled Draft';
+            setSavedDraftBanner({
+              timestamp: parsed.savedAt
+                ? new Date(parsed.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : 'Earlier session',
+              projectName: pName,
+              step: parsed.activeStep || 0,
+              data: parsed.formData,
+              modelId: parsed.selectedModelId
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('[WizardForm] Error checking saved draft:', e);
+      }
+    }
+  }, []);
+
+  // Debounced auto-save to localStorage
+  useEffect(() => {
+    if (Object.keys(formData).length === 0) return;
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          DRAFT_STORAGE_KEY,
+          JSON.stringify({
+            formData,
+            selectedModelId,
+            activeStep,
+            savedAt: new Date().toISOString()
+          })
+        );
+        setLastSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      } catch {}
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [formData, selectedModelId, activeStep]);
+
+  const handleSaveDraft = () => {
+    try {
+      localStorage.setItem(
+        DRAFT_STORAGE_KEY,
+        JSON.stringify({
+          formData,
+          selectedModelId,
+          activeStep,
+          savedAt: new Date().toISOString()
+        })
+      );
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setLastSavedTime(nowStr);
+      showToast(`Draft saved locally at ${nowStr}. You can close and continue anytime.`);
+    } catch {
+      showToast('Error saving draft locally.');
+    }
+  };
+
+  const handleResumeDraft = () => {
+    if (savedDraftBanner) {
+      setFormData(savedDraftBanner.data);
+      if (savedDraftBanner.modelId) setSelectedModelId(savedDraftBanner.modelId);
+      if (typeof savedDraftBanner.step === 'number') {
+        setActiveStep(Math.min(formSections.length - 1, Math.max(0, savedDraftBanner.step)));
+      }
+      showToast(`Resumed draft for "${savedDraftBanner.projectName}".`);
+      setSavedDraftBanner(null);
+    }
+  };
+
+  const handleDismissDraft = () => {
+    setSavedDraftBanner(null);
+  };
+
+  const handleClearDraft = () => {
+    if (confirm('Clear saved draft and start with a blank questionnaire?')) {
+      try {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+      } catch {}
+      setFormData({});
+      setActiveStep(0);
+      setSavedDraftBanner(null);
+      setLastSavedTime(null);
+      showToast('Draft cleared. Blank form loaded.');
+    }
+  };
+
+  const handleExportJson = () => {
+    const projectName = (formData['project_overview']?.['project_name'] as string) || 'srs-requirements';
+    const cleanName = projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const exportPayload = {
+      app: 'SRS Genie',
+      version: '2.5',
+      exportedAt: new Date().toISOString(),
+      projectName,
+      selectedModelId,
+      activeStep,
+      completionStats: getCompletionStats(),
+      formData
+    };
+    const dataStr = JSON.stringify(exportPayload, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${cleanName}-srs-draft-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast(`Exported "${projectName}" JSON draft.`);
+  };
+
+  const handleImportJsonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = event => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = JSON.parse(text);
+
+        // Accommodate direct formData or wrapped export payload
+        const importedFormData = parsed.formData || (parsed.project_overview ? parsed : null);
+
+        if (!importedFormData || typeof importedFormData !== 'object') {
+          showToast('Invalid SRS form JSON structure.');
+          return;
+        }
+
+        setFormData(importedFormData);
+        if (parsed.selectedModelId) {
+          setSelectedModelId(parsed.selectedModelId);
+        }
+        if (typeof parsed.activeStep === 'number') {
+          setActiveStep(Math.min(formSections.length - 1, Math.max(0, parsed.activeStep)));
+        }
+
+        const pName = (importedFormData['project_overview']?.['project_name'] as string) || 'Imported Project';
+        showToast(`Successfully imported requirements for "${pName}".`);
+
+        // Also save to local draft so it is preserved
+        localStorage.setItem(
+          DRAFT_STORAGE_KEY,
+          JSON.stringify({
+            formData: importedFormData,
+            selectedModelId: parsed.selectedModelId || selectedModelId,
+            activeStep: parsed.activeStep || 0,
+            savedAt: new Date().toISOString()
+          })
+        );
+      } catch (err: any) {
+        showToast(`Failed to parse JSON: ${err?.message || 'Invalid format'}`);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   const handleInputChange = (section: string, field: string, value: any) => {
     setFormData(prev => ({
@@ -1192,34 +1398,50 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
 
   const stats = getCompletionStats();
 
-  const exportData = () => {
-    const dataStr = JSON.stringify(formData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `srs-requirements-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-  };
-
   // Summary View
   if (viewMode === 'summary') {
     return (
       <div className="shell py-6">
+        {/* Floating Toast Notification */}
+        {toastMessage && (
+          <div className="fixed bottom-6 right-6 z-50 bg-box border border-accent text-white px-5 py-3 shadow-2xl flex items-center gap-3 animate-fadeIn">
+            <CheckCircle2 className="w-5 h-5 text-accent" />
+            <span className="text-xs font-mono">{toastMessage}</span>
+          </div>
+        )}
+
         <div className="agape-card overflow-hidden">
-          <div className="p-6 border-b border-line bg-box flex justify-between items-center">
+          <div className="p-6 border-b border-line bg-box flex flex-wrap justify-between items-center gap-4">
             <div>
               <div className="eyebrow mb-1">Pre-Flight Review</div>
               <h2 className="font-display text-xl font-semibold uppercase tracking-[0.06em] text-white">
                 Requirements Summary
               </h2>
             </div>
-            <button
-              onClick={() => setViewMode('form')}
-              className="btn btn-sm btn--ghost"
-            >
-              Back to Questionnaire
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSaveDraft}
+                className="btn btn-sm btn--ghost"
+                title="Save draft locally"
+              >
+                <Save className="w-4 h-4 mr-1 text-accent" />
+                Save Draft
+              </button>
+              <button
+                onClick={handleExportJson}
+                className="btn btn-sm btn--ghost"
+                title="Export requirements to JSON"
+              >
+                <Download className="w-4 h-4 mr-1" />
+                Export JSON
+              </button>
+              <button
+                onClick={() => setViewMode('form')}
+                className="btn btn-sm btn--ghost"
+              >
+                Back to Questionnaire
+              </button>
+            </div>
           </div>
 
           <div className="p-6 md:p-8 space-y-6">
@@ -1370,6 +1592,54 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
 
   return (
     <div className="shell py-6">
+      {/* Hidden File Input for JSON Import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,application/json"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-box border border-accent text-white px-5 py-3 shadow-2xl flex items-center gap-3 animate-fadeIn">
+          <CheckCircle2 className="w-5 h-5 text-accent" />
+          <span className="text-xs font-mono">{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Resume Unsaved Draft Banner */}
+      {savedDraftBanner && (
+        <div className="mb-4 bg-box border-l-4 border-accent p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-accent flex-shrink-0" />
+            <div>
+              <div className="text-xs font-display font-semibold text-white uppercase tracking-wider">
+                Unsaved Draft Found
+              </div>
+              <p className="text-xs text-muted font-sans mt-0.5">
+                Found a saved draft for <span className="text-white font-medium">"{savedDraftBanner.projectName}"</span> from {savedDraftBanner.timestamp} (Section {savedDraftBanner.step + 1} of 15).
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button
+              onClick={handleResumeDraft}
+              className="btn btn-xs btn--accent"
+            >
+              Resume Draft
+            </button>
+            <button
+              onClick={handleDismissDraft}
+              className="btn btn-xs btn--ghost"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="agape-card overflow-hidden">
          {/* Header */}
          <div className="p-6 border-b border-line bg-surface">
@@ -1382,7 +1652,7 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
                </h1>
              </div>
              
-             <div className="flex flex-wrap items-center gap-3">
+             <div className="flex flex-wrap items-center gap-2.5">
                {/* Quick Model Selector in Header */}
                <div className="flex items-center gap-2 bg-box px-3 py-1.5 border border-line text-xs font-display">
                  <Cpu className="w-3.5 h-3.5 text-accent" />
@@ -1400,18 +1670,56 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
                  </select>
                </div>
 
+               {/* Save Draft */}
                <button
-                 onClick={exportData}
+                 onClick={handleSaveDraft}
                  className="btn btn-sm btn--ghost"
+                 title="Save draft to local storage"
                >
-                 <Save className="w-4 h-4 mr-1 text-accent" />
-                 Save Draft
+                 <Save className="w-3.5 h-3.5 mr-1 text-accent" />
+                 <span>Save Draft</span>
+                 {lastSavedTime && (
+                   <span className="text-[10px] text-muted ml-1 hidden sm:inline">({lastSavedTime})</span>
+                 )}
                </button>
+
+               {/* Export JSON */}
+               <button
+                 onClick={handleExportJson}
+                 className="btn btn-sm btn--ghost"
+                 title="Export questionnaire data to JSON"
+               >
+                 <Download className="w-3.5 h-3.5 mr-1" />
+                 <span className="hidden sm:inline">Export</span> JSON
+               </button>
+
+               {/* Import JSON */}
+               <button
+                 onClick={handleImportJsonClick}
+                 className="btn btn-sm btn--ghost"
+                 title="Import questionnaire JSON from file"
+               >
+                 <Upload className="w-3.5 h-3.5 mr-1 text-cyan-400" />
+                 <span className="hidden sm:inline">Import</span> JSON
+               </button>
+
+               {/* Clear Draft */}
+               {stats.completed > 0 && (
+                 <button
+                   onClick={handleClearDraft}
+                   className="btn btn-sm btn--ghost hover:border-rose-500 hover:text-rose-400"
+                   title="Clear questionnaire answers"
+                 >
+                   <Trash2 className="w-3.5 h-3.5" />
+                 </button>
+               )}
+
+               {/* Review Summary */}
                <button
                  onClick={() => setViewMode('summary')}
                  className="btn btn-sm btn--ghost"
                >
-                 <Eye className="w-4 h-4 mr-1" />
+                 <Eye className="w-3.5 h-3.5 mr-1" />
                  Review
                </button>
              </div>

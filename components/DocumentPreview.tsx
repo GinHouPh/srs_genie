@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { MarkdownViewer } from './MarkdownViewer';
 import { GeneratedContent, VibeTask } from '../types';
 import {
   Download,
@@ -320,8 +320,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
                     {activeFileContent}
                   </pre>
                 ) : (
-                  <div className="prose prose-invert max-w-none text-body">
-                    <ReactMarkdown>{activeFileContent}</ReactMarkdown>
+                  <div className="max-w-4xl mx-auto py-2">
+                    <MarkdownViewer content={activeFileContent} />
                   </div>
                 )}
               </div>

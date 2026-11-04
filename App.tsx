@@ -203,8 +203,8 @@ export default function App() {
       phases: [
         { id: 'intake', name: 'Intake & Requirement Validation', description: 'Validate 15-section questionnaire', status: 'completed' },
         { id: 'drafting_plan', name: 'Master Project Plan Synthesis', description: 'Generate comprehensive draft', status: 'in_progress' },
-        { id: 'compiling_specs', name: 'Multi-Tier .specs Hierarchy Compilation', description: '22 canonical files', status: 'pending' },
         { id: 'extracting_tasks', name: 'Dynamic Task Extraction & Dependencies', description: 'Formulate bespoke atomic tasks', status: 'pending' },
+        { id: 'compiling_specs', name: 'Multi-Tier .specs Hierarchy Compilation', description: '22 canonical files', status: 'pending' },
         { id: 'finalizing', name: 'Verification & Package Finalization', description: 'Package .specs suite for download and MCP', status: 'pending' }
       ],
       currentPhaseId: 'drafting_plan',
@@ -248,18 +248,29 @@ export default function App() {
             } else if (logEntry.type === 'task_extracted') {
               tasksCount = logEntry.meta?.taskCount || tasksCount;
               currentPhaseId = 'extracting_tasks';
-            } else if (logEntry.title?.toLowerCase().includes('draft')) {
+            } else if (logEntry.type === 'draft_chunk' || (logEntry.type === 'thought' && logEntry.title?.toLowerCase().includes('draft'))) {
               currentPhaseId = 'drafting_plan';
-              if (logEntry.content && logEntry.content.length > 200) {
+              if (logEntry.content) {
                 draftText = logEntry.content;
               }
+            } else if (logEntry.title?.toLowerCase().includes('finaliz') || logEntry.title?.toLowerCase().includes('complete')) {
+              currentPhaseId = 'finalizing';
             }
 
             const updatedPhases = prev.phases.map(p => {
               if (p.id === currentPhaseId) {
                 return { ...p, status: 'in_progress' as const };
               }
+              if (currentPhaseId === 'drafting_plan' && p.id === 'intake') {
+                return { ...p, status: 'completed' as const };
+              }
+              if (currentPhaseId === 'extracting_tasks' && (p.id === 'intake' || p.id === 'drafting_plan')) {
+                return { ...p, status: 'completed' as const };
+              }
               if (currentPhaseId === 'compiling_specs' && (p.id === 'intake' || p.id === 'drafting_plan' || p.id === 'extracting_tasks')) {
+                return { ...p, status: 'completed' as const };
+              }
+              if (currentPhaseId === 'finalizing') {
                 return { ...p, status: 'completed' as const };
               }
               return p;
