@@ -1325,6 +1325,28 @@ class SaasStateStore {
     apiService.saveSetting('ai_providers', this.aiProviders).catch(() => {});
   }
 
+  toggleFavouriteProvider(id: string): boolean {
+    const prov = this.aiProviders.find(p => p.id === id);
+    if (!prov) return false;
+    prov.isFavourite = !prov.isFavourite;
+    this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveSetting('ai_providers', this.aiProviders).catch(() => {});
+    return Boolean(prov.isFavourite);
+  }
+
+  toggleFavouriteModel(providerId: string, modelId: string): boolean {
+    const prov = this.aiProviders.find(p => p.id === providerId);
+    if (!prov || !Array.isArray(prov.models)) return false;
+    const model = prov.models.find(m => m.id === modelId);
+    if (!model) return false;
+    model.isFavourite = !model.isFavourite;
+    this.saveToStorage();
+    this.notifyListeners();
+    apiService.saveSetting('ai_providers', this.aiProviders).catch(() => {});
+    return Boolean(model.isFavourite);
+  }
+
   // --- AI MODEL MANAGEMENT (Add / Toggle / Default / Delete) ---
 
   addModelToProvider(providerId: string, model: AIModelDefinition): boolean {

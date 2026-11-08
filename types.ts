@@ -17,6 +17,7 @@ export interface AIModelDefinition {
   recommendedFor: string;
   isEnabled: boolean;
   isDefault?: boolean;
+  isFavourite?: boolean;
 }
 
 export interface AIModelProvider {
@@ -27,6 +28,7 @@ export interface AIModelProvider {
   baseUrl?: string;
   isActive: boolean;
   isDefault: boolean;
+  isFavourite?: boolean;
   models: AIModelDefinition[];
   createdAt: string;
   updatedAt: string;
