@@ -90,8 +90,16 @@ export function buildCanonicalSpecsSuite(
   input: ProjectInput,
   dynamicTasks: VibeTask[],
   draftText: string | undefined,
-  recordFile: (path: string, tier: string, title: string, content: string) => void
+  recordFileCallback?: (path: string, tier: string, title: string, content: string) => void
 ): Record<string, string> {
+  const files: Record<string, string> = {};
+  const recordFile = (path: string, tier: string, title: string, content: string) => {
+    files[path] = content;
+    if (recordFileCallback) {
+      recordFileCallback(path, tier, title, content);
+    }
+  };
+
   const fd = input.formData || {};
   const projectName = input.name || (fd['project_overview']?.['project_name'] as string) || 'Modern Web Application';
   const industry = (fd['project_overview']?.['industry'] as string) || 'Technology & Software';

@@ -18,6 +18,7 @@ import { projectStore, SavedProjectRecord } from '../services/projectStore';
 interface DashboardProps {
   onNewProject: () => void;
   onSelectProject?: (proj: ProjectInput) => void;
+  onDeleteProject?: (id: string, name: string) => void;
   onOpenMcpHub?: () => void;
   onOpenAdmin?: () => void;
   onOpenSubscription?: () => void;
@@ -27,6 +28,7 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({
   onNewProject,
   onSelectProject,
+  onDeleteProject,
   onOpenMcpHub,
   onOpenAdmin,
   onOpenSubscription,
@@ -53,6 +55,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   useEffect(() => {
     refreshProjects();
+    return projectStore.subscribe(() => {
+      refreshProjects();
+    });
   }, [user]);
 
   const showToast = (msg: string) => {
@@ -62,8 +67,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const handleDelete = (id: string, name: string) => {
     projectStore.deleteProject(id);
-    refreshProjects();
+    if (onDeleteProject) {
+      onDeleteProject(id, name);
+    }
     setDeletingId(null);
+    refreshProjects();
     showToast(`Deleted specification: "${name}"`);
   };
 
@@ -447,8 +455,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </button>
               <button
                 onClick={() => {
-                  const proj = projects.find(p => p.id === deletingId);
-                  if (proj) handleDelete(proj.id, proj.name);
+                  if (deletingId) {
+                    const proj = projects.find(p => p.id === deletingId) || projectStore.getProjectById(deletingId);
+                    handleDelete(deletingId, proj?.name || 'Specification');
+                  }
                 }}
                 className="btn btn-sm btn--accent"
               >

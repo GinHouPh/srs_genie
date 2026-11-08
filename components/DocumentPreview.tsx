@@ -17,7 +17,8 @@ import {
   CheckCircle2,
   Edit3,
   Save,
-  RotateCcw
+  RotateCcw,
+  Trash2
 } from 'lucide-react';
 import { downloadSpecsZip, SPEC_TIERS } from '../services/specGeneratorService';
 import { McpHub } from './McpHub';
@@ -27,9 +28,10 @@ interface DocumentPreviewProps {
   content: GeneratedContent;
   onReset: () => void;
   onOpenMcpHub?: () => void;
+  onDeleteProject?: (id: string, name: string) => void;
 }
 
-export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onReset, onOpenMcpHub }) => {
+export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onReset, onOpenMcpHub, onDeleteProject }) => {
   const [activeTab, setActiveTab] = useState<'specs_suite' | 'tasks' | 'mcp_connect'>('specs_suite');
   const [selectedFilePath, setSelectedFilePath] = useState<string>('_index.md');
   const [viewSource, setViewSource] = useState<boolean>(false);
@@ -38,6 +40,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [isZipping, setIsZipping] = useState<boolean>(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
 
   const specs = content.specsHierarchy || {};
   const activeFileContent = specs[selectedFilePath] || content.srsMarkdown || '# Specification\n\nNo content loaded.';
@@ -90,6 +93,20 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
     }
     setIsEditing(false);
     showToast(`Saved changes to ${selectedFilePath}`);
+  };
+
+  const handleConfirmDelete = () => {
+    const projName = content.projectMeta?.projectName || 'Project';
+    const allProjects = projectStore.getAllProjects();
+    const matched = allProjects.find(p => p.name === projName);
+    const idToDelete = matched?.id || '';
+    if (onDeleteProject && idToDelete) {
+      onDeleteProject(idToDelete, projName);
+    } else if (idToDelete) {
+      projectStore.deleteProject(idToDelete);
+    }
+    setShowDeleteModal(false);
+    onReset();
   };
 
   return (
@@ -224,6 +241,15 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
           >
             <FileArchive className="w-4 h-4 mr-1.5" />
             {isZipping ? 'Packaging...' : 'Download .specs ZIP'}
+          </button>
+
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="btn btn-sm btn--ghost text-accent hover:border-accent hover:bg-accent/10 flex items-center gap-1.5"
+            title="Delete this entire specification suite"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete
           </button>
 
           <button
@@ -412,6 +438,38 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="agape-card p-6 w-full max-w-sm shadow-2xl">
+            <div className="w-10 h-10 bg-accent-soft border border-accent/30 flex items-center justify-center text-accent mb-4">
+              <Trash2 className="w-5 h-5" />
+            </div>
+            <h3 className="font-display text-lg font-semibold text-white tracking-[0.06em] uppercase mb-2">
+              Delete Specification?
+            </h3>
+            <p className="font-body text-xs text-muted mb-6">
+              Are you sure? All 22 canonical specification files for <strong className="text-white">"{content.projectMeta?.projectName || 'this project'}"</strong> will be permanently removed.
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="btn btn-sm btn--ghost"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="btn btn-sm btn--accent"
+              >
+                Delete All 22 Files
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -86,6 +86,50 @@ export default function App() {
     isComplete: false
   });
 
+  // Subscribe to project store: automatically purge active memory specs when active project is deleted
+  useEffect(() => {
+    return projectStore.subscribe(() => {
+      const all = projectStore.getAllProjects();
+      if (activeProjectName) {
+        const stillExists = all.some(p => p.name.trim().toLowerCase() === activeProjectName.trim().toLowerCase());
+        if (!stillExists && generatedContent) {
+          setGeneratedContent(null);
+          setActiveProjectName('');
+          if (appState === AppState.RESULT) {
+            setAppState(AppState.DASHBOARD);
+          }
+        }
+      }
+    });
+  }, [activeProjectName, generatedContent, appState]);
+
+  const handleDeleteProject = (deletedId: string, deletedName: string) => {
+    projectStore.deleteProject(deletedId);
+
+    const isActiveProject =
+      (activeProjectName && activeProjectName.trim().toLowerCase() === deletedName.trim().toLowerCase()) ||
+      (generatedContent?.projectMeta?.projectName &&
+        generatedContent.projectMeta.projectName.trim().toLowerCase() === deletedName.trim().toLowerCase());
+
+    if (isActiveProject) {
+      setGeneratedContent(null);
+      setActiveProjectName('');
+      setGenerationProgress({
+        phases: initialPhases,
+        currentPhaseId: 'intake',
+        logs: [],
+        draftText: '',
+        filesGeneratedCount: 0,
+        tasksExtractedCount: 0,
+        tokensStreamed: 0,
+        isComplete: false
+      });
+      if (appState === AppState.RESULT) {
+        setAppState(AppState.DASHBOARD);
+      }
+    }
+  };
+
   // Auth Handlers
   const handleOpenAuth = (mode: 'login' | 'register', plan?: SubscriptionTier) => {
     setAuthMode(mode);
@@ -404,6 +448,7 @@ export default function App() {
               user={user}
               onNewProject={handleStartNew}
               onSelectProject={handleSelectExistingProject}
+              onDeleteProject={handleDeleteProject}
               onOpenMcpHub={() => setAppState(AppState.MCP_HUB)}
               onOpenAdmin={() => setAppState(AppState.ADMIN_CONSOLE)}
               onOpenSubscription={() => setAppState(AppState.BILLING)}
@@ -501,6 +546,7 @@ export default function App() {
               content={generatedContent}
               onReset={handleBackToDash}
               onOpenMcpHub={() => setAppState(AppState.MCP_HUB)}
+              onDeleteProject={handleDeleteProject}
             />
           </div>
         )}

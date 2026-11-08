@@ -1034,6 +1034,25 @@ class SaasStateStore {
     return false;
   }
 
+  deleteMcpKeysForProject(projectId: string, projectName?: string): number {
+    const initial = this.mcpKeys.length;
+    this.mcpKeys = this.mcpKeys.filter(k => {
+      const matchId = k.projectId && k.projectId === projectId;
+      const matchName = projectName && k.projectName && k.projectName.trim().toLowerCase() === projectName.trim().toLowerCase();
+      return !matchId && !matchName;
+    });
+    if (this.mcpKeys.length < initial) {
+      this.saveToStorage();
+      this.notifyListeners();
+      auditLogger.log({
+        action: 'mcp.keys.purged_for_project',
+        status: 'SUCCESS',
+        details: { projectId, projectName, count: initial - this.mcpKeys.length }
+      });
+    }
+    return initial - this.mcpKeys.length;
+  }
+
   // --- SESSION LOGS ---
   getSessionLogs(): McpSessionLog[] {
     return [...this.sessionLogs];

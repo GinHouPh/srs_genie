@@ -117,6 +117,28 @@ export const McpHub: React.FC<McpHubProps> = ({
         </div>
       </div>
 
+      {/* Target Project / Active Spec Status Bar */}
+      {Object.keys(currentSpecs).length === 0 ? (
+        <div className="p-4 bg-box border border-accent/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <span className="badge--off text-[10px]">No Spec Loaded</span>
+            <span className="text-muted">
+              No specification suite is currently active. Any previously deleted project files have been purged. Select a project from Specifications to connect agent tools.
+            </span>
+          </div>
+          <button onClick={onBack} className="btn btn-xs btn--accent shrink-0">
+            Go to Projects
+          </button>
+        </div>
+      ) : (
+        <div className="p-3 bg-surface border border-line flex items-center justify-between text-xs font-mono">
+          <span className="text-muted">
+            Target Specification: <strong className="text-white font-sans">{projectName}</strong>
+          </span>
+          <span className="text-accent">{Object.keys(currentSpecs).length} Files Available</span>
+        </div>
+      )}
+
       {/* Main 2-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Keys & Configs (7 cols) */}

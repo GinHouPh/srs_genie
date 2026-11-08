@@ -2,6 +2,7 @@ import { ProjectInput, GeneratedContent, User } from '../types';
 import { synthesizeSpecsSuite } from './specGeneratorService';
 import { auditLogger } from './auditLogger';
 import { apiService } from './apiService';
+import { saasStore } from './saasStore';
 
 const STORAGE_PROJECTS_KEY = 'srs_genie_saved_projects';
 const STORAGE_SPECS_KEY = 'srs_genie_specs_hierarchies';
@@ -18,10 +19,24 @@ export interface SavedProjectRecord extends ProjectInput {
 
 class ProjectStore {
   private projects: SavedProjectRecord[] = [];
+  private listeners: (() => void)[] = [];
 
   constructor() {
     this.loadFromStorage();
     this.syncFromServer();
+  }
+
+  subscribe(listener: () => void): () => void {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
+  }
+
+  private notifyListeners() {
+    this.listeners.forEach(l => {
+      try { l(); } catch {}
+    });
   }
 
   async syncFromServer() {
@@ -119,6 +134,7 @@ class ProjectStore {
         }).catch(() => {});
       }
     } catch (e) {}
+    this.notifyListeners();
   }
 
   // Tenant-Aware CRUD Operations
@@ -276,16 +292,70 @@ class ProjectStore {
   }
 
   deleteProject(id: string): boolean {
+    const targetProj = this.projects.find(p => p.id === id);
     const initialLen = this.projects.length;
     this.projects = this.projects.filter(p => p.id !== id);
     this.saveToStorage();
+
+    // 1. Purge standalone specs storage if present
+    try {
+      const rawSpecs = localStorage.getItem(STORAGE_SPECS_KEY);
+      if (rawSpecs) {
+        const specsMap = JSON.parse(rawSpecs);
+        if (specsMap[id]) {
+          delete specsMap[id];
+          localStorage.setItem(STORAGE_SPECS_KEY, JSON.stringify(specsMap));
+        }
+      }
+    } catch {}
+
+    // 2. Purge questionnaire form draft if it matches the deleted project
+    try {
+      const rawDraft = localStorage.getItem('srs_genie_active_form_draft');
+      if (rawDraft) {
+        const parsedDraft = JSON.parse(rawDraft);
+        const draftProjectName =
+          parsedDraft?.formData?.project_overview?.project_name ||
+          parsedDraft?.formData?.projectName ||
+          parsedDraft?.formData?.name ||
+          parsedDraft?.projectName;
+        if (
+          targetProj &&
+          (draftProjectName?.trim().toLowerCase() === targetProj.name?.trim().toLowerCase() ||
+           parsedDraft?.id === id)
+        ) {
+          localStorage.removeItem('srs_genie_active_form_draft');
+        }
+      }
+    } catch {}
+
+    // 3. Purge MCP Agent keys linked to this project
+    if (targetProj) {
+      saasStore.deleteMcpKeysForProject(targetProj.id, targetProj.name);
+    }
+
+    auditLogger.log({
+      actorId: 'user',
+      action: 'project.deleted',
+      status: 'SUCCESS',
+      resourceType: 'project',
+      resourceId: id,
+      details: `Project "${targetProj?.name || id}" and all associated specification files were purged.`
+    });
+
     apiService.deleteProject(id).catch(() => {});
+    this.notifyListeners();
     return this.projects.length < initialLen;
   }
 
   clearAllProjects() {
     this.projects = [];
     this.saveToStorage();
+    try {
+      localStorage.removeItem(STORAGE_SPECS_KEY);
+      localStorage.removeItem('srs_genie_active_form_draft');
+    } catch {}
+    this.notifyListeners();
   }
 }
 
