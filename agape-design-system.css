@@ -1,0 +1,404 @@
+/* ==========================================================================
+   Agape Infosys / Qreate Digital Design System
+   Cyber-Minimalist Dark Design Schema
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Root Design Tokens
+   -------------------------------------------------------------------------- */
+:root {
+  --color-ink: #0c0c0c;
+  --color-surface: #141414;
+  --color-box: #2c2c2c;
+  --color-line: #383838;
+  --color-muted: #828282;
+  --color-body: #d8d8d8;
+  --color-headline: #ffffff;
+  --color-accent: #d90429;
+  --color-accent-soft: rgba(217, 4, 41, 0.14);
+  --color-accent-border: rgba(217, 4, 41, 0.35);
+  --color-on-accent: #ffffff;
+
+  --font-display: 'Akshar', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Roboto', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  --letter-spacing-body: 0.03em;
+  --letter-spacing-button: 0.22em;
+  --letter-spacing-eyebrow: 0.34em;
+}
+
+/* --------------------------------------------------------------------------
+   2. Base & Scrollbars
+   -------------------------------------------------------------------------- */
+html {
+  background-color: var(--color-ink);
+  color: var(--color-body);
+  font-family: var(--font-body);
+  letter-spacing: var(--letter-spacing-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-ink);
+  color: var(--color-body);
+  min-height: 100vh;
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) var(--color-ink);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-ink);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+
+/* --------------------------------------------------------------------------
+   3. Layout Primitives
+   -------------------------------------------------------------------------- */
+.shell {
+  width: 100%;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .shell {
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .shell {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  .shell {
+    padding-left: 3.5rem;
+    padding-right: 3.5rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. Eyebrow (Signature Agape Red Rule + Uppercase Tracked Label)
+   -------------------------------------------------------------------------- */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: var(--letter-spacing-eyebrow);
+  color: var(--color-accent);
+  text-transform: uppercase;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.eyebrow::before {
+  content: '';
+  display: inline-block;
+  height: 1px;
+  width: 2.5rem;
+  background-color: var(--color-accent);
+}
+
+/* --------------------------------------------------------------------------
+   5. Buttons
+   -------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border: 0;
+  border-radius: 0;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: var(--letter-spacing-button);
+  text-transform: uppercase;
+  transition: all 0.25s ease-in-out;
+  padding: 10px 22px;
+  line-height: 1.2;
+  cursor: pointer;
+  text-decoration: none;
+  user-select: none;
+}
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+}
+
+.btn--accent {
+  background-color: var(--color-accent);
+  color: #ffffff;
+}
+
+.btn--accent:hover {
+  background-color: #ffffff;
+  color: #0c0c0c;
+}
+
+.btn--solid {
+  background-color: var(--color-box);
+  color: #ffffff;
+}
+
+.btn--solid:hover {
+  background-color: var(--color-accent);
+  color: #ffffff;
+}
+
+.btn--ghost {
+  border: 1px solid var(--color-line);
+  background-color: transparent;
+  color: #ffffff;
+}
+
+.btn--ghost:hover {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: #ffffff;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  background-color: var(--color-surface);
+  color: var(--color-body);
+  border: 1px solid var(--color-line);
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  border-color: var(--color-accent);
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   6. Badges & Tags
+   -------------------------------------------------------------------------- */
+.badge--on {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent-border);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  line-height: 1.4;
+  border-radius: 0;
+}
+
+.badge--off {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: var(--color-box);
+  color: var(--color-muted);
+  border: 1px solid var(--color-line);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  line-height: 1.4;
+  border-radius: 0;
+}
+
+/* --------------------------------------------------------------------------
+   7. Stat Indicators
+   -------------------------------------------------------------------------- */
+.stat {
+  border-bottom: 1px solid var(--color-line);
+  padding-bottom: 1.25rem;
+}
+
+.stat__value {
+  display: block;
+  font-family: var(--font-display);
+  color: #ffffff;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.stat__label {
+  margin-top: 0.5rem;
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   8. Form Fields & Inputs
+   -------------------------------------------------------------------------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.field__label {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.agape-input {
+  width: 100%;
+  background-color: transparent;
+  border-bottom: 1px solid var(--color-line);
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  padding-bottom: 0.5rem;
+  padding-top: 0.25rem;
+  font-family: var(--font-body);
+  color: #ffffff;
+  outline: none;
+  transition: border-color 0.25s;
+  border-radius: 0;
+}
+
+.agape-input:focus {
+  border-color: var(--color-accent);
+}
+
+.agape-input::placeholder {
+  color: var(--color-muted);
+}
+
+/* Boxed Input Alternative */
+.input-boxed {
+  width: 100%;
+  background-color: var(--color-ink);
+  border: 1px solid var(--color-line);
+  padding: 0.625rem 0.875rem;
+  font-family: var(--font-body);
+  color: #ffffff;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-boxed:focus {
+  border-color: var(--color-accent);
+}
+
+.input-boxed::placeholder {
+  color: var(--color-muted);
+}
+
+/* --------------------------------------------------------------------------
+   9. Cards & Panels
+   -------------------------------------------------------------------------- */
+.agape-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-line);
+  transition: border-color 0.25s ease;
+  border-radius: 0;
+}
+
+.agape-card:hover {
+  border-color: rgba(217, 4, 41, 0.4);
+}
+
+/* Corner Diagonal Accent Fold */
+.corner-fold {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6rem;
+  height: 6rem;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.corner-fold__triangle {
+  width: 8rem;
+  height: 8rem;
+  background-color: var(--color-accent);
+  transform: rotate(45deg) translate(1.25rem, -4rem);
+  transform-origin: bottom left;
+  opacity: 0.8;
+}
+
+/* --------------------------------------------------------------------------
+   10. Tables & Data Lists
+   -------------------------------------------------------------------------- */
+.agape-table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+}
+
+.agape-table th {
+  padding: 0.75rem 1rem;
+  background-color: var(--color-box);
+  color: var(--color-muted);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.agape-table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-body);
+  font-size: 0.875rem;
+}
+
+.agape-table tr:hover td {
+  background-color: rgba(44, 44, 44, 0.4);
+}
+

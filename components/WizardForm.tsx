@@ -18,9 +18,14 @@ import {
   Trash2,
   AlertCircle,
   CheckCircle2,
-  Clock
+  Clock,
+  Paperclip,
+  Edit3,
+  X,
+  FileCode
 } from 'lucide-react';
 import { saasStore } from '../services/saasStore';
+import { MarkdownViewer } from './MarkdownViewer';
 
 const DRAFT_STORAGE_KEY = 'srs_genie_active_form_draft';
 
@@ -40,6 +45,271 @@ const SECTION_SHORT_TITLES: Record<string, string> = {
   timeline_budget: 'Timeline',
   risks_assumptions: 'Risks',
   additional: 'Additional'
+};
+
+interface ProjectSummaryEditorProps {
+  value: string;
+  fileName?: string;
+  onChange: (value: string) => void;
+  onFileAttached: (fileName: string, content: string) => void;
+  onClearAttachment: () => void;
+  showToast: (msg: string) => void;
+  placeholder?: string;
+}
+
+const ProjectSummaryEditor: React.FC<ProjectSummaryEditorProps> = ({
+  value,
+  fileName,
+  onChange,
+  onFileAttached,
+  onClearAttachment,
+  showToast,
+  placeholder
+}) => {
+  const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
+  const [isDragging, setIsDragging] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const wordCount = value ? value.trim().split(/\s+/).filter(Boolean).length : 0;
+  const charCount = value ? value.length : 0;
+
+  const validateAndProcessFile = (file: File) => {
+    setErrorMsg(null);
+    const validExtensions = ['.md', '.markdown', '.txt'];
+    const lowerName = file.name.toLowerCase();
+    const isExtensionValid = validExtensions.some(ext => lowerName.endsWith(ext));
+
+    if (!isExtensionValid) {
+      const ext = lowerName.includes('.') ? lowerName.substring(lowerName.lastIndexOf('.')) : 'unknown';
+      setErrorMsg(`Unsupported file type (${ext}). Only Markdown (.md) and plain text (.txt) files are allowed.`);
+      showToast('Invalid file format. Only .md and .txt files are supported.');
+      return;
+    }
+
+    // 5MB safeguard
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg(`File "${file.name}" is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 5 MB.`);
+      showToast('File too large (max 5 MB).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = (e.target?.result as string) || '';
+      onFileAttached(file.name, content);
+      showToast(`Attached "${file.name}" (${(file.size / 1024).toFixed(1)} KB) and loaded into Project Summary.`);
+    };
+    reader.onerror = () => {
+      setErrorMsg(`Failed to read "${file.name}".`);
+      showToast('Error reading attached file.');
+    };
+    reader.readAsText(file);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      validateAndProcessFile(file);
+    }
+    e.target.value = '';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      validateAndProcessFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  return (
+    <div
+      className={`border transition-all ${
+        isDragging
+          ? 'border-accent ring-2 ring-accent/30 bg-accent/5'
+          : 'border-line bg-ink/40'
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Hidden File Input for Attachment */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".md,.markdown,.txt,text/markdown,text/plain"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
+      {/* Editor Toolbar */}
+      <div className="p-3 bg-surface border-b border-line flex flex-wrap items-center justify-between gap-3">
+        {/* Left: Mode Tabs & Attachment Button */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Write / Preview Tab Group */}
+          <div className="flex items-center border border-line bg-box p-0.5">
+            <button
+              type="button"
+              onClick={() => setActiveTab('write')}
+              className={`flex items-center gap-1.5 px-3 py-1 text-xs font-display uppercase tracking-wider transition-colors ${
+                activeTab === 'write'
+                  ? 'bg-accent text-white font-semibold'
+                  : 'text-muted hover:text-white'
+              }`}
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Write</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('preview')}
+              className={`flex items-center gap-1.5 px-3 py-1 text-xs font-display uppercase tracking-wider transition-colors ${
+                activeTab === 'preview'
+                  ? 'bg-accent text-white font-semibold'
+                  : 'text-muted hover:text-white'
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Preview</span>
+            </button>
+          </div>
+
+          {/* Attach .md / .txt button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-box border border-line hover:border-line-hover text-white text-xs font-display uppercase tracking-wider transition-all"
+            title="Attach a Markdown (.md) or Text (.txt) file"
+          >
+            <Paperclip className="w-3.5 h-3.5 text-accent" />
+            <span>Attach File</span>
+            <span className="text-[10px] text-muted normal-case font-mono">(.md, .txt)</span>
+          </button>
+
+          {/* Attached File Chip */}
+          {fileName && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-surface border border-accent text-accent text-xs">
+              <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="font-mono text-[11px] truncate max-w-[220px]" title={fileName}>
+                {fileName}
+              </span>
+              <button
+                type="button"
+                onClick={onClearAttachment}
+                className="text-muted hover:text-rose-400 ml-1 p-0.5"
+                title="Remove attached file reference"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Word Count & Clear */}
+        <div className="flex items-center gap-3 text-xs font-mono text-muted">
+          <span>
+            {wordCount} {wordCount === 1 ? 'word' : 'words'} · {charCount} chars
+          </span>
+          {value && (
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm('Clear the project summary text?')) {
+                  onChange('');
+                  onClearAttachment();
+                  showToast('Project summary cleared.');
+                }
+              }}
+              className="text-muted hover:text-rose-400 p-1 transition-colors"
+              title="Clear summary text"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Error Message Banner */}
+      {errorMsg && (
+        <div className="p-3 bg-rose-950/60 border-b border-rose-500/40 text-rose-300 text-xs flex items-center justify-between gap-3 animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setErrorMsg(null)}
+            className="text-muted hover:text-white p-0.5"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Editor Content Area */}
+      <div className="relative">
+        {activeTab === 'write' ? (
+          <textarea
+            id="project_overview_project_summary"
+            rows={10}
+            className="w-full p-4 bg-ink/70 border-0 focus:ring-0 text-white placeholder:text-muted/60 font-body text-xs sm:text-sm leading-relaxed outline-none resize-y min-h-[220px]"
+            placeholder={placeholder}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+          />
+        ) : (
+          <div className="p-4 sm:p-6 bg-ink/90 min-h-[220px] max-h-[550px] overflow-y-auto">
+            {value && value.trim() ? (
+              <MarkdownViewer content={value} />
+            ) : (
+              <div className="py-12 text-center text-muted">
+                <FileCode className="w-8 h-8 mx-auto mb-2 text-muted/40" />
+                <p className="font-display text-xs uppercase tracking-wider">No Summary Content Yet</p>
+                <p className="text-xs font-body mt-1">Switch to the "Write" tab to type your specification or click "Attach File" to import a .md/.txt file.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Drag & Drop Overlay Hint */}
+        {isDragging && (
+          <div className="absolute inset-0 bg-ink/90 border-2 border-dashed border-accent flex flex-col items-center justify-center p-6 text-center pointer-events-none z-10 animate-fadeIn">
+            <Upload className="w-10 h-10 text-accent mb-2 animate-bounce" />
+            <p className="font-display text-sm uppercase tracking-wider text-white font-semibold">Drop Markdown or Text File Here</p>
+            <p className="text-xs text-muted font-mono mt-1">Only .md and .txt files are accepted</p>
+          </div>
+        )}
+      </div>
+
+      {/* Editor Footer / Help Tip */}
+      <div className="p-2.5 bg-surface/60 border-t border-line/60 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted">
+        <div className="flex items-center gap-1.5">
+          <HelpCircle className="w-3.5 h-3.5 text-accent flex-shrink-0" />
+          <span>
+            Type text or GitHub Markdown, or attach a <code className="text-white font-mono bg-box px-1 py-0.5">.md</code> or <code className="text-white font-mono bg-box px-1 py-0.5">.txt</code> file directly.
+          </span>
+        </div>
+        <span className="text-[10px] uppercase font-display tracking-wider text-muted/80">
+          Strict File Formats: .md, .txt only
+        </span>
+      </div>
+    </div>
+  );
 };
 
 interface WizardFormProps {
@@ -288,6 +558,14 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
           type: 'text', 
           required: true, 
           placeholder: 'Enter your project name' 
+        },
+        {
+          id: 'project_summary',
+          label: 'Project Summary & Build Specification',
+          type: 'large_text_editor',
+          required: false,
+          placeholder: 'Describe the project you want to build in detail: overarching vision, target user workflows, specific business capabilities, architectural requirements, or paste your specification here...\n\nYou can also attach a Markdown (.md) or Text (.txt) file using the attachment button above.',
+          rows: 10
         },
         { 
           id: 'industry', 
@@ -1197,6 +1475,26 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
     const value = formData[sectionId]?.[fieldId] || '';
     const textValue = formData[sectionId]?.[`${fieldId}_text`] || '';
 
+    if (field.type === 'large_text_editor') {
+      const fileName = formData[sectionId]?.['project_summary_file_name'] as string;
+      return (
+        <ProjectSummaryEditor
+          value={value as string}
+          fileName={fileName}
+          onChange={(newVal) => handleInputChange(sectionId, fieldId, newVal)}
+          onFileAttached={(fName, content) => {
+            handleInputChange(sectionId, fieldId, content);
+            handleInputChange(sectionId, 'project_summary_file_name', fName);
+          }}
+          onClearAttachment={() => {
+            handleInputChange(sectionId, 'project_summary_file_name', '');
+          }}
+          showToast={showToast}
+          placeholder={field.placeholder}
+        />
+      );
+    }
+
     if (field.type === 'text_only') {
       return (
         <textarea
@@ -1227,8 +1525,8 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
       const isSelected = (opt: string) => value === opt;
       const hasLongOptions = field.options?.some((opt: string) => opt.length > 55);
       const gridClass = hasLongOptions
-        ? 'grid grid-cols-1 md:grid-cols-2 gap-2'
-        : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2';
+        ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5'
+        : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-2.5';
 
       return (
         <div className="space-y-3">
@@ -1294,8 +1592,8 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
       const selectedValues = (value as string[]) || [];
       const hasLongOptions = field.options?.some((opt: string) => opt.length > 55);
       const gridClass = hasLongOptions
-        ? 'grid grid-cols-1 md:grid-cols-2 gap-2'
-        : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2';
+        ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5'
+        : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-2.5';
 
       return (
         <div className="space-y-3">
@@ -1486,6 +1784,28 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
                       const value = sectionData[field.id];
                       const textValue = sectionData[`${field.id}_text`];
                       if (!value || (Array.isArray(value) && value.length === 0)) return null;
+
+                      if (field.id === 'project_summary') {
+                        const fileName = sectionData['project_summary_file_name'] as string;
+                        return (
+                          <div key={field.id} className="border-l-2 border-accent pl-4 py-2 bg-box/40 p-4 border border-line">
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                              <dt className="font-display text-xs uppercase tracking-[0.16em] text-accent font-semibold">
+                                {field.label}
+                              </dt>
+                              {fileName && (
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-surface border border-accent text-accent text-[11px] font-mono">
+                                  <FileText className="w-3 h-3" />
+                                  Attached: {fileName}
+                                </span>
+                              )}
+                            </div>
+                            <dd className="max-h-[350px] overflow-y-auto pr-2">
+                              <MarkdownViewer content={value as string} />
+                            </dd>
+                          </div>
+                        );
+                      }
 
                       return (
                         <div key={field.id} className="border-l-2 border-accent pl-4 py-1">
@@ -1777,10 +2097,10 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
          </div>
 
          {/* Form Body */}
-         <div className="p-6 md:p-10 bg-ink" ref={scrollRef}>
-            <div className="max-w-4xl mx-auto">
+         <div className="p-6 md:p-8 bg-ink" ref={scrollRef}>
+            <div className="w-full">
               <div className="flex items-center gap-4 mb-8 pb-6 border-b border-line">
-                 <div className="w-12 h-12 bg-box border border-line flex items-center justify-center text-2xl">
+                 <div className="w-12 h-12 bg-box border border-line flex items-center justify-center text-2xl flex-shrink-0">
                     {currentSection.icon}
                  </div>
                  <div>

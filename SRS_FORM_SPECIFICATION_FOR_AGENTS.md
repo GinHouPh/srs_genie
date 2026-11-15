@@ -60,11 +60,12 @@ export const formatFormDataForPrompt = (formData: SRSFormData): string => {
 
 ### Section 1: `project_overview` — 1. Project Overview
 - **Section Icon:** `📋`
-- **Field Count:** 7
+- **Field Count:** 8
 
 | Field ID | Label | Type | Required | Options / Details |
 |:---|:---|:---|:---:|:---|
 | `project_name` | **Project Name** | `text` | ✅ **Required** | *Placeholder:* "Enter your project name" |
+| `project_summary` | **Project Summary & Build Specification** | `large_text_editor` | Optional | Large format editor with Markdown preview. Accepts direct typing and file attachments (`.md`, `.txt` only). Ingested by AI SpecAgent.<br/>*Placeholder:* "Describe the project you want to build in detail..." |
 | `industry` | **Industry/Domain** | `choice_with_text` | ✅ **Required** | `E-commerce & Retail`, `Healthcare & Medical`, `Finance & Banking`, `Education & E-learning`, `Real Estate`, `Travel & Hospitality`, `Food & Restaurant`, `Logistics & Transportation`, `Manufacturing`, `Media & Entertainment`, `Social Networking`, `Human Resources`, `Customer Relationship Management (CRM)`, `Project Management`, `Marketing & Advertising`, `Insurance`, `Legal Services`, `Non-profit & NGO`, `Government & Public Sector`, `Sports & Fitness`, `Agriculture`, `Energy & Utilities`, `Telecommunications`, `Other`<br/>*Extra details placeholder:* "If Other or additional details, please specify..." |
 | `project_type` | **Type of Project** | `choice_with_text` | ✅ **Required** | `New Product Development`, `Redesign/Modernization of Existing System`, `Feature Enhancement/Addition`, `System Integration`, `Migration Project`, `Proof of Concept (POC)`, `Minimum Viable Product (MVP)`, `Full-Scale Production System`, `Other`<br/>*Extra details placeholder:* "Please provide additional details..." |
 | `business_model` | **Business Model** | `multiple_choice_with_text` | Optional | `B2B (Business to Business)`, `B2C (Business to Consumer)`, `B2B2C`, `C2C (Consumer to Consumer)`, `Marketplace/Platform`, `Subscription-based (SaaS)`, `Freemium`, `One-time Purchase`, `Commission-based`, `Advertising-based`, `Other`<br/>*Extra details placeholder:* "Describe your business model in detail..." |

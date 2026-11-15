@@ -1,0 +1,101 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "name": "Agape Infosys / Qreate Digital Cyber-Dark Design Schema",
+  "version": "1.0.0",
+  "description": "Signature cyber-minimalist dark mode design system used by SRS Genie and Agape Infosys.",
+  "color": {
+    "ink": {
+      "value": "#0c0c0c",
+      "type": "color",
+      "description": "Deepest canvas background / root body ink"
+    },
+    "surface": {
+      "value": "#141414",
+      "type": "color",
+      "description": "Card, modal, and panel background"
+    },
+    "box": {
+      "value": "#2c2c2c",
+      "type": "color",
+      "description": "Elevated containers, wells, code blocks, inactive tabs, and hover states"
+    },
+    "line": {
+      "value": "#383838",
+      "type": "color",
+      "description": "Structural borders, grid lines, dividers, and scrollbar thumbs"
+    },
+    "muted": {
+      "value": "#828282",
+      "type": "color",
+      "description": "Secondary copy, subtitles, metadata, inactive labels, and placeholders"
+    },
+    "body": {
+      "value": "#d8d8d8",
+      "type": "color",
+      "description": "Primary readable paragraph and body copy"
+    },
+    "headline": {
+      "value": "#ffffff",
+      "type": "color",
+      "description": "Headings, titles, active badges, and high-contrast text"
+    },
+    "accent": {
+      "value": "#d90429",
+      "type": "color",
+      "description": "Signature Agape crimson red brand accent"
+    },
+    "accentSoft": {
+      "value": "rgba(217, 4, 41, 0.14)",
+      "type": "color",
+      "description": "Soft red tinted background for active badges, highlights, and alerts"
+    },
+    "accentBorder": {
+      "value": "rgba(217, 4, 41, 0.35)",
+      "type": "color",
+      "description": "Accent border for active pills, cards hover, and badges"
+    },
+    "onAccent": {
+      "value": "#ffffff",
+      "type": "color",
+      "description": "Contrast text color on top of crimson accent surfaces"
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "display": {
+        "value": ["Akshar", "ui-sans-serif", "system-ui", "sans-serif"],
+        "type": "fontFamily",
+        "description": "Condensed technical sans-serif for headings, eyebrows, buttons, stats, and navigation"
+      },
+      "body": {
+        "value": ["Roboto", "ui-sans-serif", "system-ui", "sans-serif"],
+        "type": "fontFamily",
+        "description": "Clean legible neutral grotesque sans-serif for prose and form controls"
+      },
+      "mono": {
+        "value": ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"],
+        "type": "fontFamily",
+        "description": "Monospaced font for tokens, paths, hashes, and code blocks"
+      }
+    },
+    "letterSpacing": {
+      "tight": { "value": "0.03em", "type": "letterSpacing" },
+      "wide": { "value": "0.12em", "type": "letterSpacing" },
+      "wider": { "value": "0.16em", "type": "letterSpacing" },
+      "button": { "value": "0.22em", "type": "letterSpacing" },
+      "eyebrow": { "value": "0.34em", "type": "letterSpacing" }
+    }
+  },
+  "layout": {
+    "maxWidth": {
+      "content": { "value": "1300px", "type": "dimension" }
+    },
+    "shellPadding": {
+      "mobile": { "value": "1rem", "type": "dimension" },
+      "sm": { "value": "1.75rem", "type": "dimension" },
+      "lg": { "value": "2.5rem", "type": "dimension" },
+      "2xl": { "value": "3.5rem", "type": "dimension" }
+    }
+  }
+}
+

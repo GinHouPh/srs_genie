@@ -67,10 +67,10 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
 
   const initialPhases: GenerationPhase[] = [
-    { id: 'intake', name: 'Intake & Requirement Validation', description: 'Validate 15-section questionnaire', status: 'completed' },
-    { id: 'drafting_plan', name: 'Master Project Plan Synthesis', description: 'Generate comprehensive draft', status: 'pending' },
-    { id: 'compiling_specs', name: 'Multi-Tier .specs Hierarchy Compilation', description: '22 canonical files', status: 'pending' },
-    { id: 'extracting_tasks', name: 'Dynamic Task Extraction & Dependencies', description: 'Formulate bespoke atomic tasks', status: 'pending' },
+    { id: 'intake', name: 'Form Intake & Requirements Consolidation', description: 'Consolidate 15-section questionnaire', status: 'completed' },
+    { id: 'strategic_planning', name: '8 Staging Plans Synthesis', description: 'Agent drafts PRD, designs, architecture, tech specs, roadmap, risk, QA, deploy', status: 'pending' },
+    { id: 'reading_specs', name: 'Reading .specs Architecture & Rules', description: 'Agent inspects 6-tier hierarchy & cascade rules', status: 'pending' },
+    { id: 'updating_specs', name: 'Updating 22 .specs Files from Plan', description: 'Agent derives dynamic tasks & updates canonical specs', status: 'pending' },
     { id: 'finalizing', name: 'Verification & Package Finalization', description: 'Package .specs suite for download and MCP', status: 'pending' }
   ];
 
@@ -245,23 +245,24 @@ export default function App() {
 
     setGenerationProgress({
       phases: [
-        { id: 'intake', name: 'Intake & Requirement Validation', description: 'Validate 15-section questionnaire', status: 'completed' },
-        { id: 'drafting_plan', name: 'Master Project Plan Synthesis', description: 'Generate comprehensive draft', status: 'in_progress' },
-        { id: 'extracting_tasks', name: 'Dynamic Task Extraction & Dependencies', description: 'Formulate bespoke atomic tasks', status: 'pending' },
-        { id: 'compiling_specs', name: 'Multi-Tier .specs Hierarchy Compilation', description: '22 canonical files', status: 'pending' },
+        { id: 'intake', name: 'Form Intake & Requirements Consolidation', description: 'Consolidate 15-section questionnaire', status: 'completed' },
+        { id: 'strategic_planning', name: '8 Staging Plans Synthesis', description: 'Agent drafts PRD, designs, architecture, tech specs, roadmap, risk, QA, deploy', status: 'in_progress' },
+        { id: 'reading_specs', name: 'Reading .specs Architecture & Rules', description: 'Agent inspects 6-tier hierarchy & cascade rules', status: 'pending' },
+        { id: 'updating_specs', name: 'Updating 22 .specs Files from Plan', description: 'Agent derives dynamic tasks & updates canonical specs', status: 'pending' },
         { id: 'finalizing', name: 'Verification & Package Finalization', description: 'Package .specs suite for download and MCP', status: 'pending' }
       ],
-      currentPhaseId: 'drafting_plan',
+      currentPhaseId: 'strategic_planning',
       logs: [
         {
           id: crypto.randomUUID(),
           timestamp: new Date().toLocaleTimeString(),
           type: 'thought',
-          title: 'Initializing Autonomous Spec Generator',
-          content: `Ingested 15-section questionnaire for "${data.name}". Beginning Master Project Plan Draft synthesis.`
+          title: 'Initializing SpecAgent Micro-Agent',
+          content: `Ingested 15-section questionnaire for "${data.name}". Beginning 8 Staging Planning Documents synthesis.`
         }
       ],
       draftText: '',
+      strategicPlans: {},
       filesGeneratedCount: 0,
       tasksExtractedCount: 0,
       tokensStreamed: 28500,
@@ -281,20 +282,26 @@ export default function App() {
         (logEntry) => {
           setGenerationProgress(prev => {
             const nextLogs = [...prev.logs, logEntry];
-            let currentPhaseId = prev.currentPhaseId;
+            let currentPhaseId: GenerationPhaseId = prev.currentPhaseId;
             let filesCount = prev.filesGeneratedCount;
             let tasksCount = prev.tasksExtractedCount;
             let draftText = prev.draftText;
+            const nextPlans = { ...(prev.strategicPlans || {}) };
+
+            if (logEntry.type === 'draft_chunk' && logEntry.meta?.file) {
+              nextPlans[logEntry.meta.file] = logEntry.content;
+            }
 
             if (logEntry.type === 'file_created') {
               filesCount = Math.min(22, filesCount + 1);
-              currentPhaseId = 'compiling_specs';
+              currentPhaseId = 'updating_specs';
             } else if (logEntry.type === 'task_extracted') {
               tasksCount = logEntry.meta?.taskCount || tasksCount;
-              currentPhaseId = 'extracting_tasks';
-            } else if (logEntry.type === 'draft_chunk' || (logEntry.type === 'thought' && logEntry.title?.toLowerCase().includes('draft'))) {
-              currentPhaseId = 'drafting_plan';
-              if (logEntry.content) {
+              currentPhaseId = 'updating_specs';
+            } else if (logEntry.title?.toLowerCase().includes('reading .specs') || logEntry.title?.toLowerCase().includes('dependency dag')) {
+              currentPhaseId = 'reading_specs';
+            } else if (logEntry.type === 'draft_chunk' || (logEntry.type === 'thought' && logEntry.title?.toLowerCase().includes('plan'))) {
+              if (logEntry.type === 'draft_chunk') {
                 draftText = logEntry.content;
               }
             } else if (logEntry.title?.toLowerCase().includes('finaliz') || logEntry.title?.toLowerCase().includes('complete')) {
@@ -305,13 +312,10 @@ export default function App() {
               if (p.id === currentPhaseId) {
                 return { ...p, status: 'in_progress' as const };
               }
-              if (currentPhaseId === 'drafting_plan' && p.id === 'intake') {
+              if (currentPhaseId === 'reading_specs' && (p.id === 'intake' || p.id === 'strategic_planning')) {
                 return { ...p, status: 'completed' as const };
               }
-              if (currentPhaseId === 'extracting_tasks' && (p.id === 'intake' || p.id === 'drafting_plan')) {
-                return { ...p, status: 'completed' as const };
-              }
-              if (currentPhaseId === 'compiling_specs' && (p.id === 'intake' || p.id === 'drafting_plan' || p.id === 'extracting_tasks')) {
+              if (currentPhaseId === 'updating_specs' && (p.id === 'intake' || p.id === 'strategic_planning' || p.id === 'reading_specs')) {
                 return { ...p, status: 'completed' as const };
               }
               if (currentPhaseId === 'finalizing') {
@@ -327,6 +331,7 @@ export default function App() {
               filesGeneratedCount: filesCount,
               tasksExtractedCount: tasksCount,
               draftText: draftText || prev.draftText,
+              strategicPlans: nextPlans,
               phases: updatedPhases
             };
           });
@@ -341,6 +346,7 @@ export default function App() {
         ...prev,
         isComplete: true,
         currentPhaseId: 'finalizing',
+        strategicPlans: packageResult.strategicPlans || prev.strategicPlans,
         filesGeneratedCount: 22,
         tasksExtractedCount: packageResult.implementationTasks.length,
         phases: prev.phases.map(p => ({ ...p, status: 'completed' as const }))
@@ -530,7 +536,7 @@ export default function App() {
               onExploreSpecs={() => setAppState(AppState.RESULT)}
               onDownloadZip={() => {
                 if (generatedContent?.specsHierarchy) {
-                  downloadSpecsZip(generatedContent.specsHierarchy, activeProjectName || 'project');
+                  downloadSpecsZip(generatedContent.specsHierarchy, activeProjectName || 'project', generatedContent.strategicPlans);
                 }
               }}
               onOpenMcpHub={() => setAppState(AppState.MCP_HUB)}

@@ -12,6 +12,13 @@
         "placeholder": "Enter your project name"
       },
       {
+        "id": "project_summary",
+        "label": "Project Summary & Build Specification",
+        "type": "large_text_editor",
+        "required": false,
+        "placeholder": "Describe the project you want to build in detail: vision, core workflows, target users, specific features, architectural preferences, or copy-paste your specification here... (Supports .md and .txt attachments)"
+      },
+      {
         "id": "industry",
         "label": "Industry/Domain",
         "type": "choice_with_text",

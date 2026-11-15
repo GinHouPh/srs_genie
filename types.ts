@@ -312,13 +312,15 @@ export interface SpecFileItem {
   description: string;
 }
 
-// Comprehensive generated content containing the full .specs suite
+// Comprehensive generated content containing the full .specs suite and strategic planning docs
 export interface GeneratedContent {
   srsMarkdown: string;
   agentContext: string;
   implementationTasks: VibeTask[];
   // Complete .specs files hierarchy
   specsHierarchy: Record<string, string>;
+  // The 8 Specialized Strategic Planning Documents
+  strategicPlans?: Record<string, string>;
   projectMeta: {
     projectName: string;
     description: string;
@@ -371,7 +373,7 @@ export interface AgentLogEntry {
   };
 }
 
-export type GenerationPhaseId = 'intake' | 'drafting_plan' | 'compiling_specs' | 'extracting_tasks' | 'finalizing';
+export type GenerationPhaseId = 'intake' | 'strategic_planning' | 'reading_specs' | 'updating_specs' | 'finalizing';
 
 export interface GenerationPhase {
   id: GenerationPhaseId;
@@ -385,6 +387,7 @@ export interface GenerationProgressState {
   currentPhaseId: GenerationPhaseId;
   logs: AgentLogEntry[];
   draftText: string;
+  strategicPlans?: Record<string, string>;
   filesGeneratedCount: number;
   tasksExtractedCount: number;
   tokensStreamed: number;

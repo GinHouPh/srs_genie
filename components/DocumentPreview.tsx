@@ -18,9 +18,11 @@ import {
   Edit3,
   Save,
   RotateCcw,
-  Trash2
+  Trash2,
+  Layers
 } from 'lucide-react';
 import { downloadSpecsZip, SPEC_TIERS } from '../services/specGeneratorService';
+import { STRATEGIC_PLAN_DEFINITIONS } from '../services/specAgentPrompts';
 import { McpHub } from './McpHub';
 import { projectStore } from '../services/projectStore';
 
@@ -32,7 +34,8 @@ interface DocumentPreviewProps {
 }
 
 export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onReset, onOpenMcpHub, onDeleteProject }) => {
-  const [activeTab, setActiveTab] = useState<'specs_suite' | 'tasks' | 'mcp_connect'>('specs_suite');
+  const [activeTab, setActiveTab] = useState<'specs_suite' | 'strategic_plans' | 'tasks' | 'mcp_connect'>('specs_suite');
+  const [selectedPlanFilename, setSelectedPlanFilename] = useState<string>('PRD.md');
   const [selectedFilePath, setSelectedFilePath] = useState<string>('_index.md');
   const [viewSource, setViewSource] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -58,7 +61,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
   const handleDownloadZip = async () => {
     setIsZipping(true);
     try {
-      await downloadSpecsZip(specs, content.projectMeta?.projectName || 'project');
+      await downloadSpecsZip(specs, content.projectMeta?.projectName || 'project', content.strategicPlans);
     } catch (e) {
       console.error('Failed to download specs zip', e);
     } finally {
@@ -134,6 +137,20 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
             <FolderTree className="w-4 h-4 mr-2" />
             .specs Suite ({Object.keys(specs).length || 22} Files)
           </button>
+
+          {content.strategicPlans && Object.keys(content.strategicPlans).length > 0 && (
+            <button
+              onClick={() => setActiveTab('strategic_plans')}
+              className={`flex items-center px-4 py-2 transition-all whitespace-nowrap ${
+                activeTab === 'strategic_plans'
+                  ? 'bg-accent text-white font-semibold'
+                  : 'text-muted hover:text-white'
+              }`}
+            >
+              <Layers className="w-4 h-4 mr-2" />
+              8 Staging Plans ({Object.keys(content.strategicPlans).length})
+            </button>
+          )}
 
           <button
             onClick={() => setActiveTab('tasks')}
@@ -350,6 +367,78 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
                     <MarkdownViewer content={activeFileContent} />
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* VIEW: 8 STRATEGIC PLANNING DOCUMENTS */}
+        {activeTab === 'strategic_plans' && content.strategicPlans && (
+          <div className="flex flex-col md:flex-row h-full">
+            {/* Left Sidebar: Staging Plans List */}
+            <div className="w-full md:w-80 border-b md:border-b-0 md:border-r border-line bg-surface overflow-y-auto p-4 space-y-4">
+              <div className="px-1 py-1 flex items-center justify-between border-b border-line pb-2">
+                <span className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+                  Strategic Plans
+                </span>
+                <span className="badge--on text-[9px]">
+                  Pre-Specs Stage
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                {STRATEGIC_PLAN_DEFINITIONS.map(plan => {
+                  const hasPlan = Boolean(content.strategicPlans?.[plan.filename]);
+                  const isSelected = selectedPlanFilename === plan.filename;
+                  return (
+                    <button
+                      key={plan.id}
+                      onClick={() => setSelectedPlanFilename(plan.filename)}
+                      className={`w-full text-left p-2.5 border transition-all ${
+                        isSelected
+                          ? 'border-accent bg-box text-white'
+                          : hasPlan
+                          ? 'border-line/40 bg-ink/40 text-gray-300 hover:text-white hover:border-line'
+                          : 'border-transparent text-muted/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-mono text-xs font-semibold">{plan.filename}</span>
+                        {hasPlan && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                      </div>
+                      <p className="text-[10px] text-muted line-clamp-1">{plan.title}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right Pane: Markdown Viewer for Selected Staging Plan */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-ink custom-scrollbar">
+              <div className="max-w-4xl mx-auto">
+                <div className="mb-6 pb-3 border-b border-line/60 flex items-center justify-between">
+                  <div>
+                    <h2 className="font-display text-base font-semibold text-white uppercase tracking-wider">
+                      {STRATEGIC_PLAN_DEFINITIONS.find(d => d.filename === selectedPlanFilename)?.title || selectedPlanFilename}
+                    </h2>
+                    <p className="text-xs text-muted">
+                      Author: {STRATEGIC_PLAN_DEFINITIONS.find(d => d.filename === selectedPlanFilename)?.role}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const text = content.strategicPlans?.[selectedPlanFilename] || '';
+                      navigator.clipboard.writeText(text);
+                      showToast(`Copied ${selectedPlanFilename} to clipboard`);
+                    }}
+                    className="btn btn-sm btn--ghost"
+                  >
+                    <Copy className="w-3.5 h-3.5 mr-1" />
+                    Copy .md
+                  </button>
+                </div>
+
+                <MarkdownViewer content={content.strategicPlans[selectedPlanFilename] || '# Document not found.'} />
               </div>
             </div>
           </div>

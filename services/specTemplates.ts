@@ -104,6 +104,8 @@ export function buildCanonicalSpecsSuite(
   const projectName = input.name || (fd['project_overview']?.['project_name'] as string) || 'Modern Web Application';
   const industry = (fd['project_overview']?.['industry'] as string) || 'Technology & Software';
   const projectType = (fd['project_overview']?.['project_type'] as string) || 'Full-Scale Production System';
+  const projectSummary = (fd['project_overview']?.['project_summary'] as string) || '';
+  const attachedFileName = (fd['project_overview']?.['project_summary_file_name'] as string) || '';
   const appTypes = Array.isArray(fd['system_type']?.['application_type'])
     ? (fd['system_type']?.['application_type'] as string[]).join(', ')
     : (fd['system_type']?.['application_type'] as string) || 'Web Application (React + Node.js)';
@@ -167,7 +169,7 @@ updated: ${dateStr}
 
 **${projectName}** is an enterprise-grade ${projectType.toLowerCase()} engineered for the **${industry}** sector.
 It provides ${targetUsers} with high-throughput workflows, real-time collaboration, and bulletproof security isolation.
-
+${projectSummary.trim() ? `\n> **Authoritative Build Vision:**  \n> ${projectSummary.trim().replace(/\n+/g, ' ').slice(0, 320)}${projectSummary.trim().length > 320 ? '...' : ''}\n` : ''}
 - **Architecture Classification:** ${archPattern}
 - **API Standard:** ${apiStyle}
 - **Core Technology Stack:** ${backend} · ${database} · ${frontend}
@@ -237,7 +239,10 @@ updated: ${dateStr}
 **${projectName}** is an enterprise-grade platform developed for the **${industry}** sector.
 It empowers **${targetUsers}** by eliminating manual operational overhead, providing automated workflow execution, and guaranteeing continuous multi-tenant data isolation.
 
-### Core Value Drivers:
+${projectSummary.trim() ? `### User-Provided Build Specification & Project Summary
+${attachedFileName ? `> *Source Document: Attached file \`${attachedFileName}\`*\n\n` : ''}${projectSummary.trim()}
+
+` : ''}### Core Value Drivers:
 - **Operational Automation:** Streamlines ${userMgmt} and automated business workflows.
 - **Financial Integrity:** Seamless ${ecom} with automated tax calculation and invoice reconciliation.
 - **Unified Communications:** ${comms} with multi-channel event broadcasting.
