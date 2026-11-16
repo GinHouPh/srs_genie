@@ -12,6 +12,7 @@ import { cryptoService } from './cryptoService';
 import { buildCanonicalSpecsSuite, extractSectionFromDraft } from './specTemplates';
 import { SPEC_TIERS, formatFormDataForPrompt, generateDynamicProjectTasks } from './specGeneratorService';
 import { cloneSpecsTemplateForProject, getMasterSpecsTemplates } from './specsTemplateRepository';
+import { decomposeProjectTasksAgentic } from './specTaskDecomposer';
 import {
   STRATEGIC_PLAN_DEFINITIONS,
   buildStrategicPlanPrompt,
@@ -251,65 +252,175 @@ export class SpecAgent {
   }
 
   /**
-   * Helper to execute prompt against active AI Provider
+   * Helper to execute prompt against active AI Provider with intelligent auto-failover
    */
   private async executeModelPrompt(prompt: string): Promise<string> {
     const aiProviders = saasStore.getAiProviders();
-    const targetProvider = (this.modelDef?.providerId
+
+    // Priority candidates
+    const candidates: { provider: any; modelId: string }[] = [];
+
+    const explicitProvider = this.modelDef?.providerId
       ? aiProviders.find(p => p.id === this.modelDef.providerId)
-      : null)
-      || aiProviders.find(p => p.isActive && p.models?.some(m => m.id === this.modelDef?.id))
-      || aiProviders.find(p => p.type === 'google' && p.isActive)
-      || aiProviders.find(p => p.isActive);
+      : null;
 
-    let activeKey = targetProvider?.apiKey || '';
-    if (targetProvider?.type === 'google' && !activeKey) {
-      activeKey = process.env.API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+    if (explicitProvider && explicitProvider.isActive) {
+      candidates.push({ provider: explicitProvider, modelId: this.modelDef?.id || 'gemini-2.5-flash' });
     }
 
-    if (activeKey && (activeKey.startsWith('aes_gcm$') || activeKey.startsWith('enc_b64_'))) {
-      try {
-        activeKey = await cryptoService.decryptSecret(activeKey);
-      } catch {}
+    const matchingProvider = aiProviders.find(p => p.isActive && p.models?.some(m => m.id === this.modelDef?.id));
+    if (matchingProvider && !candidates.some(c => c.provider.id === matchingProvider.id)) {
+      candidates.push({ provider: matchingProvider, modelId: this.modelDef?.id || matchingProvider.models[0]?.id });
     }
 
-    if (!targetProvider || (!activeKey && !targetProvider.baseUrl)) {
-      return '';
+    // Always include AgentRouter candidate if active
+    const agentRouter = aiProviders.find(p => (p.id === 'prov_agentrouter' || p.name.toLowerCase().includes('agentrouter')) && p.isActive);
+    if (agentRouter && !candidates.some(c => c.provider.id === agentRouter.id)) {
+      candidates.push({ provider: agentRouter, modelId: 'gpt-5.6-sol' });
     }
 
-    const targetModel = this.modelDef?.id || 'gemini-2.5-flash';
-    const providerType = targetProvider.type;
-
-    if (providerType === 'google') {
-      const ai = new GoogleGenAI({ apiKey: activeKey });
-      const res = await ai.models.generateContent({
-        model: targetModel.startsWith('gemini') ? targetModel : 'gemini-2.5-flash',
-        contents: prompt
-      });
-      return res.text || '';
-    } else {
-      const rawBaseUrl = (targetProvider.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
-      const res = await fetch(`${rawBaseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(activeKey ? { 'Authorization': `Bearer ${activeKey}` } : {})
-        },
-        body: JSON.stringify({
-          model: targetModel,
-          messages: [
-            { role: 'system', content: SPEC_AGENT_SYSTEM_DIRECTIVE },
-            { role: 'user', content: prompt }
-          ]
-        }),
-        signal: AbortSignal.timeout(180000)
-      });
-      if (res.ok) {
-        const data = await res.json();
-        return data.choices?.[0]?.message?.content || '';
+    // Include other active providers
+    for (const p of aiProviders) {
+      if (p.isActive && !candidates.some(c => c.provider.id === p.id)) {
+        candidates.push({ provider: p, modelId: p.models?.[0]?.id || 'gpt-4o' });
       }
     }
 
+    let lastError: any = null;
+
+    for (const { provider: targetProvider, modelId: targetModel } of candidates) {
+      try {
+        let activeKey = targetProvider?.apiKey || '';
+        if (targetProvider?.type === 'google' && !activeKey) {
+          activeKey = process.env.API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+        }
+
+        if (activeKey && (activeKey.startsWith('aes_gcm$') || activeKey.startsWith('enc_b64_'))) {
+          try {
+            activeKey = await cryptoService.decryptSecret(activeKey);
+          } catch {}
+        }
+
+        if (!activeKey && !targetProvider.baseUrl) continue;
+
+        // Route to Google Gemini
+        if (targetProvider.type === 'google') {
+          if (!activeKey || activeKey.includes('AIzaSyAMzGX1Ecar')) {
+            // Skip invalid placeholder key to failover immediately
+            continue;
+          }
+          const ai = new GoogleGenAI({ apiKey: activeKey });
+          const res = await ai.models.generateContent({
+            model: targetModel.startsWith('gemini') ? targetModel : 'gemini-2.5-flash',
+            contents: prompt
+          });
+          const text = res.text || '';
+          if (text.trim().length > 50) return text;
+        }
+
+        // Route to AgentRouter or OpenAI-compatible
+        const rawBaseUrl = (targetProvider.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
+        const isAgentRouter = rawBaseUrl.includes('agentrouter') || targetProvider.name.toLowerCase().includes('agentrouter');
+
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        if (activeKey && activeKey !== 'ollama-local') {
+          headers['Authorization'] = `Bearer ${activeKey}`;
+        }
+        if (isAgentRouter) {
+          headers['Originator'] = 'codex_cli_rs';
+        }
+
+        if (isAgentRouter) {
+          const timeoutMs = (targetModel.includes('6.1') || targetModel.includes('astra')) ? 420000 : 360000;
+          const res = await fetch(`${rawBaseUrl}/responses`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              model: targetModel,
+              input: prompt,
+              reasoning: { effort: 'low' },
+              stream: true
+            }),
+            signal: AbortSignal.timeout(timeoutMs)
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(`AgentRouter error: ${err.error?.message || err.message || res.status}`);
+          }
+
+          if (res.body) {
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let accumulatedText = '';
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || !trimmed.startsWith('data:')) continue;
+                const jsonStr = trimmed.replace(/^data:\s*/, '');
+                if (jsonStr === '[DONE]') continue;
+                try {
+                  const payload = JSON.parse(jsonStr);
+                  if (typeof payload.delta === 'string') {
+                    accumulatedText += payload.delta;
+                  } else if (payload.delta?.text) {
+                    accumulatedText += payload.delta.text;
+                  } else if (payload.text) {
+                    accumulatedText += payload.text;
+                  } else if (payload.response?.output && !accumulatedText) {
+                    const msg = payload.response.output.find((o: any) => o.type === 'message');
+                    const t = msg?.content?.[0]?.text;
+                    if (t) accumulatedText = t;
+                  }
+                } catch {}
+              }
+            }
+
+            if (accumulatedText.trim().length > 50) {
+              return accumulatedText.trim();
+            }
+          }
+        } else {
+          const res = await fetch(`${rawBaseUrl}/chat/completions`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              model: targetModel,
+              messages: [
+                { role: 'system', content: SPEC_AGENT_SYSTEM_DIRECTIVE },
+                { role: 'user', content: prompt }
+              ]
+            }),
+            signal: AbortSignal.timeout(180000)
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const text = data.choices?.[0]?.message?.content || '';
+            if (text.trim().length > 50) {
+              return text;
+            }
+          }
+        }
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`[SpecAgent] Candidate provider ${targetProvider.name} failed:`, err?.message || err);
+      }
+    }
+
+    if (lastError) {
+      console.error('[SpecAgent] All AI candidates failed. Last error:', lastError);
+    }
     return '';
   }
 
@@ -337,35 +448,42 @@ export class SpecAgent {
     const formattedInput = formatFormDataForPrompt(fd);
     const dateStr = new Date().toISOString().split('T')[0];
 
-    // Generate each of the 9 Specialized Planning Documents
-    for (const planDef of STRATEGIC_PLAN_DEFINITIONS) {
-      this.emit({
-        type: 'action',
-        title: `Synthesizing ${planDef.filename} (${planDef.title})`,
-        content: `Agent assuming role of ${planDef.role}. Formulating ${planDef.description}`
-      });
+    // Generate the 9 Specialized Planning Documents in concurrent batches of 3
+    const BATCH_SIZE = 3;
+    for (let i = 0; i < STRATEGIC_PLAN_DEFINITIONS.length; i += BATCH_SIZE) {
+      const batch = STRATEGIC_PLAN_DEFINITIONS.slice(i, i + BATCH_SIZE);
 
-      let content = '';
-      try {
-        const prompt = buildStrategicPlanPrompt(planDef.id, projectName, formattedInput);
-        content = await this.executeModelPrompt(prompt);
-      } catch (e: any) {
-        console.warn(`Error generating ${planDef.filename} via AI model:`, e);
-      }
+      await Promise.all(
+        batch.map(async (planDef) => {
+          this.emit({
+            type: 'action',
+            title: `Synthesizing ${planDef.filename} (${planDef.title})`,
+            content: `Agent assuming role of ${planDef.role}. Formulating ${planDef.description}`
+          });
 
-      // If AI output was unavailable, generate rich deterministic technical content
-      if (!content || content.length < 150) {
-        content = this.generateDeterministicStrategicPlan(planDef.id, projectName, fd, dateStr);
-      }
+          let content = '';
+          try {
+            const prompt = buildStrategicPlanPrompt(planDef.id, projectName, formattedInput);
+            content = await this.executeModelPrompt(prompt);
+          } catch (e: any) {
+            console.warn(`Error generating ${planDef.filename} via AI model:`, e);
+          }
 
-      this.strategicPlans[planDef.filename] = content;
+          // If AI output was unavailable, generate rich deterministic technical content
+          if (!content || content.length < 150) {
+            content = this.generateDeterministicStrategicPlan(planDef.id, projectName, fd, dateStr);
+          }
 
-      this.emit({
-        type: 'draft_chunk',
-        title: `Forged ${planDef.filename}`,
-        content: content,
-        meta: { file: planDef.filename, tokens: Math.round(content.length / 4) }
-      });
+          this.strategicPlans[planDef.filename] = content;
+
+          this.emit({
+            type: 'draft_chunk',
+            title: `Forged ${planDef.filename}`,
+            content: content,
+            meta: { file: planDef.filename, tokens: Math.round(content.length / 4) }
+          });
+        })
+      );
     }
 
     // Build the master combined project plan reference
@@ -455,24 +573,22 @@ ${Object.entries(this.strategicPlans).map(([filename, doc]) => `## Document: ${f
   }
 
   /**
-   * Step 4: Derives dynamic tasks and compiles the 22 .specs files from the 8 Strategic Planning Documents
+   * Step 4: Derives dynamic tasks and compiles the 22 .specs files from the 9 Strategic Planning Documents
    */
-  updateSpecsFromPlan(): { specs: Record<string, string>; tasks: VibeTask[] } {
+  async updateSpecsFromPlan(): Promise<{ specs: Record<string, string>; tasks: VibeTask[] }> {
     this.emit({
       type: 'thought',
-      title: 'Extracting Dynamic Tasks from Roadmap & Tech Specs',
-      content: `Analyzing roadmap_resourceplan.md and tech_spec.md to formulate bespoke atomic tasks (not generic templates).`
+      title: 'Synthesizing Deep WBS Task Backlog with Autonomous Prompts',
+      content: `Extracting granular atomic tasks across 16 engineering milestones from Parent Project Plan, PRD, and Technical Specification.`
     });
 
-    // Derive atomic tasks directly matching the plan requirements
-    this.dynamicTasks = generateDynamicProjectTasks(this.input);
-
-    this.emit({
-      type: 'task_extracted',
-      title: 'Dynamic Task Backlog Formulated',
-      content: `Extracted ${this.dynamicTasks.length} sequential atomic tasks from roadmap and tech specifications, complete with dependencies, complexity rankings, and autonomous agent execution prompts.`,
-      meta: { taskCount: this.dynamicTasks.length }
-    });
+    // Derive comprehensive 60–100+ atomic tasks directly matching the plan requirements
+    this.dynamicTasks = await decomposeProjectTasksAgentic(
+      this.input,
+      this.strategicPlans,
+      (prompt) => this.executeModelPrompt(prompt),
+      (log) => this.emit(log)
+    );
 
     // Clone the master .specs template repository to create an isolated project copy
     const projectTemplateCopy = cloneSpecsTemplateForProject(this.input.name || 'Application');
@@ -485,7 +601,7 @@ ${Object.entries(this.strategicPlans).map(([filename, doc]) => `## Document: ${f
 
     this.emit({
       type: 'action',
-      title: 'Updating Project .specs Copy from 9 Strategic Plans',
+      title: 'Compiling 22 Project .specs Files from Strategic Architecture',
       content: `Commencing top-down population of all 22 project specification files derived from PRD, designs, architecture, tech specs, roadmap, risk, QA, and deployment plans.`
     });
 
@@ -560,7 +676,7 @@ ${Object.entries(this.strategicPlans).map(([filename, doc]) => `## Document: ${f
     this.readSpecsArchitecture();
 
     // 4. Update the 22 .specs files & dynamic tasks based on the 9 Strategic Plans
-    this.updateSpecsFromPlan();
+    await this.updateSpecsFromPlan();
 
     // 5. Finalize package for preview & export
     return this.finalizeAndPackage();

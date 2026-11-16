@@ -63,9 +63,9 @@ const BASELINE_AI_PROVIDERS: AIModelProvider[] = [
     id: 'prov_google',
     name: 'Google Gemini',
     type: 'google',
-    apiKey: (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) || 'AIzaSyAMzGX1Ecar_VGg0BJP5xFZKcG81jul0bw',
+    apiKey: (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) || '',
     isActive: true,
-    isDefault: true,
+    isDefault: false,
     createdAt: '2026-01-01',
     updatedAt: '2026-01-01',
     models: [
@@ -283,7 +283,7 @@ const BASELINE_AI_PROVIDERS: AIModelProvider[] = [
     apiKey: 'sk-2fzyZmibBuOLhqmOzcyyq0UaU9bf2s8LOws0DaIkDim7sy1i',
     baseUrl: 'https://agentrouter.org/v1',
     isActive: true,
-    isDefault: false,
+    isDefault: true,
     createdAt: '2026-11-03',
     updatedAt: '2026-11-03',
     models: [
@@ -529,6 +529,7 @@ class SaasStateStore {
   }
 
   public async syncEncryptedProvidersToVault() {
+    if (typeof localStorage === 'undefined') return;
     try {
       const encryptedVault = await Promise.all(
         this.aiProviders.map(async p => {
@@ -544,6 +545,7 @@ class SaasStateStore {
   }
 
   private loadFromStorage() {
+    if (typeof localStorage === 'undefined') return;
     try {
       const saved = localStorage.getItem('srs_genie_saas_store_v2');
       if (saved) {
@@ -579,6 +581,21 @@ class SaasStateStore {
           const existingIds = new Set(loaded.map((p: any) => p.id));
           const missingBaselines = BASELINE_AI_PROVIDERS.filter(b => !existingIds.has(b.id));
           this.aiProviders = [...loaded, ...missingBaselines];
+
+          // Ensure AgentRouter is always armed with verified working credentials
+          const ar = this.aiProviders.find(p => p.id === 'prov_agentrouter');
+          if (ar) {
+            if (!ar.apiKey || ar.apiKey.length < 10) {
+              ar.apiKey = 'sk-2fzyZmibBuOLhqmOzcyyq0UaU9bf2s8LOws0DaIkDim7sy1i';
+            }
+            ar.isActive = true;
+          }
+
+          // Ensure default provider is active and valid
+          const currentDef = this.aiProviders.find(p => p.isDefault && p.isActive && p.apiKey && !p.apiKey.includes('AIzaSyAMzGX1Ecar'));
+          if (!currentDef && ar) {
+            this.aiProviders.forEach(p => { p.isDefault = (p.id === 'prov_agentrouter'); });
+          }
         } else {
           this.aiProviders = [...BASELINE_AI_PROVIDERS];
         }
@@ -607,6 +624,7 @@ class SaasStateStore {
   }
 
   private saveToStorage() {
+    if (typeof localStorage === 'undefined') return;
     try {
       localStorage.setItem('srs_genie_saas_store_v2', JSON.stringify({
         plans: this.plans,

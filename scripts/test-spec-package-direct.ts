@@ -56,7 +56,8 @@ async function testDirect() {
     const result = await generateComprehensiveSpecPackage(sampleProject, 'gpt-5.6-sol', (log) => {
       console.log(`[LOG] ${log.type}: ${log.title}`);
     });
-    console.log('✓ SUCCESS! Result keys:', Object.keys(result.specsHierarchy).length);
+    console.log('✓ SUCCESS! Result keys in specsHierarchy:', Object.keys(result.specsHierarchy).length);
+    console.log('✓ Strategic plans in package:', Object.keys(result.strategicPlans || {}));
   } catch (err: any) {
     console.error('❌ FAILED with error:', err);
   }

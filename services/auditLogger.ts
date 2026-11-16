@@ -32,6 +32,7 @@ class AuditLoggerService {
   }
 
   private loadFromStorage() {
+    if (typeof localStorage === 'undefined') return;
     try {
       const data = localStorage.getItem(STORAGE_AUDIT_KEY);
       if (data) {

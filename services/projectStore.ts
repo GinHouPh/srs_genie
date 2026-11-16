@@ -11,6 +11,7 @@ export interface SavedProjectRecord extends ProjectInput {
   userId?: string;
   tenantId?: string;
   specsHierarchy?: Record<string, string>;
+  strategicPlans?: Record<string, string>;
   content?: string;
   vibeTasks?: any[];
   createdAt: string;
@@ -220,7 +221,12 @@ class ProjectStore {
     return newProj;
   }
 
-  saveFullProject(project: ProjectInput, specs?: Record<string, string>, user?: User | null): SavedProjectRecord {
+  saveFullProject(
+    project: ProjectInput,
+    specs?: Record<string, string>,
+    user?: User | null,
+    strategicPlans?: Record<string, string>
+  ): SavedProjectRecord {
     const existingIdx = this.projects.findIndex(p => p.id === project.id);
     const now = new Date().toISOString();
 
@@ -234,7 +240,8 @@ class ProjectStore {
       lastModified: new Date(),
       updatedAt: now,
       createdAt: existingIdx >= 0 ? this.projects[existingIdx].createdAt : now,
-      specsHierarchy: specs || (existingIdx >= 0 ? this.projects[existingIdx].specsHierarchy : synthesizeSpecsSuite(project))
+      specsHierarchy: specs || (existingIdx >= 0 ? this.projects[existingIdx].specsHierarchy : synthesizeSpecsSuite(project)),
+      strategicPlans: strategicPlans || (existingIdx >= 0 ? this.projects[existingIdx].strategicPlans : undefined)
     };
 
     if (existingIdx >= 0) {

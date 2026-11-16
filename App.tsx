@@ -211,6 +211,7 @@ export default function App() {
             }
           ],
           specsHierarchy: proj.specsHierarchy,
+          strategicPlans: proj.strategicPlans,
           projectMeta: {
             projectName: proj.name,
             description: `Specification suite for ${proj.name}`,
@@ -221,7 +222,7 @@ export default function App() {
         });
       } else {
         const pkg = await generateComprehensiveSpecPackage(proj);
-        projectStore.saveFullProject(proj, pkg.specsHierarchy);
+        projectStore.saveFullProject(proj, pkg.specsHierarchy, null, pkg.strategicPlans);
         setGeneratedContent(pkg);
       }
       setAppState(AppState.RESULT);
@@ -338,8 +339,8 @@ export default function App() {
         }
       );
 
-      // Persist real project to projectStore
-      projectStore.saveFullProject(projectPayload, packageResult.specsHierarchy);
+      // Persist real project to projectStore with full specs and all 9 strategic planning documents
+      projectStore.saveFullProject(projectPayload, packageResult.specsHierarchy, null, packageResult.strategicPlans);
       setGeneratedContent(packageResult);
 
       setGenerationProgress(prev => ({

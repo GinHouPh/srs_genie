@@ -425,17 +425,30 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
                       Author: {STRATEGIC_PLAN_DEFINITIONS.find(d => d.filename === selectedPlanFilename)?.role}
                     </p>
                   </div>
-                  <button
-                    onClick={() => {
-                      const text = content.strategicPlans?.[selectedPlanFilename] || '';
-                      navigator.clipboard.writeText(text);
-                      showToast(`Copied ${selectedPlanFilename} to clipboard`);
-                    }}
-                    className="btn btn-sm btn--ghost"
-                  >
-                    <Copy className="w-3.5 h-3.5 mr-1" />
-                    Copy .md
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const text = content.strategicPlans?.[selectedPlanFilename] || '';
+                        navigator.clipboard.writeText(text);
+                        showToast(`Copied ${selectedPlanFilename} to clipboard`);
+                      }}
+                      className="btn btn-sm btn--ghost"
+                    >
+                      <Copy className="w-3.5 h-3.5 mr-1" />
+                      Copy .md
+                    </button>
+                    <button
+                      onClick={() => {
+                        const text = content.strategicPlans?.[selectedPlanFilename] || '';
+                        handleDownloadSingleFile(selectedPlanFilename, text);
+                      }}
+                      className="btn btn-sm btn--ghost"
+                      title="Download this planning document"
+                    >
+                      <Download className="w-3.5 h-3.5 mr-1" />
+                      .md
+                    </button>
+                  </div>
                 </div>
 
                 <MarkdownViewer content={content.strategicPlans[selectedPlanFilename] || '# Document not found.'} />
