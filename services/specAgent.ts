@@ -23,7 +23,11 @@ import {
   generateDeterministicPRD,
   generateDeterministicDesigns,
   generateDeterministicArchitecture,
-  generateDeterministicTechSpec
+  generateDeterministicTechSpec,
+  generateDeterministicRoadmap,
+  generateDeterministicRisk,
+  generateDeterministicQA,
+  generateDeterministicDeployment
 } from './planningTemplates';
 
 /**
@@ -409,91 +413,16 @@ ${Object.entries(this.strategicPlans).map(([filename, doc]) => `## Document: ${f
         return generateDeterministicTechSpec(projectName, fd, dateStr);
 
       case 'roadmap':
-        return `# Execution Roadmap & Dynamic Task Backlog: ${projectName}
-**Date:** ${dateStr}
-
-## 1. Dynamic Task Breakdown
-- **TASK-001 (XS - Setup):** Initialize repository, tsconfig strict mode, ESLint, Prettier.
-- **TASK-002 (S - Setup):** Multi-stage Dockerfile and Docker Compose environment configuration.
-- **TASK-003 (M - Database):** PostgreSQL DDL schema, migrations, and Row-Level Security policies.
-- **TASK-004 (M - Database):** Multi-tenant isolation middleware and connection pool.
-- **TASK-005 (M - Backend):** JWT authentication, Argon2id hashing, and sliding session refresh.
-- **TASK-006 (S - Backend):** Role-Based Access Control (RBAC) permission guards.
-- **TASK-007 (S - Backend):** Immutable security audit logging service.
-- **TASK-008 (M - Backend):** Core domain resource repository and business invariant handlers.
-- **TASK-009 (M - Frontend):** Responsive frontend application shell, theme tokens, and routing.
-- **TASK-010 (M - Frontend):** Authentication, registration, and onboarding views.
-- **TASK-011 (L - Frontend):** Operational dashboard with live metrics and charts.
-- **TASK-012 (M - Agent):** Model Context Protocol (MCP) server endpoints for coding agents.
-- **TASK-013 (M - QA):** Vitest unit tests and Supertest integration test suites.
-- **TASK-014 (M - Deploy):** Playwright E2E automation and GitHub Actions CI/CD deployment pipeline.
-
-## 2. 4-Sprint Roadmap
-- **Sprint 1 (Foundation):** TASK-001 through TASK-004 (Repo, Docker, DB DDL, Tenancy).
-- **Sprint 2 (Core Logic):** TASK-005 through TASK-008 (Auth, RBAC, Audits, Domain Services).
-- **Sprint 3 (Frontend):** TASK-009 through TASK-011 (UI Shell, Auth Views, Dashboard).
-- **Sprint 4 (Verification & Release):** TASK-012 through TASK-014 (MCP Server, Tests, CI/CD).
-`;
+        return generateDeterministicRoadmap(projectName, fd, dateStr);
 
       case 'risk':
-        return `# Risk Register, Threat Modeling & Compliance: ${projectName}
-**Date:** ${dateStr}
-
-## 1. OWASP Threat Model & Mitigations
-- **Broken Object Level Authorization (BOLA):** Enforced via mandatory database-level Row-Level Security (RLS) on \`tenant_id\`.
-- **SQL Injection:** Parameterized queries strictly enforced via typed ORM/query builder.
-- **Credential Stuffing:** Rate-limiting on \`/auth\` endpoints (max 5 attempts per IP per 15 minutes) with IP jail.
-
-## 2. Compliance Checklist (${compliance})
-- [x] Column-level encryption for sensitive user identifiers using AES-256-GCM.
-- [x] TLS 1.3 enforced across all public endpoints with HSTS preloading.
-- [x] GDPR "Right to be Forgotten" cryptographic erasure procedure.
-`;
+        return generateDeterministicRisk(projectName, fd, dateStr);
 
       case 'qa':
-        return `# Quality Assurance & Automated Test Strategy: ${projectName}
-**Date:** ${dateStr}
-
-## 1. Test Automation Pyramid
-- **Unit Tests (70%):** Vitest testing utility algorithms, schema validators, and business logic.
-- **Integration Tests (20%):** Supertest testing API routes against isolated test PostgreSQL containers.
-- **End-to-End Tests (10%):** Playwright automated browser tests covering registration, checkout, and exports.
-
-## 2. Quality Gates & Coverage Threshold
-- Minimum 85% branch coverage required on core domain and authentication modules.
-- Pre-commit Husky hooks blocking commits on lint, typecheck, or unit test failures.
-`;
+        return generateDeterministicQA(projectName, fd, dateStr);
 
       case 'deployment':
-        return `# DevOps, CI/CD & Release Engineering: ${projectName}
-**Date:** ${dateStr}
-
-## 1. Multi-Stage Containerization
-\`\`\`dockerfile
-FROM node:22-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-FROM node:22-alpine AS runner
-WORKDIR /app
-USER node
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-EXPOSE 3000
-CMD ["node", "dist/index.js"]
-\`\`\`
-
-## 2. CI/CD Deployment Pipeline
-GitHub Actions pipeline executing on push to \`main\`:
-1. Lint and strict TypeScript check
-2. Vitest unit tests with coverage report
-3. Supertest API integration tests
-4. Docker container build and push to registry
-5. Rolling zero-downtime container update
-`;
+        return generateDeterministicDeployment(projectName, fd, dateStr);
     }
   }
 

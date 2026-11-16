@@ -4,6 +4,9 @@ import { DESIGNS_TEMPLATE, generateDeterministicDesigns } from './designsTemplat
 import { ARCHITECTURE_TEMPLATE, generateDeterministicArchitecture } from './architectureTemplate';
 import { TECHNICAL_SPECIFICATION_TEMPLATE, generateDeterministicTechSpec } from './techSpecTemplate';
 import { ROADMAP_TEMPLATE, generateDeterministicRoadmap } from './roadmapTemplate';
+import { RISK_MANAGEMENT_TEMPLATE, generateDeterministicRisk } from './riskTemplate';
+import { QA_TEMPLATE, generateDeterministicQA } from './qaTemplate';
+import { DEPLOYMENT_RELEASE_TEMPLATE, generateDeterministicDeployment } from './deploymentTemplate';
 
 export {
   PARENT_PROJECT_PLAN_TEMPLATE,
@@ -17,12 +20,18 @@ export {
   TECHNICAL_SPECIFICATION_TEMPLATE,
   generateDeterministicTechSpec,
   ROADMAP_TEMPLATE,
-  generateDeterministicRoadmap
+  generateDeterministicRoadmap,
+  RISK_MANAGEMENT_TEMPLATE,
+  generateDeterministicRisk,
+  QA_TEMPLATE,
+  generateDeterministicQA,
+  DEPLOYMENT_RELEASE_TEMPLATE,
+  generateDeterministicDeployment
 };
 
 /**
  * Registry mapping template IDs to their raw markdown template instructions.
- * As the user provides the remaining templates one by one, they are registered here.
+ * All 9 specialized strategic planning schemes are registered here.
  */
 export const PLANNING_SCHEME_TEMPLATES: Record<string, string> = {
   project_plan: PARENT_PROJECT_PLAN_TEMPLATE,
@@ -31,7 +40,9 @@ export const PLANNING_SCHEME_TEMPLATES: Record<string, string> = {
   architecture: ARCHITECTURE_TEMPLATE,
   tech_spec: TECHNICAL_SPECIFICATION_TEMPLATE,
   roadmap: ROADMAP_TEMPLATE,
-  // risk, qa, deployment will be added as provided
+  risk: RISK_MANAGEMENT_TEMPLATE,
+  qa: QA_TEMPLATE,
+  deployment: DEPLOYMENT_RELEASE_TEMPLATE
 };
 
 export function getPlanningSchemeTemplate(schemeId: string): string | undefined {

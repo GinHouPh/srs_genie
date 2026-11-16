@@ -5,7 +5,10 @@ import {
   DESIGNS_TEMPLATE,
   ARCHITECTURE_TEMPLATE,
   TECHNICAL_SPECIFICATION_TEMPLATE,
-  ROADMAP_TEMPLATE
+  ROADMAP_TEMPLATE,
+  RISK_MANAGEMENT_TEMPLATE,
+  QA_TEMPLATE,
+  DEPLOYMENT_RELEASE_TEMPLATE
 } from './planningTemplates';
 
 export type StrategicPlanDocumentId =
@@ -139,6 +142,12 @@ export function buildStrategicPlanPrompt(
     ? `\n\nAUTHORITATIVE TECHNICAL SPECIFICATION TEMPLATE STRUCTURE TO ADHERE TO:\n${TECHNICAL_SPECIFICATION_TEMPLATE}\n`
     : planId === 'roadmap'
     ? `\n\nAUTHORITATIVE PROJECT ROADMAP TEMPLATE STRUCTURE TO ADHERE TO:\n${ROADMAP_TEMPLATE}\n`
+    : planId === 'risk'
+    ? `\n\nAUTHORITATIVE PROJECT RISK MANAGEMENT TEMPLATE STRUCTURE TO ADHERE TO:\n${RISK_MANAGEMENT_TEMPLATE}\n`
+    : planId === 'qa'
+    ? `\n\nAUTHORITATIVE QUALITY ASSURANCE & TEST PLAN TEMPLATE STRUCTURE TO ADHERE TO:\n${QA_TEMPLATE}\n`
+    : planId === 'deployment'
+    ? `\n\nAUTHORITATIVE DEPLOYMENT AND RELEASE PLAN TEMPLATE STRUCTURE TO ADHERE TO:\n${DEPLOYMENT_RELEASE_TEMPLATE}\n`
     : '';
 
   return `
@@ -392,29 +401,118 @@ function getPlanSpecificRequirements(planId: StrategicPlanDocumentId, projectNam
 
     case 'risk':
       return `
-1. Threat Modeling & Attack Surface (OWASP Top 10 vulnerabilities: SQLi, XSS, SSRF, BOLA, and concrete code mitigations).
-2. Regulatory Compliance Checklist (Specific controls for GDPR, SOC 2 Type II, HIPAA data anonymization).
-3. Failure Modes & System Resilience (DB failover, external API circuit breakers, queue backpressure handling).
-4. Initial Architecture Decision Records (ADR-001 through ADR-003 with context, decision, and consequences).
-5. Known Technical Debt Backlog (Deferred optimizations with mitigation workarounds).
+1. Strictly follow the 23-section Project Risk Management Plan template structure:
+   - SECTION 1: Risk Management Overview (Project Information table, Purpose, Objectives, Scope, Boundaries, Deliverables)
+   - SECTION 2: Risk Management Governance (Structure, Roles & Responsibility Definitions, RACI Matrix, Approval Authority, Communication Cadence)
+   - SECTION 3: Risk Management Methodology (8-stage Lifecycle, Identification Techniques, Risk Discovery Register table DISC-001.., Discovery Schedule)
+   - SECTION 4: Risk Taxonomy and Classification (19 Risk Categories: Strategic, PM, Requirements, Architecture, Technical, UI/UX, DB, API/Integration, Security, Compliance, Infrastructure, DevOps, Resource, Financial, Vendor, QA, Operational, AI-Specific; Category Register table CAT-001..)
+   - SECTION 5: Risk Identification Register (Master Risk Register table RISK-001.., Cause-Event-Effect Statement Format: "Due to [Cause], [Uncertain Event] may occur, resulting in [Potential Consequence]")
+   - SECTION 6: Risk Assessment Framework (Likelihood Scale 1-5 Rare to Almost Certain, Impact Scale 1-5 Insignificant to Severe across Business/Schedule/Financial/Technical/Security/Compliance/Quality)
+   - SECTION 7: Risk Scoring and Prioritization (Qualitative 5x5 Matrix Likelihood x Impact = 1 to 25, Thresholds Low 1-4, Moderate 5-9, High 10-14, Very High 15-19, Critical 20-25; Priority, Heat Map, Score Register table)
+   - SECTION 8: Inherent and Residual Risk (Inherent Assessment, Existing Controls Register table CTRL-001.., Control Effectiveness, Residual Risk Assessment, Risk Reduction, Residual Acceptance)
+   - SECTION 9: Risk Response Strategy (Threat Strategies: Avoid, Mitigate, Transfer, Accept, Escalate; Opportunity Strategies: Exploit, Enhance, Share, Accept, Escalate; Strategy Register table)
+   - SECTION 10: Risk Mitigation and Action Planning (Mitigation Action Register table MIT-001.., Action Specifications, Preventive/Detective/Corrective Measures, Effectiveness Verification)
+   - SECTION 11: Contingency and Fallback Planning (Contingency Register table CONT-001.., Fallback Scenarios, Rollback Strategy, Recovery Requirements RTO/RPO)
+   - SECTION 12: Early Warning Indicators and Triggers (Risk Trigger Register table TRIG-001.., Key Risk Indicators table KRI-001.., Trigger Escalation)
+   - SECTION 13: Risk Ownership and Accountability (Risk Owner Assignment, Ownership Register table, Responsibilities, Transfer, Unassigned Risks)
+   - SECTION 14: Risk Monitoring and Review (Review Framework, Frequency table, Review Process, Status Tracking, Trend Analysis, Review Register table REV-001.., Reassessment Triggers)
+   - SECTION 15: Risk Escalation and Communication (Escalation Levels 1-4, Escalation Register table ESC-001.., Escalation Conditions, Communication Plan & Matrix)
+   - SECTION 16: Risk Interdependency and Aggregation (Risk Dependency Register table RDEP-001.., Cascading Scenarios, Risk Concentration, Systemic Risk)
+   - SECTION 17: Quantitative Risk Analysis (Expected Monetary Value EMV = Probability x Financial Impact, Financial Exposure Register table, Schedule Risk Analysis, Sensitivity Analysis)
+   - SECTION 18: Specialized Risk Management Plans (Technical, Security OWASP Top 10, Data RLS/Backups, Infrastructure, AI/Agentic, Compliance GDPR/SOC2, Vendor)
+   - SECTION 19: Issue and Incident Management (Issue Register table ISSUE-001.., Issue Specification, Incident Management, Root Cause Analysis, Lessons Learned)
+   - SECTION 20: Risk Acceptance and Closure (Risk Acceptance Criteria, Register table ACCEPT-001.., Risk Closure Criteria, Closure Register table, Lessons Learned)
+   - SECTION 21: Risk Reporting and Dashboards (Executive Risk Dashboard, Distribution, Trend Dashboard, Mitigation Progress Dashboard, Financial Dashboard)
+   - SECTION 22: Risk Management Change Control (Change Request Register table RCHANGE-001.., Change Impact Analysis, Baseline Management, Versioning)
+   - SECTION 23: Final Risk Management Summary (Executive Risk Summary, Risk Readiness Assessment table, Outstanding Decisions table RDEC-001.., Final Recommendations)
+   - APPENDIX A: Standard Identification System (RMP, RISK, CAT, DISC, CTRL, MIT, CONT, TRIG, KRI, REV, ESC, RDEP, ISSUE, ACCEPT, RCHANGE, RDEC)
+   - APPENDIX B: Standard Enumerations
+   - APPENDIX C: Final Risk Management Validation (all checkboxes verified)
+2. Use Information Classifications: Confirmed Risk, Potential Risk, Identified Threat, Opportunity, Emerging Risk, Accepted Risk, Transferred Risk, Residual Risk, Closed Risk.
+3. Every risk must explicitly evaluate multi-tenant boundaries, JWT/session invalidation, queue overflow, and compliance mandates.
 `;
 
     case 'qa':
       return `
-1. Test Automation Pyramid (70% Unit, 20% Integration, 10% End-to-End).
-2. Unit Testing Standards (Vitest test conventions, mocking rules, and mandatory 85%+ branch coverage gates).
-3. API Integration Test Matrix (Supertest scenarios covering happy paths, validation errors, auth rejection, multi-tenant boundaries).
-4. End-to-End User Journeys (Playwright browser automation specs for registration, core domain mutations, and data exports).
-5. Load & Latency Testing Strategy (Performance assertions verifying P95 < 200ms under expected user scale).
+1. Strictly follow the 33-section Quality Assurance and Software Test Plan (QATP) template structure:
+   - SECTION 1: QA and Test Plan Overview (Document Information table, Purpose, Quality Vision, Quality Objectives, Scope, Boundaries, Reference Documents table)
+   - SECTION 2: Quality Assurance Framework (QA Philosophy, Principles: Quality by Design / Shift-Left, Activities across Lifecycle Stages, QA Deliverables, Governance)
+   - SECTION 3: Quality Standards and Acceptance Policy (Applicable Standards ISO 25010 / OWASP ASVS / WCAG 2.1 AA, Quality Attribute Framework, Coding Quality Standards, Design/Data Quality, Approval Authority)
+   - SECTION 4: Testing Scope and Coverage (In-Scope, Out-of-Scope, Testing Limitations, Test Coverage Inventory table COV-001.., Coverage Boundaries, Exclusions)
+   - SECTION 5: Testing Strategy and Methodology (Overall Approach Risk-Based & Automation-First, Principles, 11-stage Testing Lifecycle, Phase Strategy table, Execution Frequency, Prioritization)
+   - SECTION 6: Testing Levels (Unit, Component, Integration, Contract, System, End-to-End, Acceptance, Regression, Testing Level Matrix table)
+   - SECTION 7: Functional Testing (Functional Areas, Positive, Negative, Boundary, Equivalence Partitioning, Decision Table, State Transition, Exploratory, Functional Coverage Matrix table)
+   - SECTION 8: UI/UX and Design System Testing (Visual, Design System Compliance, Interaction, Responsive, State, Content, Visual Regression, Cross-Browser, UI/UX Acceptance Criteria)
+   - SECTION 9: API and Integration Testing (API Coverage, Functional, Negative, Security, Performance, Contract, Integration, Webhook HMAC-SHA256, API Test Register table API-001..)
+   - SECTION 10: Database and Data Quality Testing (Functional CRUD, Schema, Data Integrity, Migration, Concurrency, Backup/Recovery, Data Privacy, Database Test Register table DBTC-001..)
+   - SECTION 11: Security Testing (Authentication JWT/Argon2id, Authorization RBAC/RLS, OWASP ASVS Top 10, API Security, Infrastructure Security, Dependency Security, Privacy, Penetration Testing)
+   - SECTION 12: Non-Functional Testing (Performance, Load, Stress, Spike, Endurance, Scalability, Reliability, Resilience, Recovery RTO/RPO, Compatibility, Accessibility WCAG, Non-Functional Test Matrix table)
+   - SECTION 13: Platform-Specific Testing (Web, Mobile, Desktop, API Product, SaaS Multi-Tenant Isolation / Subscription / Entitlement / Admin)
+   - SECTION 14: AI and Machine Learning Testing (Model Validation, Prompt Testing, Output Schema Validation, Hallucination Prevention, Agent Workflow, Tool Execution, RAG Grounding, Safety)
+   - SECTION 15: Test Environment Management (Environment Inventory table ENV-001.. Dev/CI/Staging/Prod, Infrastructure, Parity, Provisioning, Reset, Access Control)
+   - SECTION 16: Test Data Management (Data Requirements, Categories, Test Data Register table DATA-001.., Preparation, Privacy Zero PII, Consistency, Versioning)
+   - SECTION 17: Test Automation Strategy (Automation Objectives, Candidates, Tool Selection Vitest / Supertest / Playwright / k6, Architecture, Execution, Flaky Test Management, Coverage table)
+   - SECTION 18: Test Case Design and Specification (Test Scenario Inventory table SCN-001.., Individual Test Case Specification TC-001.. with Preconditions/Data/Steps/Expected/Actual/Status/Evidence)
+   - SECTION 19: Test Coverage and Traceability (Requirements Traceability Matrix RTM table FR-001 -> TC-001, Traceability Rules, Coverage Analysis, Coverage Gaps, Change Impact)
+   - SECTION 20: Defect and Bug Management (Defect Lifecycle, Categories, Severity S1-S4, Priority P1-P4, Defect Report Template BUG-001.., Triage, Retesting, Regression Impact, Closure Criteria)
+   - SECTION 21: Test Execution Management (Execution Schedule table CYCLE-001.., Readiness, Smoke Testing, Sanity Testing, Regression Execution, Logging, Blocked Tests, Cycle Completion)
+   - SECTION 22: Quality Gates and Release Acceptance (Quality Gate Framework 23.1-23.7, Release Acceptance Criteria: 100% S1/S2 pass, >=85% branch coverage, zero critical CVEs, P95 < 200ms, Sign-Off, Go/No-Go Decision)
+   - SECTION 23: User Acceptance Testing (UAT Strategy, Objectives, Participants, Scope, Scenarios, Environment, Execution, Acceptance Criteria, Sign-Off table)
+   - SECTION 24: CI/CD and Continuous Testing (Continuous Testing Pipeline 13 stages, Quality Gates, Parallelization, Reporting, Failure Handling, Promotion)
+   - SECTION 25: Quality Metrics and Reporting (Coverage Metrics, Defect Metrics, Efficiency Metrics, Product Metrics, Definitions table, QA Dashboard, Reporting Schedule)
+   - SECTION 26: QA Team and Test Resource Planning (Team Structure, Role Register table, RACI Matrix, Resource Allocation, Required Skills, Training)
+   - SECTION 27: Testing Tools and Infrastructure (Test Management, Automation Tools, Security Tools, Environment Tools, Tool Register table TOOL-001.., Integration)
+   - SECTION 28: Testing Schedule and Roadmap (Timeline table, Dependencies, Milestones, Contingency)
+   - SECTION 29: Test Risk Management (Testing Risk Register table QRISK-001.., Common Risks, Mitigation Plan, Contingency Plan, Blockers)
+   - SECTION 30: Test Environment and Production Validation (Production Testing, Smoke Testing, Validation, Synthetic Monitoring, Rollback Criteria, Restrictions)
+   - SECTION 31: Defect Prevention and Continuous Improvement (Defect Prevention, Root Cause Analysis, Trend Analysis, Retrospectives, Improvement Register table IMP-001..)
+   - SECTION 32: Test Closure and Quality Sign-Off (Closure Criteria, Test Summary Report table, Defect Summary, Coverage Summary, Quality Assessment, Known Limitations, Sign-Off table)
+   - SECTION 33: QA and Test Plan Executive Summary (Executive Quality Summary, Quality Readiness Assessment table, Outstanding Decisions table QDEC-001.., Final QA Recommendations)
+   - APPENDIX A: Standard Identification System (QAP, TP, COV, SCN, TC, CYCLE, TRUN, BUG, DATA, ENV, TOOL, QRISK, QGATE, IMP, QDEC, EXEC)
+   - APPENDIX B: Standard Enumerations
+   - APPENDIX C: Final QA and Test Plan Validation Checklist (all checkboxes verified)
+2. Use Source Classifications: Requirement-Derived, Architecture-Derived, Technical-Derived, User-Confirmed, Existing-System, QA-Recommended, Assumed, Pending Approval, Out of Scope.
+3. Every test case must include concrete execution steps, inputs, and measurable assertions (e.g. Vitest expect() syntax, HTTP status codes, RLS denial proofs).
 `;
 
     case 'deployment':
       return `
-1. Multi-Stage Container Specification (Production-hardened Dockerfile with non-root security user).
-2. Multi-Container Orchestration (Complete docker-compose.yml for application, PostgreSQL, Redis, and health checks).
-3. CI/CD Automation Pipeline (GitHub Actions deploy workflow executing lint, typecheck, unit tests, integration tests, and preview deploy).
-4. Environment Variable & Secret Specification (Complete .env.example matrix with variable name, description, and security level).
-5. Rollback Strategy & Disaster Recovery (Zero-downtime rolling deploys, database migration rollbacks, automated snapshot schedule).
+1. Strictly follow the 30-section Software Deployment and Release Plan template structure:
+   - SECTION 1: Deployment and Release Overview (Project Information table, Purpose, Release/Deployment Objectives, Scope, Success Criteria)
+   - SECTION 2: Source Documents and Baselines (Reference Documents table, Approved Release Baseline, Source Code Baseline Git tag/commit, Technical Baseline, Change Freeze)
+   - SECTION 3: Release Strategy (Release Model Major/Minor/Patch/Hotfix, Release Channels Alpha/Beta/GA, Frequency, Governance Approvals)
+   - SECTION 4: Release Scope and Content Management (Feature Inventory table FEAT-001.., Change Inventory, Excluded/Deferred Items, Known Limitations, Impact Analysis)
+   - SECTION 5: Versioning and Build Management (SemVer Strategy, Version Register table REL-001.., Build Pipeline 10 stages, Reproducibility, Artifact Inventory table ART-001.., Artifact Promotion)
+   - SECTION 6: Deployment Architecture (Deployment Model Container/Serverless/Cloud, Deployment Inventory table DEPLOY-001.., Dependencies, Topology Mermaid diagram, Sequence, Constraints)
+   - SECTION 7: Deployment Environment Management (Environment Inventory: Local, Dev, QA, Staging, Production; Environment Register table ENV-001.., Configuration, Parity, Provisioning, Access)
+   - SECTION 8: Infrastructure and Configuration Deployment (Infrastructure Requirements, Provisioning IaC Terraform/CDK, Verification, Configuration Inventory table CFG-001.., Secret Management)
+   - SECTION 9: Database Deployment and Migration (Database Inventory table DB-001.., Migration Inventory table MIG-001.., Migration Specification, Backward Compatibility, Expand-and-Contract Protocol, Failure Handling)
+   - SECTION 10: Application and Service Deployment (Application Inventory table APP-001.., Backend Deployment, Frontend Deployment, Multi-Stage Production Dockerfile with non-root security user, Service Dependencies)
+   - SECTION 11: CI/CD Pipeline (Continuous Integration & Delivery Overview, CI Stages 1-12, CD Stages 1-10, Pipeline Inventory table PIPE-001.., GitHub Actions deploy.yml workflow, Automation, Security, Quality Gates)
+   - SECTION 12: Deployment Strategy and Rollout (Strategy Selection Rolling/Blue-Green/Canary/Recreate Assessment table, Release Rollout Strategy, Rollout Phases table ROLL-001.., Feature Flags, Stop Conditions)
+   - SECTION 13: Release Communication and Change Management (Stakeholder Communication, Communication Matrix table, Maintenance Notifications, Release Notes, Change Approval, Emergency Changes)
+   - SECTION 14: Deployment Scheduling and Coordination (Deployment Window, Activity Register table DACT-001.., Sequence, Parallel Deployment, Duration Estimates, Buffer)
+   - SECTION 15: Pre-Deployment Readiness (Prerequisites: Release/Infra/DB/Config/Ops, Pre-Deployment Checklist table PRE-001.., Go/No-Go Decision)
+   - SECTION 16: Deployment Execution Procedure (Deployment Runbook, Step-by-Step Execution Register table STEP-001.., Deployment Logs, Technical Completion Criteria)
+   - SECTION 17: Post-Deployment Validation (Verification: Infra, Application, Database, Integration, Functional Smoke Tests, Monitoring, Validation Register table VAL-001.., Sign-Off)
+   - SECTION 18: Rollback and Recovery Plan (Rollback Strategy, Triggers, Decision Authority, Scope, Step-by-Step Rollback Procedure 1-11, Database Recovery, Time Estimates MTTR < 15 min, Rollback Register table RB-001..)
+   - SECTION 19: Production Monitoring and Observability (Monitoring Strategy Infra/App/Business/Security/Release, Thresholds table, Alerting, Observation Window Hypercare)
+   - SECTION 20: Production Support and Stabilization (Stabilization Objectives, Period 48h Hypercare, Post-Release Activities, Defect Prioritization, Stabilization Exit Criteria)
+   - SECTION 21: Operational Handover (Handover Requirements, Operational Ownership, Support Procedures, Service Levels, Operational Acceptance)
+   - SECTION 22: Release and Deployment Security (Deployment Access, Credential Management, Artifact Security, Infrastructure Security, Release Security Validation, Audit Trail)
+   - SECTION 23: Specialized Deployment and Release Requirements (SaaS Tenant Rollout, Tenant Migration, Entitlements, Tenant Rollback, API Release Versioning, AI System Release)
+   - SECTION 24: Release Schedule and Milestones (Release Timeline table, Release Milestones table RMS-001.., Dependencies, Contingency)
+   - SECTION 25: Release and Deployment Resource Plan (Personnel Roles, Responsibility Matrix RACI table, Resource Availability, Deployment Tools, Emergency Contacts)
+   - SECTION 26: Deployment and Release Risk Management (Deployment Risk Register table DRISK-001.., Common Deployment Risks, Release Risks, Risk Response, Go/No-Go Risks)
+   - SECTION 27: Release Communication and Documentation (Deliverables: Release Docs, Deployment Runbook, Operational Docs, Release Evidence, Document Approval)
+   - SECTION 28: Release Metrics and Performance (DORA Metrics: Deployment Frequency, Lead Time, Change Failure Rate, MTTR; Quality Metrics, Adoption Metrics, Reporting)
+   - SECTION 29: Release Closure and Post-Release Review (Completion Criteria, Release Summary Report table, Retrospective, Lessons Learned, Sign-Off table)
+   - SECTION 30: Executive Deployment and Release Summary (Executive Summary, Deployment Readiness Assessment table, Outstanding Decisions table DDEC-001.., Final Recommendations)
+   - APPENDIX A: Standard Identification System (DPL, RPL, REL, DEPLOY, BUILD, ART, ENV, PIPE, MIG, CFG, STEP, VAL, RB, ROLL, RMS, CHG, DRISK, DDEC)
+   - APPENDIX B: Standard Enumerations
+   - APPENDIX C: Final Deployment and Release Validation Checklist (all checkboxes verified)
+2. Use Source Classifications: User-Confirmed, Architecture-Derived, Requirement-Derived, Existing-System, Release-Recommended, Assumed, Pending Approval, Out of Scope.
+3. Include executable artifacts: production-hardened multi-stage Dockerfile, complete docker-compose.yml, GitHub Actions deploy.yml, full .env.example matrix, and zero-downtime rolling update configuration.
 `;
   }
 }
