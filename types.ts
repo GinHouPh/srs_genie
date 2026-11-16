@@ -319,7 +319,7 @@ export interface GeneratedContent {
   implementationTasks: VibeTask[];
   // Complete .specs files hierarchy
   specsHierarchy: Record<string, string>;
-  // The 8 Specialized Strategic Planning Documents
+  // The 9 Specialized Strategic Planning Documents
   strategicPlans?: Record<string, string>;
   projectMeta: {
     projectName: string;

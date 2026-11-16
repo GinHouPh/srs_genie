@@ -68,7 +68,7 @@ export default function App() {
 
   const initialPhases: GenerationPhase[] = [
     { id: 'intake', name: 'Form Intake & Requirements Consolidation', description: 'Consolidate 15-section questionnaire', status: 'completed' },
-    { id: 'strategic_planning', name: '8 Staging Plans Synthesis', description: 'Agent drafts PRD, designs, architecture, tech specs, roadmap, risk, QA, deploy', status: 'pending' },
+    { id: 'strategic_planning', name: '9 Staging Plans Synthesis', description: 'Agent drafts Parent Project Plan, PRD, designs, architecture, tech specs, roadmap, risk, QA, deploy', status: 'pending' },
     { id: 'reading_specs', name: 'Reading .specs Architecture & Rules', description: 'Agent inspects 6-tier hierarchy & cascade rules', status: 'pending' },
     { id: 'updating_specs', name: 'Updating 22 .specs Files from Plan', description: 'Agent derives dynamic tasks & updates canonical specs', status: 'pending' },
     { id: 'finalizing', name: 'Verification & Package Finalization', description: 'Package .specs suite for download and MCP', status: 'pending' }
@@ -246,7 +246,7 @@ export default function App() {
     setGenerationProgress({
       phases: [
         { id: 'intake', name: 'Form Intake & Requirements Consolidation', description: 'Consolidate 15-section questionnaire', status: 'completed' },
-        { id: 'strategic_planning', name: '8 Staging Plans Synthesis', description: 'Agent drafts PRD, designs, architecture, tech specs, roadmap, risk, QA, deploy', status: 'in_progress' },
+        { id: 'strategic_planning', name: '9 Staging Plans Synthesis', description: 'Agent drafts Parent Project Plan, PRD, designs, architecture, tech specs, roadmap, risk, QA, deploy', status: 'in_progress' },
         { id: 'reading_specs', name: 'Reading .specs Architecture & Rules', description: 'Agent inspects 6-tier hierarchy & cascade rules', status: 'pending' },
         { id: 'updating_specs', name: 'Updating 22 .specs Files from Plan', description: 'Agent derives dynamic tasks & updates canonical specs', status: 'pending' },
         { id: 'finalizing', name: 'Verification & Package Finalization', description: 'Package .specs suite for download and MCP', status: 'pending' }

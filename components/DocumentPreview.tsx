@@ -35,7 +35,7 @@ interface DocumentPreviewProps {
 
 export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onReset, onOpenMcpHub, onDeleteProject }) => {
   const [activeTab, setActiveTab] = useState<'specs_suite' | 'strategic_plans' | 'tasks' | 'mcp_connect'>('specs_suite');
-  const [selectedPlanFilename, setSelectedPlanFilename] = useState<string>('PRD.md');
+  const [selectedPlanFilename, setSelectedPlanFilename] = useState<string>('project_plan.md');
   const [selectedFilePath, setSelectedFilePath] = useState<string>('_index.md');
   const [viewSource, setViewSource] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -148,7 +148,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
               }`}
             >
               <Layers className="w-4 h-4 mr-2" />
-              8 Staging Plans ({Object.keys(content.strategicPlans).length})
+              9 Staging Plans ({Object.keys(content.strategicPlans).length})
             </button>
           )}
 

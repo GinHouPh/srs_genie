@@ -18,6 +18,13 @@ import {
   StrategicPlanDocumentId,
   SPEC_AGENT_SYSTEM_DIRECTIVE
 } from './specAgentPrompts';
+import {
+  generateDeterministicProjectPlan,
+  generateDeterministicPRD,
+  generateDeterministicDesigns,
+  generateDeterministicArchitecture,
+  generateDeterministicTechSpec
+} from './planningTemplates';
 
 /**
  * Architecture rules specification describing the 22-file .specs hierarchy,
@@ -205,9 +212,9 @@ export const SPEC_ARCHITECTURE_RULES: SpecArchitectureRule[] = [
  * 
  * Staged Planning Protocol:
  * 1. Consolidate SRS form answers into context
- * 2. Generate the 8 Specialized Strategic Planning Documents (PRD, designs, architecture, tech_spec, roadmap, risk, qa, deployment)
+ * 2. Generate the 9 Specialized Strategic Planning Documents (Parent Project Plan, PRD, designs, architecture, tech_spec, roadmap, risk, qa, deployment)
  * 3. Read & understand .specs architecture rules (tiers, dependencies, regeneration cascades)
- * 4. Update the 22 .specs files & dynamic tasks based on the 8 Specialized Planning Documents
+ * 4. Update the 22 .specs files & dynamic tasks based on the 9 Specialized Planning Documents
  * 5. Finalize and package for Viewport Previews, ZIP exports, and MCP
  */
 export class SpecAgent {
@@ -319,14 +326,14 @@ export class SpecAgent {
       content: `Consolidating 15 domain sections for "${projectName}" (${projectType}) in ${industry}.${
         projectSummary.trim()
           ? ` Ingesting user-defined Project Summary${attachedFileName ? ` (from attached file "${attachedFileName}")` : ''} (${projectSummary.trim().length} characters). Prioritizing custom vision, workflows, and build requirements.`
-          : ' Formulating multi-disciplinary staging context for the 8 Specialized Planning Documents.'
+          : ' Formulating multi-disciplinary staging context for the 9 Specialized Planning Documents.'
       }`
     });
 
     const formattedInput = formatFormDataForPrompt(fd);
     const dateStr = new Date().toISOString().split('T')[0];
 
-    // Generate each of the 8 Specialized Planning Documents
+    // Generate each of the 9 Specialized Planning Documents
     for (const planDef of STRATEGIC_PLAN_DEFINITIONS) {
       this.emit({
         type: 'action',
@@ -386,123 +393,20 @@ ${Object.entries(this.strategicPlans).map(([filename, doc]) => `## Document: ${f
       : 'SOC 2, GDPR, OWASP Top 10';
 
     switch (planId) {
+      case 'project_plan':
+        return generateDeterministicProjectPlan(projectName, fd, dateStr);
+
       case 'prd':
-        return `# Product Requirements Document (PRD): ${projectName}
-**Date:** ${dateStr} | **Industry:** ${industry} | **Status:** Approved
-
-## 1. Executive Summary & Value Proposition
-${projectName} is an enterprise-grade platform engineered to streamline mission-critical operations for ${industry}.
-It eliminates manual operational bottlenecks, guarantees zero-leakage multi-tenant data partitioning, and delivers real-time visibility.
-
-## 2. User Personas & Roles
-- **Standard User / Customer:** Seamless self-service onboarding, item creation, real-time transaction tracking.
-- **Team / Operations Manager:** Team member role management, approval gates, daily operational reporting.
-- **Tenant Administrator:** Plan upgrades, quota management, audit log inspection, VAT invoicing.
-- **Super Administrator:** Global platform health telemetry, revenue metrics, provider configs.
-
-## 3. Scope Boundaries
-- **In-Scope (v1.0):** Self-service registration, JWT authentication, core domain CRUD, automated billing, MCP agent tool endpoints.
-- **Out-of-Scope (v2.0):** Legacy native desktop installers, active-active multi-region replication.
-
-## 4. Key Gherkin User Flow
-\`\`\`gherkin
-Scenario: Workspace creation & domain activation
-  Given an authenticated user with valid workspace credentials
-  When they submit the initial onboarding payload
-  Then an isolated tenant partition is provisioned
-  And the user is assigned the role "admin"
-  And audit log stream records the workspace initialization event
-\`\`\`
-`;
+        return generateDeterministicPRD(projectName, fd, dateStr);
 
       case 'designs':
-        return `# UI/UX Design System & Component Specification: ${projectName}
-**Date:** ${dateStr}
-
-## 1. Design Tokens & Visual Hierarchy
-- **Palette:** Dark Mode Theme (\`#090d16\` ink, \`#121826\` box, \`#1e293b\` line, \`#6366f1\` accent, \`#06b6d4\` cyan).
-- **Typography:** Display: Space Grotesk / Inter; Body: Inter (System UI); Monospace: JetBrains Mono.
-- **Accessibility:** Minimum 4.5:1 text contrast conforming to WCAG 2.1 AA.
-
-## 2. Application Route Table
-| Path | Page Component | Access Level | Description |
-|:---|:---|:---:|:---|
-| \`/\` | \`LandingPage\` | Public | Marketing hero, feature breakdown, pricing table |
-| \`/auth\` | \`AuthModal\` | Public | Email/password, OAuth SSO, 2FA challenge |
-| \`/dashboard\` | \`DashboardView\` | Authenticated | KPI metric cards, recent domain activity feeds |
-| \`/workspace\` | \`WorkspaceView\` | Authenticated | Main domain resource tables and mutation modals |
-| \`/admin\` | \`AdminConsole\` | Role: Admin/Staff | Multi-tenant user moderation, billing, telemetry |
-
-## 3. Responsive Adaptations
-- Mobile (<640px): Single-column layout with collapsible bottom navigation bar.
-- Tablet (640-1024px): Collapsible icon-only left navigation tree.
-- Desktop (>1024px): Full dual-pane workspace with live contextual sidebars.
-`;
+        return generateDeterministicDesigns(projectName, fd, dateStr);
 
       case 'architecture':
-        return `# System Architecture & Security Topology: ${projectName}
-**Date:** ${dateStr}
-
-## 1. System Topology
-\`\`\`mermaid
-flowchart TD
-    Client["Client Web / Mobile UI (${frontend})"]
-    CDN["Cloud CDN / WAF Shield"]
-    API["API Gateway / Backend (${backend})"]
-    DB[("Primary Database (${database})")]
-    Cache[("Redis Cache & Sessions")]
-    Workers["Background Queue Workers (BullMQ)"]
-    MCP["Model Context Protocol (MCP) Server"]
-
-    Client --> CDN
-    CDN --> API
-    API --> DB
-    API --> Cache
-    API --> Workers
-    Workers --> DB
-    MCP --> DB
-\`\`\`
-
-## 2. Clean Architecture Layering
-- **Presentation:** Route handlers and request payload schema validators (Zod).
-- **Service Layer:** Business invariants, transaction boundary management, domain events.
-- **Repository Layer:** Strongly typed SQL query builders with mandatory \`tenant_id\` filtering.
-- **Persistence:** Relational schema with connection pooling and Row-Level Security (RLS).
-`;
+        return generateDeterministicArchitecture(projectName, fd, dateStr);
 
       case 'tech_spec':
-        return `# Technical Specification & Data Contracts: ${projectName}
-**Date:** ${dateStr}
-
-## 1. Database DDL Schema (PostgreSQL)
-\`\`\`sql
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
-CREATE TABLE tenants (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(120) NOT NULL,
-    plan VARCHAR(30) DEFAULT 'free',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(30) DEFAULT 'member',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_users_tenant ON users(tenant_id);
-\`\`\`
-
-## 2. Core Business Invariants
-- **DR-001 (Multi-Tenant Partitioning):** All queries MUST contain an explicit \`tenant_id\` constraint.
-- **DR-002 (Idempotency Key Verification):** Mutating requests accept \`Idempotency-Key\` header with 24h Redis caching.
-- **DR-003 (Immutable Audit Stream):** Security and financial logs are append-only.
-- **DR-004 (Hard Quota Gates):** Exhausted quotas return \`HTTP 402 Payment Required\`.
-`;
+        return generateDeterministicTechSpec(projectName, fd, dateStr);
 
       case 'roadmap':
         return `# Execution Roadmap & Dynamic Task Backlog: ${projectName}
@@ -652,7 +556,7 @@ GitHub Actions pipeline executing on push to \`main\`:
 
     this.emit({
       type: 'action',
-      title: 'Updating Project .specs Copy from 8 Strategic Plans',
+      title: 'Updating Project .specs Copy from 9 Strategic Plans',
       content: `Commencing top-down population of all 22 project specification files derived from PRD, designs, architecture, tech specs, roadmap, risk, QA, and deployment plans.`
     });
 
@@ -726,7 +630,7 @@ GitHub Actions pipeline executing on push to \`main\`:
     // 3. Read & understand .specs architecture rules
     this.readSpecsArchitecture();
 
-    // 4. Update the 22 .specs files & dynamic tasks based on the 8 Strategic Plans
+    // 4. Update the 22 .specs files & dynamic tasks based on the 9 Strategic Plans
     this.updateSpecsFromPlan();
 
     // 5. Finalize package for preview & export

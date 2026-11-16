@@ -8,12 +8,14 @@ import fallbackTemplates from './specsTemplateFallback.json';
  * of this template suite specifically for the project, leaving the master templates intact.
  */
 
-// Use Vite's glob import to bundle all 22 markdown files from the .specs template folder
-const templateModules = import.meta.glob('/.specs/**/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true
-}) as Record<string, string>;
+// Use Vite's glob import to bundle all 22 markdown files from the .specs template folder (with Node fallback)
+const templateModules: Record<string, string> = (typeof (import.meta as any).glob === 'function')
+  ? (import.meta as any).glob('/.specs/**/*.md', {
+      query: '?raw',
+      import: 'default',
+      eager: true
+    })
+  : {};
 
 /**
  * Normalizes Vite glob paths (e.g., "/.specs/foundation/brief.md" -> "foundation/brief.md")

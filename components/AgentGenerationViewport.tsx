@@ -49,7 +49,7 @@ export const AgentGenerationViewport: React.FC<AgentGenerationViewportProps> = (
   onCancel
 }) => {
   const [activeTab, setActiveTab] = useState<'stream' | 'plans' | 'draft' | 'tasks'>('stream');
-  const [selectedPlanFilename, setSelectedPlanFilename] = useState<string>('PRD.md');
+  const [selectedPlanFilename, setSelectedPlanFilename] = useState<string>('project_plan.md');
   const [autoScroll, setAutoScroll] = useState<boolean>(true);
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const [previewFile, setPreviewFile] = useState<string | null>(null);
@@ -251,7 +251,7 @@ export const AgentGenerationViewport: React.FC<AgentGenerationViewportProps> = (
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
-                8 Staging Plans ({Object.keys(progressState.strategicPlans || {}).length}/8)
+                9 Staging Plans ({Object.keys(progressState.strategicPlans || {}).length}/{STRATEGIC_PLAN_DEFINITIONS.length})
               </button>
 
               <button
@@ -387,7 +387,7 @@ export const AgentGenerationViewport: React.FC<AgentGenerationViewportProps> = (
             </div>
           )}
 
-          {/* Tab: 8 Staging Plans */}
+          {/* Tab: 9 Staging Plans */}
           {activeTab === 'plans' && (
             <div className="flex-1 flex flex-col min-h-0 bg-ink/70">
               {/* Document Selector Strip */}
