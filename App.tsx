@@ -15,11 +15,16 @@ import { AgentGenerationViewport } from './components/AgentGenerationViewport';
 import { authService } from './services/authService';
 import { projectStore, SavedProjectRecord } from './services/projectStore';
 import { saasStore } from './services/saasStore';
+import { ShieldAlert } from 'lucide-react';
+import { licenseService } from './services/licenseService';
+import { LicenseActivationModal } from './components/LicenseActivationModal';
 
 export default function App() {
   // Real persistent session
   const [user, setUser] = useState<User | null>(() => authService.getCurrentUser());
   const [businessSettings, setBusinessSettings] = useState(() => saasStore.getBusinessSettings());
+  const [licenseInfo, setLicenseInfo] = useState(() => licenseService.getLicenseInfo());
+  const [showLicenseModal, setShowLicenseModal] = useState<boolean>(false);
 
   const [appState, setAppStateState] = useState<AppState>(() => {
     const cur = authService.getCurrentUser();
@@ -52,6 +57,12 @@ export default function App() {
   useEffect(() => {
     return saasStore.subscribe(() => {
       setBusinessSettings(saasStore.getBusinessSettings());
+    });
+  }, []);
+
+  useEffect(() => {
+    return licenseService.subscribe(info => {
+      setLicenseInfo(info);
     });
   }, []);
 
@@ -416,6 +427,24 @@ export default function App() {
         </div>
       )}
 
+      {/* Unlicensed Installation Notice Banner (Shown on live domain if not activated) */}
+      {!licenseInfo.isLicensed && !licenseInfo.isLocal && (
+        <div className="w-full bg-accent text-white py-2 px-4 text-xs font-display flex flex-col sm:flex-row items-center justify-between gap-2 relative z-40 border-b border-accent/60 shadow-md">
+          <div className="flex items-center gap-2 text-center sm:text-left">
+            <ShieldAlert className="w-4 h-4 shrink-0" />
+            <span>
+              <strong>UNLICENSED INSTALLATION:</strong> SRS Genie is running in unverified mode on this host. Activate your Envato Purchase Code or Agape License Key to ensure uninterrupted spec synthesis.
+            </span>
+          </div>
+          <button
+            onClick={() => setShowLicenseModal(true)}
+            className="btn btn-xs bg-white text-ink hover:bg-white/90 uppercase tracking-wider text-[10px] px-3 py-1 font-semibold whitespace-nowrap"
+          >
+            Activate License
+          </button>
+        </div>
+      )}
+
       <main className="flex-1 flex flex-col items-center justify-start relative z-10 w-full">
         {/* Error notification banner if any */}
         {error && (
@@ -584,6 +613,15 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* Floating License Activation Modal */}
+      <LicenseActivationModal
+        isOpen={showLicenseModal}
+        onClose={() => setShowLicenseModal(false)}
+        onSuccess={() => {
+          licenseService.fetchLicenseStatus();
+        }}
+      />
     </div>
   );
 }

@@ -419,3 +419,58 @@ export interface FraudEvaluationResult {
   isDummyOrReserved?: boolean;
   mxActive?: boolean;
 }
+
+// ==========================================
+// Central Licensing & Protection Types
+// ==========================================
+export type LicenseChannel = 'envato' | 'agape_direct' | 'offline_dev';
+export type LicenseTier = 'regular' | 'extended' | 'developer' | 'agency' | 'enterprise';
+
+export interface LicenseFeatures {
+  mcpGateway: boolean;
+  multiAiProvider: boolean;
+  whiteLabel: boolean;
+  priorityUpdates: boolean;
+}
+
+export interface LicenseInfo {
+  isLicensed: boolean;
+  isLocal: boolean;
+  licenseKey: string;
+  channel?: LicenseChannel;
+  tier?: LicenseTier;
+  buyerName?: string;
+  buyerEmail?: string;
+  boundDomain?: string;
+  supportUntil?: string;
+  activatedAt?: string;
+  lastHeartbeat?: string;
+  features: LicenseFeatures;
+  status: 'active' | 'unlicensed' | 'expired' | 'suspended';
+  statusMessage?: string;
+}
+
+export interface LicenseVerificationResponse {
+  success: boolean;
+  valid: boolean;
+  message: string;
+  buyer?: string;
+  tier?: LicenseTier;
+  channel?: LicenseChannel;
+  activation_hash?: string;
+  client_salt?: string;
+  support_until?: string;
+  features?: LicenseFeatures;
+  error?: string;
+}
+
+export interface SoftwareUpdateInfo {
+  updateAvailable: boolean;
+  currentVersion: string;
+  latestVersion?: string;
+  minPhpVersion?: string;
+  changelog?: string;
+  downloadUrl?: string;
+  sha256?: string;
+  releaseDate?: string;
+}

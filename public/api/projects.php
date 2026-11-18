@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/license_check.php';
 $pdo = getDbConnection();
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -64,6 +65,7 @@ if ($method === 'GET') {
 
 // 2. SAVE OR UPDATE PROJECT
 if ($method === 'POST') {
+    SRSLocalLicenseGate::enforce();
     $id = $body['id'] ?? ('proj_' . round(microtime(true) * 1000));
     $userId = $body['userId'] ?? 'anonymous';
     $tenantId = $body['tenantId'] ?? 'tenant_master_001';

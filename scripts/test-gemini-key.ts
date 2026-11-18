@@ -1,19 +1,9 @@
-import { GoogleGenAI } from '@google/genai';
-
-async function checkGemini() {
-  const apiKey = 'AIzaSyAMzGX1Ecar_VGg0BJP5xFZKcG81jul0bw';
-  console.log('Testing Google Gemini API...');
-  try {
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: 'hello, return one word'
-    });
-    console.log('Gemini response:', response.text);
-  } catch (err: any) {
-    console.error('Gemini error:', err.message);
-  }
+async function testGemini() {
+  const key = 'AIzaSyAMzGX1Ecar_VGg0BJP5xFZKcG81jul0bw';
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+  const data = await res.json();
+  console.log('Gemini API status:', res.status);
+  console.log('Gemini API response:', data);
 }
 
-checkGemini();
-
+testGemini();

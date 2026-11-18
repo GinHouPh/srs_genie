@@ -1,0 +1,2636 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SRS Genie - Official Client Onboarding & Comprehensive Setup Guide</title>
+  <meta name="description" content="Complete step-by-step installation, deployment, and configuration guide for SRS Genie - The Autonomous Specification Engineering Platform & AI-Ready Task Decomposer.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z'/%3E%3C/svg%3E">
+  
+  <style>
+    /* ==========================================================================
+       SRS GENIE CLIENT SETUP GUIDE - DESIGN SYSTEM & THEME
+       Agape UI Design System: High-contrast, clean typography, responsive layout
+       ========================================================================== */
+    :root {
+      --bg-primary: #0b0f19;
+      --bg-secondary: #111827;
+      --bg-tertiary: #1f2937;
+      --bg-card: rgba(17, 24, 39, 0.85);
+      --bg-card-hover: rgba(31, 41, 55, 0.95);
+      --border-color: #374151;
+      --border-accent: rgba(99, 102, 241, 0.3);
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-light: #818cf8;
+      --accent-glow: rgba(99, 102, 241, 0.15);
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.1);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.1);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.1);
+      --info: #06b6d4;
+      --info-bg: rgba(6, 182, 212, 0.1);
+      --code-bg: #030712;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sidebar-width: 290px;
+      --header-height: 68px;
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f8fafc;
+      --border-color: #e2e8f0;
+      --border-accent: rgba(99, 102, 241, 0.25);
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
+      --accent-light: #6366f1;
+      --accent-glow: rgba(79, 70, 229, 0.08);
+      --success: #059669;
+      --success-bg: rgba(5, 150, 105, 0.08);
+      --warning: #d97706;
+      --warning-bg: rgba(217, 119, 6, 0.08);
+      --danger: #dc2626;
+      --danger-bg: rgba(220, 38, 38, 0.08);
+      --info: #0891b2;
+      --info-bg: rgba(8, 145, 178, 0.08);
+      --code-bg: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    /* Top Sticky Header */
+    header.top-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: var(--header-height);
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #9333ea);
+      color: #fff;
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand-pill {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      background: var(--accent-glow);
+      color: var(--accent-light);
+      border: 1px solid var(--border-accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.45rem 0.85rem 0.45rem 2.2rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      outline: none;
+      width: 220px;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+      width: 280px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.9rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    /* Reading Progress Bar */
+    .progress-bar-container {
+      position: fixed;
+      top: var(--header-height);
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: transparent;
+      z-index: 49;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), #a855f7, #10b981);
+      transition: width 0.1s;
+    }
+
+    /* Layout Wrapper */
+    .app-layout {
+      display: flex;
+      flex: 1;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Sidebar Navigation */
+    aside.sidebar {
+      width: var(--sidebar-width);
+      position: sticky;
+      top: var(--header-height);
+      height: calc(100vh - var(--header-height));
+      overflow-y: auto;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      padding: 1.5rem 1rem;
+      flex-shrink: 0;
+    }
+
+    .sidebar-section-title {
+      font-size: 0.725rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: var(--text-dim);
+      margin: 1.25rem 0 0.5rem 0.5rem;
+    }
+
+    .sidebar-section-title:first-child {
+      margin-top: 0;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .nav-item a {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+
+    .nav-item a:hover {
+      color: var(--text-main);
+      background: var(--bg-tertiary);
+    }
+
+    .nav-item a.active {
+      color: var(--accent-light);
+      background: var(--accent-glow);
+      font-weight: 600;
+      border-left: 3px solid var(--accent);
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-dim);
+    }
+
+    /* Main Content Area */
+    main.content-area {
+      flex: 1;
+      padding: 2.5rem 3rem;
+      min-width: 0;
+      max-width: 1100px;
+    }
+
+    /* Hero Banner */
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.08), rgba(16, 185, 129, 0.05));
+      border: 1px solid var(--border-accent);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-banner::after {
+      content: "";
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-tagline {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent-light);
+      background: var(--accent-glow);
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border-accent);
+    }
+
+    .hero-title {
+      font-size: 2.4rem;
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(120deg, var(--text-main) 60%, var(--accent-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      max-width: 780px;
+    }
+
+    .hero-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .hero-meta-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hero-meta-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .hero-meta-val {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 0.2rem;
+    }
+
+    /* Section Styling */
+    section.guide-section {
+      margin-bottom: 3.5rem;
+      scroll-margin-top: calc(var(--header-height) + 1.5rem);
+    }
+
+    .section-header {
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+
+    .section-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-title-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--accent-light);
+      font-size: 0.85rem;
+      font-weight: 800;
+    }
+
+    .section-lead {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+    }
+
+    /* Interactive Checklist */
+    .checklist-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .checklist-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .checklist-progress-text {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent-light);
+    }
+
+    .checklist-meter {
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+    }
+
+    .checklist-meter-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--success));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .checklist-items {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.6rem 0.85rem;
+      border-radius: 8px;
+      background: var(--bg-tertiary);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s;
+    }
+
+    .checklist-item:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .checklist-checkbox {
+      margin-top: 0.2rem;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .checklist-label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .checklist-label.completed {
+      text-decoration: line-through;
+      color: var(--text-dim);
+    }
+
+    /* Cards & Grids */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.2s;
+    }
+
+    .info-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px var(--accent-glow);
+    }
+
+    .card-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      background: var(--accent-glow);
+      color: var(--accent-light);
+      border: 1px solid var(--border-accent);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-desc {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Architecture Diagram Box */
+    .diagram-container {
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 1.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.825rem;
+      line-height: 1.45;
+      color: #94a3b8;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    /* Callout Alerts */
+    .callout {
+      border-radius: 10px;
+      padding: 1.15rem 1.35rem;
+      margin: 1.25rem 0;
+      display: flex;
+      gap: 1rem;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .callout-icon {
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .callout-title {
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .callout-info {
+      background: var(--info-bg);
+      border: 1px solid var(--info);
+      color: var(--text-main);
+    }
+    .callout-info .callout-icon, .callout-info .callout-title { color: var(--info); }
+
+    .callout-success {
+      background: var(--success-bg);
+      border: 1px solid var(--success);
+      color: var(--text-main);
+    }
+    .callout-success .callout-icon, .callout-success .callout-title { color: var(--success); }
+
+    .callout-warning {
+      background: var(--warning-bg);
+      border: 1px solid var(--warning);
+      color: var(--text-main);
+    }
+    .callout-warning .callout-icon, .callout-warning .callout-title { color: var(--warning); }
+
+    .callout-danger {
+      background: var(--danger-bg);
+      border: 1px solid var(--danger);
+      color: var(--text-main);
+    }
+    .callout-danger .callout-icon, .callout-danger .callout-title { color: var(--danger); }
+
+    /* Code Blocks */
+    .code-wrapper {
+      position: relative;
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      margin: 1rem 0 1.5rem 0;
+      overflow: hidden;
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.775rem;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+    }
+
+    .code-lang-tag {
+      font-weight: 700;
+      color: var(--accent-light);
+      text-transform: uppercase;
+    }
+
+    .code-copy-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 0.25rem 0.6rem;
+      border-radius: 5px;
+      font-size: 0.725rem;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s;
+    }
+
+    .code-copy-btn:hover {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    pre.code-content {
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.55;
+      color: #e2e8f0;
+      margin: 0;
+    }
+
+    code.inline-code {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      color: var(--accent-light);
+    }
+
+    /* Tabs Component */
+    .tab-group {
+      margin: 1.5rem 0;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 2px solid var(--border-color);
+      margin-bottom: 1.25rem;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      padding: 0.6rem 1.25rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      color: var(--accent-light);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Interactive Generators (Tools inside the guide) */
+    .interactive-tool-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-accent);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin: 1.75rem 0;
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+
+    .tool-header {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin-bottom: 1rem;
+    }
+
+    .tool-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .form-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .form-control {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.55rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-family: var(--font-mono);
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent);
+    }
+
+    /* Comparison & Spec Tables */
+    .spec-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      margin: 1.25rem 0;
+    }
+
+    table.spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+
+    table.spec-table th {
+      background: var(--bg-tertiary);
+      padding: 0.85rem 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    table.spec-table td {
+      padding: 0.85rem 1.1rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-muted);
+    }
+
+    table.spec-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    table.spec-table tr:hover td {
+      background: var(--bg-card-hover);
+      color: var(--text-main);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-success { background: var(--success-bg); color: var(--success); }
+    .badge-warning { background: var(--warning-bg); color: var(--warning); }
+    .badge-info { background: var(--info-bg); color: var(--info); }
+
+    /* Accordion FAQ */
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+
+    .faq-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border 0.2s;
+    }
+
+    .faq-item.open {
+      border-color: var(--border-accent);
+    }
+
+    .faq-trigger {
+      width: 100%;
+      padding: 1.1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .faq-icon {
+      transition: transform 0.2s ease;
+      color: var(--text-dim);
+    }
+
+    .faq-item.open .faq-icon {
+      transform: rotate(180deg);
+      color: var(--accent-light);
+    }
+
+    .faq-body {
+      display: none;
+      padding: 0 1.25rem 1.25rem 1.25rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .faq-item.open .faq-body {
+      display: block;
+    }
+
+    /* Footer */
+    footer.page-footer {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-color);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      margin-top: auto;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent-light);
+    }
+
+    /* Print Stylesheet (Clean PDF Export) */
+    @media print {
+      header.top-header, aside.sidebar, .progress-bar-container, .btn, .code-copy-btn, .checklist-card, .interactive-tool-box, .search-box {
+        display: none !important;
+      }
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        font-size: 11pt;
+      }
+      main.content-area {
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+      .hero-banner {
+        border: 1px solid #ccc !important;
+        background: #f9f9f9 !important;
+        color: #000 !important;
+      }
+      .code-wrapper, .diagram-container {
+        border: 1px solid #ccc !important;
+        background: #f5f5f5 !important;
+        color: #000 !important;
+        page-break-inside: avoid;
+      }
+      pre.code-content {
+        color: #000 !important;
+      }
+      section.guide-section {
+        page-break-inside: avoid;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      aside.sidebar {
+        display: none;
+      }
+      main.content-area {
+        padding: 1.5rem;
+      }
+      .hero-title {
+        font-size: 1.85rem;
+      }
+    }
+  </style>
+</head>
+<body data-theme="dark">
+
+  <!-- Reading Progress Bar -->
+  <div class="progress-bar-container">
+    <div class="progress-bar" id="readingProgressBar"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="top-header">
+    <a href="#welcome" class="brand-wrap">
+      <div class="brand-badge">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+      </div>
+      <div>
+        <div class="brand-title">SRS Genie <span class="brand-pill">Client Edition</span></div>
+      </div>
+    </a>
+
+    <div class="header-actions">
+      <!-- Live Search -->
+      <div class="search-box">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="guideSearchInput" class="search-input" placeholder="Search guide (Ctrl+K)...">
+      </div>
+
+      <!-- Theme Switcher -->
+      <button class="btn btn-secondary" id="themeToggleBtn" title="Toggle Dark/Light Mode">
+        <svg id="themeIconDark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        <svg id="themeIconLight" style="display:none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+      </button>
+
+      <!-- Print / PDF Button -->
+      <button class="btn btn-secondary" onclick="window.print()" title="Print or Export to PDF">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+        <span>Print Manual</span>
+      </button>
+
+      <a href="https://agapeinfosys.com/support" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Get Support</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- App Layout -->
+  <div class="app-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-section-title">Getting Started</div>
+      <ul class="nav-list">
+        <li class="nav-item"><a href="#welcome" class="active">Overview & Package</a></li>
+        <li class="nav-item"><a href="#requirements">System Requirements</a></li>
+        <li class="nav-item"><a href="#checklist">Interactive Checklist <span class="nav-badge" id="sidebarChecklistBadge">0/9</span></a></li>
+        <li class="nav-item"><a href="#architecture">System Architecture</a></li>
+      </ul>
+
+      <div class="sidebar-section-title">Deployment Guides</div>
+      <ul class="nav-list">
+        <li class="nav-item"><a href="#deploy-cpanel">Track 1: cPanel / Shared</a></li>
+        <li class="nav-item"><a href="#deploy-vps">Track 2: Ubuntu VPS / Nginx</a></li>
+        <li class="nav-item"><a href="#deploy-local">Track 3: Local Dev Sandbox</a></li>
+        <li class="nav-item"><a href="#tool-db-config">Database Config Generator</a></li>
+        <li class="nav-item"><a href="#tool-nginx-config">Web Server Config Generator</a></li>
+      </ul>
+
+      <div class="sidebar-section-title">Configuration & Admin</div>
+      <ul class="nav-list">
+        <li class="nav-item"><a href="#admin-setup">1. Admin Login & Credentials</a></li>
+        <li class="nav-item"><a href="#license-activation">2. License Key Activation</a></li>
+        <li class="nav-item"><a href="#ai-providers">3. AI Model Providers</a></li>
+        <li class="nav-item"><a href="#billing-cashfree">4. Cashfree Payment & Plans</a></li>
+        <li class="nav-item"><a href="#branding-whitelabel">5. White-labeling & Branding</a></li>
+        <li class="nav-item"><a href="#mcp-hub">6. IDE MCP Server Setup</a></li>
+        <li class="nav-item"><a href="#fraud-security">7. Anti-Fraud & Blacklist</a></li>
+      </ul>
+
+      <div class="sidebar-section-title">Maintenance & Help</div>
+      <ul class="nav-list">
+        <li class="nav-item"><a href="#troubleshooting">Troubleshooting & FAQ</a></li>
+        <li class="nav-item"><a href="#backups-updates">Updates & Backups</a></li>
+        <li class="nav-item"><a href="#support-channels">Official Agape Support</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content-area">
+
+      <!-- Hero Welcome -->
+      <section id="welcome" class="hero-banner">
+        <div class="hero-content">
+          <div class="hero-tagline">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Official Client Onboarding Manual
+          </div>
+          <h1 class="hero-title">Welcome to SRS Genie</h1>
+          <p class="hero-subtitle">
+            Thank you for purchasing <strong>SRS Genie</strong> — the Autonomous Specification Engineering Platform and AI-Ready Task Decomposer. This complete guide will walk you through deploying your software, configuring database connectivity, setting up AI API providers, activating your license, and onboarding clients in under 10 minutes.
+          </p>
+
+          <div class="hero-meta-grid">
+            <div class="hero-meta-item">
+              <span class="hero-meta-label">Software Version</span>
+              <span class="hero-meta-val">v2.5.0 LTS</span>
+            </div>
+            <div class="hero-meta-item">
+              <span class="hero-meta-label">Supported PHP</span>
+              <span class="hero-meta-val">PHP 8.1 - 8.3+</span>
+            </div>
+            <div class="hero-meta-item">
+              <span class="hero-meta-label">Database Engine</span>
+              <span class="hero-meta-val">MySQL 8.0+ / MariaDB</span>
+            </div>
+            <div class="hero-meta-item">
+              <span class="hero-meta-label">Front-End Bundle</span>
+              <span class="hero-meta-val">React 19 + Vite SPA</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Package Contents -->
+      <section class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">01</span> What's in Your Package
+          </h2>
+        </div>
+        <p class="section-lead">
+          Your purchase archive contains the entire production distribution, ready to deploy directly without requiring node build tools, as well as developer source files.
+        </p>
+
+        <div class="card-grid">
+          <div class="info-card">
+            <div class="card-icon-wrap">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            </div>
+            <h3 class="card-title">Production Web Bundle</h3>
+            <p class="card-desc">Compiled React 19 + TypeScript single-page application located in <code class="inline-code">dist/</code> with production asset hashing, gzip/brotli compression support, and deep URL routing rules.</p>
+          </div>
+
+          <div class="info-card">
+            <div class="card-icon-wrap">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            </div>
+            <h3 class="card-title">Self-Migrating PHP REST API</h3>
+            <p class="card-desc">Zero manual SQL import headaches. The lightweight, secure PHP 8.1+ REST API in <code class="inline-code">public/api/</code> automatically migrates all tables, indices, and default seed records on boot.</p>
+          </div>
+
+          <div class="info-card">
+            <div class="card-icon-wrap">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </div>
+            <h3 class="card-title">Multi-AI Provider Engine</h3>
+            <p class="card-desc">Direct support for Google Gemini 2.5/2.0, OpenAI GPT-4o, Anthropic Claude 3.7 Sonnet, DeepSeek-V3/R1, Groq, Ollama, and custom OpenAI-compatible endpoints with client-side failover.</p>
+          </div>
+
+          <div class="info-card">
+            <div class="card-icon-wrap">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+            </div>
+            <h3 class="card-title">MCP Server Protocol Gateway</h3>
+            <p class="card-desc">Hardened Model Context Protocol (MCP) STDIO server in <code class="inline-code">mcp/server.mjs</code> with SHA-256 token authorization, path-traversal guards, and rate limiting for Cursor & Claude Desktop.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <svg class="callout-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <div>
+            <div class="callout-title">Fast-Track Guarantee</div>
+            <p>You <strong>do not need to install Node.js or run npm build</strong> on your production hosting server if you deploy the pre-compiled <code class="inline-code">dist/</code> bundle. Simply copy the files and set your database connection!</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- System Requirements -->
+      <section id="requirements" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">02</span> Server Requirements & Compatibility
+          </h2>
+        </div>
+        <p class="section-lead">
+          Ensure your hosting provider or virtual machine satisfies the following baseline technical specifications:
+        </p>
+
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Minimum Requirement</th>
+                <th>Recommended Production</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Web Server</strong></td>
+                <td>Apache 2.4+ / Nginx 1.18+ / LiteSpeed</td>
+                <td>Nginx 1.24+ or Apache 2.4.50+</td>
+                <td><code class="inline-code">mod_rewrite</code> & <code class="inline-code">mod_headers</code> required for SPA routing</td>
+              </tr>
+              <tr>
+                <td><strong>PHP Runtime</strong></td>
+                <td>PHP 8.1.0</td>
+                <td>PHP 8.2 or PHP 8.3</td>
+                <td>FastCGI Process Manager (PHP-FPM) recommended</td>
+              </tr>
+              <tr>
+                <td><strong>PHP Extensions</strong></td>
+                <td>PDO MySQL, cURL, JSON, mbstring, OpenSSL</td>
+                <td>+ fileinfo, filter, hash, session</td>
+                <td>Standard on 99% of cPanel, Plesk & Cloud Linux setups</td>
+              </tr>
+              <tr>
+                <td><strong>MySQL Database</strong></td>
+                <td>MySQL 5.7+ or MariaDB 10.3+</td>
+                <td>MySQL 8.0+ or MariaDB 10.6+</td>
+                <td><code class="inline-code">utf8mb4</code> charset, InnoDB storage engine</td>
+              </tr>
+              <tr>
+                <td><strong>SSL Certificate</strong></td>
+                <td>Required (HTTPS)</td>
+                <td>Let's Encrypt / Cloudflare SSL</td>
+                <td>Required by browsers for Web Crypto API & Payment Gateways</td>
+              </tr>
+              <tr>
+                <td><strong>Memory (RAM)</strong></td>
+                <td>512 MB Free</td>
+                <td>2 GB+ RAM</td>
+                <td>Lightweight footprint; API is stateless and cached</td>
+              </tr>
+              <tr>
+                <td><strong>Disk Space</strong></td>
+                <td>100 MB</td>
+                <td>1 GB+ (for database growth)</td>
+                <td>SRS Genie bundle is under 15 MB uncompressed</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Interactive Checklist -->
+      <section id="checklist" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">03</span> Interactive Setup Progress Tracker
+          </h2>
+        </div>
+        <p class="section-lead">
+          Track your setup step-by-step. Your progress is saved automatically in your browser's local storage:
+        </p>
+
+        <div class="checklist-card">
+          <div class="checklist-header">
+            <div style="font-weight:700;font-size:1rem;">Onboarding Milestones</div>
+            <div class="checklist-progress-text" id="checklistProgressText">0 of 9 Completed (0%)</div>
+          </div>
+          <div class="checklist-meter">
+            <div class="checklist-meter-fill" id="checklistMeterFill"></div>
+          </div>
+          <div class="checklist-items">
+            <label class="checklist-item">
+              <input type="checkbox" class="checklist-checkbox" data-task="step1" onchange="updateProgress()">
+              <span class="checklist-label">1. Create MySQL Database and Database User with ALL PRIVILEGES</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="checklist-checkbox" data-task="step2" onchange="updateProgress()">
+              <span class="checklist-label">2. Upload production bundle files to web root (<code class="inline-code">public_html</code> or subdomain)</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="checklist-checkbox" data-task="step3" onchange="updateProgress()">
+              <span class="checklist-label">3. Configure database credentials in <code class="inline-code">public/api/config.php</code></span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="checklist-checkbox" data-task="step4" onchange="updateProgress()">
+              <span class="checklist-label">4. Test Health Endpoint (<code class="inline-code">/api/health.php</code>) to trigger automatic table migration</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="checklist-checkbox" data-task="step5" onchange="updateProgress()">
+              <span class="checklist-label">5. Sign in to Admin Console using default credentials (<code class="inline-code">admin@srsgenie.ai</code> / <code class="inline-code">Admin123!</code>)</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="checklist-checkbox" data-task="step6" onchange="updateProgress()">
+              <span class="checklist-label">6. Change default Super Admin password and profile details immediately</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="checklist-checkbox" data-task="step7" onchange="updateProgress()">
+              <span class="checklist-label">7. Activate software license using Envato Purchase Code or Agape License Key</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="checklist-checkbox" data-task="step8" onchange="updateProgress()">
+              <span class="checklist-label">8. Connect at least one AI Model Provider (Google Gemini, OpenAI, Claude, or DeepSeek)</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="checklist-checkbox" data-task="step9" onchange="updateProgress()">
+              <span class="checklist-label">9. (Optional) Set up Cashfree Gateway for SaaS billing and custom branding</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- System Architecture Diagram -->
+      <section id="architecture" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">04</span> Platform Architecture
+          </h2>
+        </div>
+        <p class="section-lead">
+          Understanding the data flow and boundary between the React client, PHP backend, MySQL storage, and external AI services:
+        </p>
+
+        <div class="diagram-container">
++---------------------------------------------------------------------------------------------------+
+|                                      SRS GENIE CLIENT ARCHITECTURE                                |
++---------------------------------------------------------------------------------------------------+
+|                                                                                                   |
+|    +-----------------------------+       HTTPS / WSS       +---------------------------------+   |
+|    |      USER BROWSER / UI      | <=====================> |    APACHE / NGINX REVERSE PROXY   |   |
+|    |  (React 19 + Vite SPA App)  |                         |  (SSL Termination & URL Rewrite)|   |
+|    +-----------------------------+                         +---------------------------------+   |
+|                   |                                                         |                     |
+|                   | Direct Browser Fetch                                    | Proxies /api/*      |
+|                   v                                                         v                     |
+|    +-----------------------------+                         +---------------------------------+   |
+|    |      MULTI-AI GATEWAY       |                         |       PHP 8.1+ REST API         |   |
+|    | - Google Gemini 2.5 Flash   |                         | - /api/auth.php (JWT/Pass Hash) |   |
+|    | - Anthropic Claude 3.7      |                         | - /api/projects.php (CRUD)      |   |
+|    | - OpenAI GPT-4o             |                         | - /api/saas.php (Settings/Plans)|   |
+|    | - DeepSeek-V3 / R1          |                         | - /api/license.php (Activation) |   |
+|    | - Groq / Ollama (Local LLM) |                         | - /api/cashfree.php (Payments)  |   |
+|    +-----------------------------+                         +---------------------------------+   |
+|                                                                             |                     |
+|                                                                             v                     |
+|    +-----------------------------+        STDIO JSON-RPC   +---------------------------------+   |
+|    |    AI AGENTS & IDEs (MCP)   | <====================== |       MYSQL 8.0+ DATABASE       |   |
+|    | - Cursor, Windsurf          |                         | - users, customers, projects    |   |
+|    | - Claude Desktop            |                         | - saas_settings, audit_logs     |   |
+|    | - Antigravity Agent         |                         | - payment_transactions          |   |
+|    +-----------------------------+                         +---------------------------------+   |
+|                                                                                                   |
++---------------------------------------------------------------------------------------------------+</div>
+      </section>
+
+      <!-- Track 1: cPanel / Shared Hosting Installation -->
+      <section id="deploy-cpanel" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">05</span> Track 1: cPanel / Shared Hosting Deployment
+          </h2>
+        </div>
+        <p class="section-lead">
+          Recommended for Hostinger, cPanel, StackCP, Serverbyt, Bluehost, Namecheap, and standard Apache/LiteSpeed hosts.
+        </p>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Step 1: Create MySQL Database in cPanel</h3>
+        <ol style="margin-left:1.5rem;color:var(--text-muted);display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;">
+          <li>Log into your <strong>cPanel</strong> dashboard.</li>
+          <li>Under <strong>Databases</strong>, click <strong>MySQL Database Wizard</strong> (or MySQL Databases).</li>
+          <li>Create a database name (e.g. <code class="inline-code">cpaneluser_srsgenie</code>).</li>
+          <li>Create a database user and generate a strong password (e.g. <code class="inline-code">cpaneluser_srsuser</code>).</li>
+          <li>Assign the user to the database and check <strong>ALL PRIVILEGES</strong>. Click <strong>Make Changes</strong>.</li>
+          <li>Note down the <strong>Database Name</strong>, <strong>User</strong>, and <strong>Password</strong>.</li>
+        </ol>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Step 2: Upload Application Files</h3>
+        <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+          Open <strong>cPanel File Manager</strong>. Navigate to your target directory:
+        </p>
+        <ul style="margin-left:1.5rem;color:var(--text-muted);display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;">
+          <li>For primary domain: navigate to <code class="inline-code">public_html/</code></li>
+          <li>For a subdomain (e.g. <code class="inline-code">srs.yourdomain.com</code>): navigate to the subdomain's document root.</li>
+        </ul>
+        <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+          Upload the distribution zip (<code class="inline-code">dist.zip</code> or compiled package) and extract it. Ensure the folder structure matches:
+        </p>
+
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang-tag">Folder Structure</span>
+            <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+          </div>
+          <pre class="code-content">public_html/
+├── .htaccess                 # Essential Apache URL routing & security rules
+├── index.html                # Vite React Single Page Application entry
+├── assets/                   # Compiled JS, CSS, and SVG chunks
+├── api/                      # PHP REST API endpoints
+│   ├── config.php            # &lt;-- EDIT THIS with your DB credentials!
+│   ├── db.php                # Database PDO engine & auto-migration
+│   ├── auth.php              # Authentication & password management
+│   ├── health.php            # Diagnostics & auto-migration trigger
+│   ├── license.php           # Envato / Agape License client
+│   ├── license_check.php     # Cryptographic domain & signature check
+│   ├── projects.php          # Specification projects store
+│   ├── saas.php              # SaaS settings, AI keys & billing
+│   └── cashfree.php          # Payment gateway order & webhook handler
+└── mcp/                      # Model Context Protocol server for IDEs
+    └── server.mjs            # Hardened STDIO MCP server</pre>
+        </div>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Step 3: Configure Database Connection</h3>
+        <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+          Open <code class="inline-code">api/config.php</code> in the File Manager Code Editor and enter your MySQL details:
+        </p>
+
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang-tag">php (api/config.php)</span>
+            <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+          </div>
+          <pre class="code-content">&lt;?php
+/**
+ * SRS Genie - Database Configuration
+ */
+return [
+    'db_host'    =&gt; getenv('DB_HOST') ?: 'localhost',            // Usually 'localhost' or '127.0.0.1'
+    'db_name'    =&gt; getenv('DB_NAME') ?: 'cpaneluser_srsgenie',  // Your MySQL Database Name
+    'db_user'    =&gt; getenv('DB_USER') ?: 'cpaneluser_srsuser',   // Your MySQL Database User
+    'db_pass'    =&gt; getenv('DB_PASS') ?: 'YourStrongPassword123!',// Your MySQL Database Password
+    'db_charset' =&gt; 'utf8mb4'
+];</pre>
+        </div>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Step 4: Verify Apache .htaccess File</h3>
+        <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+          Verify that <code class="inline-code">.htaccess</code> is present in your web root. In cPanel, click <strong>Settings</strong> (top right) &gt; check <strong>Show Hidden Files (dotfiles)</strong> to see it:
+        </p>
+
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang-tag">apache (.htaccess)</span>
+            <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+          </div>
+          <pre class="code-content">&lt;IfModule mod_rewrite.c&gt;
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. Forward REST API calls to PHP scripts
+  RewriteRule ^api/health$ api/health.php [L,QSA]
+  RewriteRule ^api/auth(/.*)?$ api/auth.php [L,QSA]
+  RewriteRule ^api/projects(/.*)?$ api/projects.php [L,QSA]
+  RewriteRule ^api/saas(/.*)?$ api/saas.php [L,QSA]
+  RewriteRule ^api/cashfree(/.*)?$ api/cashfree.php [L,QSA]
+  RewriteRule ^api/license(/.*)?$ api/license.php [L,QSA]
+
+  # 2. Prevent directory listing
+  Options -Indexes
+
+  # 3. Handle Single Page Application (React Router / HTML5 History)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  RewriteRule ^ index.html [L]
+&lt;/IfModule&gt;
+
+# MIME Types & Headers
+&lt;IfModule mod_mime.c&gt;
+  AddType application/javascript .js .mjs
+  AddType text/css .css
+  AddType image/svg+xml .svg
+&lt;/IfModule&gt;
+
+&lt;IfModule mod_headers.c&gt;
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
+&lt;/IfModule&gt;</pre>
+        </div>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Step 5: Run Health Check & Auto-Migration</h3>
+        <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+          In your browser, visit your health endpoint:
+          <br><code class="inline-code">https://yourdomain.com/api/health.php</code>
+        </p>
+        <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+          You should see a successful JSON response similar to:
+        </p>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang-tag">json (Success Response)</span>
+            <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+          </div>
+          <pre class="code-content">{
+  "status": "connected",
+  "database": "MySQL",
+  "tables_initialized": [
+    "users",
+    "projects",
+    "saas_settings",
+    "customers",
+    "payment_transactions",
+    "audit_logs"
+  ],
+  "registered_users": 1,
+  "server_time": "2026-11-18 13:55:00",
+  "success": true
+}</pre>
+        </div>
+        <div class="callout callout-success">
+          <svg class="callout-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <div>
+            <div class="callout-title">Database Auto-Migration Successful!</div>
+            <p>Visiting <code class="inline-code">health.php</code> automatically generated all tables and seeded the default Super Admin account (<code class="inline-code">admin@srsgenie.ai</code>). Your installation is now ready!</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Track 2: VPS / Dedicated Linux Server (Nginx / Apache) -->
+      <section id="deploy-vps" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">06</span> Track 2: Ubuntu VPS Deployment (Nginx + PHP-FPM)
+          </h2>
+        </div>
+        <p class="section-lead">
+          Full step-by-step terminal instructions for Ubuntu 22.04 / 24.04 LTS servers (AWS EC2, DigitalOcean, Hetzner, Linode, Vultr):
+        </p>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Step 1: Install Nginx, PHP 8.2 & MySQL Server</h3>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang-tag">bash (Terminal)</span>
+            <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+          </div>
+          <pre class="code-content"># Update package repositories
+sudo apt update && sudo apt upgrade -y
+
+# Install Nginx, MySQL Server, and PHP 8.2 with extensions
+sudo apt install -y nginx mysql-server certbot python3-certbot-nginx \
+  php8.2-fpm php8.2-mysql php8.2-curl php8.2-mbstring php8.2-xml \
+  php8.2-zip php8.2-gd php8.2-intl unzip git curl
+
+# Verify PHP-FPM status
+sudo systemctl status php8.2-fpm --no-pager</pre>
+        </div>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Step 2: Create MySQL Database and User</h3>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang-tag">sql (MySQL Terminal)</span>
+            <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+          </div>
+          <pre class="code-content">sudo mysql
+
+-- Create database with utf8mb4 collation
+CREATE DATABASE srsgenie_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Create secure user
+CREATE USER 'srsgenie_user'@'localhost' IDENTIFIED BY 'PutStrongPasswordHere$2026!';
+
+-- Grant privileges
+GRANT ALL PRIVILEGES ON srsgenie_db.* TO 'srsgenie_user'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;</pre>
+        </div>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Step 3: Setup Web Root and Permissions</h3>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang-tag">bash (Terminal)</span>
+            <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+          </div>
+          <pre class="code-content"># Create application directory
+sudo mkdir -p /var/www/srsgenie
+
+# Upload or copy your SRS Genie files into /var/www/srsgenie
+# (If using SCP or Git clone):
+# sudo git clone https://github.com/your-repo/srsgenie.git /var/www/srsgenie
+
+# Configure database in config.php
+sudo nano /var/www/srsgenie/public/api/config.php
+
+# Assign web permissions to www-data
+sudo chown -R www-data:www-data /var/www/srsgenie
+sudo chmod -R 755 /var/www/srsgenie</pre>
+        </div>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Step 4: Configure Nginx Server Block</h3>
+        <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+          Create a new Nginx configuration file: <code class="inline-code">sudo nano /etc/nginx/sites-available/srsgenie.conf</code>
+        </p>
+
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang-tag">nginx (/etc/nginx/sites-available/srsgenie.conf)</span>
+            <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+          </div>
+          <pre class="code-content">server {
+    listen 80;
+    server_name srs.yourdomain.com; # Replace with your actual domain
+
+    root /var/www/srsgenie/dist;     # Or root /var/www/srsgenie if files are in root
+    index index.html index.php;
+
+    client_max_body_size 32M;
+
+    # Gzip compression
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    # API rewrite rule to PHP API handlers
+    location /api/ {
+        alias /var/www/srsgenie/public/api/;
+        try_files $uri $uri/ @api_rewrite;
+
+        location ~ \.php$ {
+            include snippets/fastcgi-php.conf;
+            fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+            fastcgi_param SCRIPT_FILENAME $request_filename;
+        }
+    }
+
+    location @api_rewrite {
+        rewrite ^/api/(.*)$ /api/$1.php last;
+    }
+
+    # SPA routing for React (Vite)
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Deny hidden files like .env or .git
+    location ~ /\. {
+        deny all;
+    }
+}</pre>
+        </div>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Step 5: Enable Site & Issue Free SSL Certificate</h3>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang-tag">bash (Terminal)</span>
+            <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+          </div>
+          <pre class="code-content"># Enable configuration in Nginx
+sudo ln -s /etc/nginx/sites-available/srsgenie.conf /etc/nginx/sites-enabled/
+sudo nginx -t
+
+# Reload Nginx
+sudo systemctl reload nginx
+
+# Install free Let's Encrypt SSL certificate
+sudo certbot --nginx -d srs.yourdomain.com</pre>
+        </div>
+      </section>
+
+      <!-- Track 3: Local Dev Sandbox Setup -->
+      <section id="deploy-local" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">07</span> Track 3: Local Development & Sandbox Mode
+          </h2>
+        </div>
+        <p class="section-lead">
+          For developers customizing the React frontend or testing plugins locally before cloud deployment:
+        </p>
+
+        <div class="callout callout-success">
+          <svg class="callout-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <div>
+            <div class="callout-title">Permissive Local Sandbox License</div>
+            <p>SRS Genie automatically detects local test environments (<code class="inline-code">localhost</code>, <code class="inline-code">127.0.0.1</code>, <code class="inline-code">*.local</code>, <code class="inline-code">*.test</code>, <code class="inline-code">dev.*</code>, <code class="inline-code">staging.*</code>) and runs in <strong>Free Developer Sandbox Mode</strong> with all features unlocked. You do not need to burn your production activation key for local development!</p>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Running Frontend Development Server</h3>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang-tag">bash (Terminal / PowerShell)</span>
+            <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+          </div>
+          <pre class="code-content"># 1. Clone or unpack SRS Genie project folder
+cd srs_genie
+
+# 2. Install NPM dependencies
+npm install
+
+# 3. Create .env.local file
+echo "GEMINI_API_KEY=your_gemini_api_key_here" &gt; .env.local
+
+# 4. Start Vite hot-reloading dev server
+npm run dev
+
+# App will launch on http://localhost:5173</pre>
+        </div>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Building for Production</h3>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang-tag">bash (Terminal)</span>
+            <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+          </div>
+          <pre class="code-content"># Compiles TypeScript and creates optimized bundles in dist/
+npm run build
+
+# Preview production build locally
+npm run preview</pre>
+        </div>
+      </section>
+
+      <!-- Interactive Generator: Database Config -->
+      <section id="tool-db-config" class="interactive-tool-box">
+        <div class="tool-header">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent-light);"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          <div class="tool-title">Interactive Tool: Database Configuration Generator</div>
+        </div>
+        <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.25rem;">
+          Fill in your database details below to generate a drop-in ready <code class="inline-code">api/config.php</code> snippet with copy-to-clipboard:
+        </p>
+
+        <div class="tool-grid">
+          <div class="form-group">
+            <label class="form-label">Database Host</label>
+            <input type="text" id="genDbHost" class="form-control" value="localhost" oninput="generateDbConfig()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Database Name</label>
+            <input type="text" id="genDbName" class="form-control" value="srsgenie_db" oninput="generateDbConfig()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Database User</label>
+            <input type="text" id="genDbUser" class="form-control" value="srsgenie_admin" oninput="generateDbConfig()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Database Password</label>
+            <input type="text" id="genDbPass" class="form-control" value="SuperSecretPassword$123" oninput="generateDbConfig()">
+          </div>
+        </div>
+
+        <div class="code-wrapper" style="margin-bottom:0;">
+          <div class="code-header">
+            <span class="code-lang-tag">Generated config.php</span>
+            <button class="code-copy-btn" onclick="copySnippet(this)">Copy Generated Code</button>
+          </div>
+          <pre class="code-content" id="genDbOutput">&lt;?php
+return [
+    'db_host'    =&gt; getenv('DB_HOST') ?: 'localhost',
+    'db_name'    =&gt; getenv('DB_NAME') ?: 'srsgenie_db',
+    'db_user'    =&gt; getenv('DB_USER') ?: 'srsgenie_admin',
+    'db_pass'    =&gt; getenv('DB_PASS') ?: 'SuperSecretPassword$123',
+    'db_charset' =&gt; 'utf8mb4'
+];</pre>
+        </div>
+      </section>
+
+      <!-- Interactive Generator: Web Server Config -->
+      <section id="tool-nginx-config" class="interactive-tool-box">
+        <div class="tool-header">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent-light);"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <div class="tool-title">Interactive Tool: Web Server VirtualHost Generator</div>
+        </div>
+        <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.25rem;">
+          Enter your domain name and select your server type to generate production configuration blocks:
+        </p>
+
+        <div class="tool-grid">
+          <div class="form-group">
+            <label class="form-label">Target Domain / Subdomain</label>
+            <input type="text" id="genDomain" class="form-control" value="srs.yourdomain.com" oninput="generateServerConfig()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Server Type</label>
+            <select id="genServerType" class="form-control" onchange="generateServerConfig()">
+              <option value="nginx">Nginx (Ubuntu / Debian + PHP-FPM)</option>
+              <option value="apache">Apache VirtualHost (.conf)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Document Root Path</label>
+            <input type="text" id="genDocRoot" class="form-control" value="/var/www/srsgenie" oninput="generateServerConfig()">
+          </div>
+        </div>
+
+        <div class="code-wrapper" style="margin-bottom:0;">
+          <div class="code-header">
+            <span class="code-lang-tag" id="genServerLang">nginx config</span>
+            <button class="code-copy-btn" onclick="copySnippet(this)">Copy Server Block</button>
+          </div>
+          <pre class="code-content" id="genServerOutput"></pre>
+        </div>
+      </section>
+
+      <!-- Post-Installation Step 1: Admin Credentials -->
+      <section id="admin-setup" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">08</span> Step 1: Initial Admin Login & Security Hardening
+          </h2>
+        </div>
+        <p class="section-lead">
+          Once your health check passes, log into your new installation to set up administrative ownership:
+        </p>
+
+        <div class="callout callout-warning">
+          <svg class="callout-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div>
+            <div class="callout-title">Critical Security Action Required</div>
+            <p>Every default SRS Genie installation is pre-seeded with factory credentials. You <strong>must change these immediately</strong> after logging in to prevent unauthorized administrative access.</p>
+          </div>
+        </div>
+
+        <div class="card-grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="info-card">
+            <h4 style="color:var(--text-dim);font-size:0.75rem;text-transform:uppercase;">Default Super Admin Email</h4>
+            <div style="font-size:1.25rem;font-weight:700;font-family:var(--font-mono);color:var(--accent-light);margin-top:0.25rem;">admin@srsgenie.ai</div>
+          </div>
+          <div class="info-card">
+            <h4 style="color:var(--text-dim);font-size:0.75rem;text-transform:uppercase;">Default Master Password</h4>
+            <div style="font-size:1.25rem;font-weight:700;font-family:var(--font-mono);color:var(--warning);margin-top:0.25rem;">Admin123!</div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">How to Change Admin Password:</h3>
+        <ol style="margin-left:1.5rem;color:var(--text-muted);display:flex;flex-direction:column;gap:0.4rem;">
+          <li>Visit your website: <code class="inline-code">https://yourdomain.com</code></li>
+          <li>Click <strong>Sign In</strong> in the top header and enter the default email and password above.</li>
+          <li>Once logged in, click your name or avatar in the header &gt; select <strong>Admin Console</strong>.</li>
+          <li>In the Admin Console left sidebar, click <strong>Business Settings</strong> or <strong>Staff & Roles</strong>.</li>
+          <li>Update your primary Admin Email, Full Name, and choose a new, secure password. Click <strong>Save Changes</strong>.</li>
+        </ol>
+      </section>
+
+      <!-- Post-Installation Step 2: License Activation -->
+      <section id="license-activation" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">09</span> Step 2: Software License Activation
+          </h2>
+        </div>
+        <p class="section-lead">
+          SRS Genie uses an official licensing handshake with Agape Central Licensing (<code class="inline-code">agapeinfosys.com</code>) to deliver one-click software updates and verify purchase rights.
+        </p>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Finding Your License Key</h3>
+        <ul style="margin-left:1.5rem;color:var(--text-muted);display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;">
+          <li><strong>If bought from CodeCanyon / Envato Market:</strong> Your license key is your <strong>Item Purchase Code</strong>. You can find it on your Envato Downloads page by clicking <em>Download &gt; License certificate &amp; purchase code (text)</em>. Example format: <code class="inline-code">4b7e8d91-38a2-4a7b-912f-0d9238e8211b</code>.</li>
+          <li><strong>If bought directly from Agape:</strong> Check your receipt email or customer portal for your Agape Product Key (<code class="inline-code">AGP-SRS-XXXX-XXXX</code>).</li>
+        </ul>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Activating in Admin Console</h3>
+        <ol style="margin-left:1.5rem;color:var(--text-muted);display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;">
+          <li>Open <strong>Admin Console</strong> &gt; click the <strong>License &amp; Updates</strong> tab.</li>
+          <li>Paste your Purchase Code or License Key into the <strong>Activation Key</strong> input.</li>
+          <li>Click <strong>Verify &amp; Activate License</strong>.</li>
+          <li>The system connects to <code class="inline-code">https://agapeinfosys.com/api/v1/license/verify</code>, binds your current domain, stores a cryptographic validation hash, and unlocks all enterprise capabilities!</li>
+        </ol>
+
+        <div class="callout callout-info">
+          <svg class="callout-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <div>
+            <div class="callout-title">Moving Domains or Reinstalling?</div>
+            <p>You can unbind a license at any time by clicking <strong>Deactivate / Unbind Domain</strong> in the Admin License view before moving your installation to a new domain or server.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Post-Installation Step 3: AI Providers -->
+      <section id="ai-providers" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">10</span> Step 3: Configure AI Model Providers
+          </h2>
+        </div>
+        <p class="section-lead">
+          SRS Genie includes built-in connectors for all premier Large Language Model APIs. You only need to configure at least one active provider to enable specification synthesis.
+        </p>
+
+        <div class="tab-group">
+          <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab(this, 'tab-gemini')">Google Gemini (Recommended)</button>
+            <button class="tab-btn" onclick="switchTab(this, 'tab-openai')">OpenAI (GPT-4o)</button>
+            <button class="tab-btn" onclick="switchTab(this, 'tab-anthropic')">Anthropic Claude</button>
+            <button class="tab-btn" onclick="switchTab(this, 'tab-deepseek')">DeepSeek & Groq</button>
+            <button class="tab-btn" onclick="switchTab(this, 'tab-ollama')">Ollama (Self-Hosted)</button>
+          </div>
+
+          <!-- Gemini Tab -->
+          <div class="tab-panel active" id="tab-gemini">
+            <h4 style="margin-bottom:0.5rem;font-size:1.05rem;">Google Gemini 2.5 & 2.0 Integration</h4>
+            <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+              Google Gemini is the default recommended provider for SRS Genie due to its massive 1M+ token context window, ultra-fast generation speed, and generous free tier for developers.
+            </p>
+            <ol style="margin-left:1.5rem;color:var(--text-muted);display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;">
+              <li>Visit <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color:var(--accent-light);">Google AI Studio</a> and click <strong>Create API Key</strong>.</li>
+              <li>In SRS Genie, go to <strong>Admin Console &gt; AI Providers</strong>.</li>
+              <li>Find <strong>Google AI (Gemini)</strong> and click <strong>Configure / Edit</strong>.</li>
+              <li>Paste your API key into the <strong>API Key</strong> field.</li>
+              <li>Click <strong>Test Connection</strong> to verify your key against live Gemini servers.</li>
+              <li>Set <strong>Gemini 2.5 Flash</strong> as the Default Model for fast streaming specifications.</li>
+            </ol>
+          </div>
+
+          <!-- OpenAI Tab -->
+          <div class="tab-panel" id="tab-openai">
+            <h4 style="margin-bottom:0.5rem;font-size:1.05rem;">OpenAI Integration</h4>
+            <ol style="margin-left:1.5rem;color:var(--text-muted);display:flex;flex-direction:column;gap:0.4rem;">
+              <li>Obtain an API key from the <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" style="color:var(--accent-light);">OpenAI Platform</a>.</li>
+              <li>In <strong>Admin Console &gt; AI Providers</strong>, edit <strong>OpenAI</strong>.</li>
+              <li>Enter your API key (<code class="inline-code">sk-proj-...</code>).</li>
+              <li>Enable models: <code class="inline-code">gpt-4o</code> and <code class="inline-code">gpt-4o-mini</code>.</li>
+              <li>Click <strong>Save &amp; Test</strong>.</li>
+            </ol>
+          </div>
+
+          <!-- Anthropic Tab -->
+          <div class="tab-panel" id="tab-anthropic">
+            <h4 style="margin-bottom:0.5rem;font-size:1.05rem;">Anthropic Claude Integration</h4>
+            <ol style="margin-left:1.5rem;color:var(--text-muted);display:flex;flex-direction:column;gap:0.4rem;">
+              <li>Obtain an API key from the <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" style="color:var(--accent-light);">Anthropic Console</a>.</li>
+              <li>In <strong>Admin Console &gt; AI Providers</strong>, edit <strong>Anthropic</strong>.</li>
+              <li>Enter your API key (<code class="inline-code">sk-ant-...</code>).</li>
+              <li>Enable models: <code class="inline-code">claude-3-7-sonnet</code> and <code class="inline-code">claude-3-5-haiku</code>.</li>
+              <li>Click <strong>Save &amp; Test</strong>.</li>
+            </ol>
+          </div>
+
+          <!-- DeepSeek Tab -->
+          <div class="tab-panel" id="tab-deepseek">
+            <h4 style="margin-bottom:0.5rem;font-size:1.05rem;">DeepSeek & Groq Ultra-Fast Inference</h4>
+            <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+              SRS Genie supports native reasoning models like DeepSeek-R1 and Groq LPUs for instant task decomposition:
+            </p>
+            <ul style="margin-left:1.5rem;color:var(--text-muted);display:flex;flex-direction:column;gap:0.4rem;">
+              <li>For DeepSeek: Enter your <code class="inline-code">api.deepseek.com</code> key with models <code class="inline-code">deepseek-chat</code> (V3) and <code class="inline-code">deepseek-reasoner</code> (R1).</li>
+              <li>For Groq: Enter your <code class="inline-code">console.groq.com</code> key with models <code class="inline-code">llama-3.3-70b-versatile</code> or <code class="inline-code">mixtral-8x7b-32768</code>.</li>
+            </ul>
+          </div>
+
+          <!-- Ollama Tab -->
+          <div class="tab-panel" id="tab-ollama">
+            <h4 style="margin-bottom:0.5rem;font-size:1.05rem;">Local Self-Hosted LLMs with Ollama</h4>
+            <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+              Run 100% offline or on private cloud GPUs without paying API tokens:
+            </p>
+            <ol style="margin-left:1.5rem;color:var(--text-muted);display:flex;flex-direction:column;gap:0.4rem;">
+              <li>Ensure Ollama is running on your server or LAN (<code class="inline-code">ollama serve</code>).</li>
+              <li>Pull your chosen model: <code class="inline-code">ollama run llama3:70b</code> or <code class="inline-code">ollama run deepseek-r1:14b</code>.</li>
+              <li>In SRS Genie AI Providers, set the Base URL to: <code class="inline-code">http://127.0.0.1:11434/v1</code>.</li>
+              <li>Leave API Key empty or enter dummy text, and enable your local model.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- Post-Installation Step 4: Billing & Cashfree -->
+      <section id="billing-cashfree" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">11</span> Step 4: SaaS Billing & Cashfree Payments
+          </h2>
+        </div>
+        <p class="section-lead">
+          Monetize your specification platform by connecting Cashfree Payment Gateway to collect subscription payments (Cards, UPI, Netbanking, International):
+        </p>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Connecting Cashfree Gateway</h3>
+        <ol style="margin-left:1.5rem;color:var(--text-muted);display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;">
+          <li>Create an account on <a href="https://merchant.cashfree.com/" target="_blank" rel="noopener noreferrer" style="color:var(--accent-light);">Cashfree Payments</a>.</li>
+          <li>Go to <strong>Payment Gateway &gt; Developers &gt; API Keys</strong>.</li>
+          <li>Copy your <strong>App ID</strong> and <strong>Secret Key</strong>.</li>
+          <li>In SRS Genie, go to <strong>Admin Console &gt; Business Settings &gt; Payment Gateway</strong>.</li>
+          <li>Paste the credentials, select your environment (<strong>Sandbox</strong> for testing, <strong>Production</strong> for live), and select your currency (<strong>INR</strong> or <strong>USD</strong>).</li>
+          <li>Set your Cashfree Webhook URL to:
+            <br><code class="inline-code">https://yourdomain.com/api/cashfree.php?action=webhook</code>
+          </li>
+          <li>Click <strong>Save Gateway Settings</strong>.</li>
+        </ol>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">Customizing Pricing Plans</h3>
+        <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+          In <strong>Admin Console &gt; Pricing Plans</strong>, you can configure your tier options:
+        </p>
+        <div class="card-grid">
+          <div class="info-card">
+            <h4 class="card-title">Free / Starter Plan</h4>
+            <p class="card-desc">Default plan for new users. Configure how many specification projects they can generate per month (e.g. 1 or 2).</p>
+          </div>
+          <div class="info-card">
+            <h4 class="card-title">Pro Plan</h4>
+            <p class="card-desc">Monthly or yearly recurring price. Includes higher project quota, complete 22-file .specs hierarchy, and full markdown export.</p>
+          </div>
+          <div class="info-card">
+            <h4 class="card-title">Enterprise / Team</h4>
+            <p class="card-desc">Unlimited specifications, custom MCP server API keys, multi-user seats, and priority synthesis queues.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Post-Installation Step 5: Branding & White-labeling -->
+      <section id="branding-whitelabel" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">12</span> Step 5: White-Labeling & Company Branding
+          </h2>
+        </div>
+        <p class="section-lead">
+          Rebrand SRS Genie to represent your software agency, venture studio, or corporate brand:
+        </p>
+
+        <ol style="margin-left:1.5rem;color:var(--text-muted);display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;">
+          <li>In <strong>Admin Console &gt; Business Settings</strong>, update the following fields:
+            <ul style="margin-left:1.25rem;margin-top:0.35rem;display:flex;flex-direction:column;gap:0.25rem;">
+              <li><strong>Brand Name:</strong> Displayed on navigation, headers, and footer.</li>
+              <li><strong>Legal Entity Name:</strong> Appears on customer invoices and receipts.</li>
+              <li><strong>Support Email:</strong> Where customer support inquiries are routed.</li>
+              <li><strong>Billing Email &amp; Tax ID / GSTIN:</strong> Included on PDF and email invoices.</li>
+              <li><strong>Timezone &amp; Default Currency:</strong> Sets date formats and invoice currency.</li>
+              <li><strong>Maintenance Mode:</strong> Toggle when performing server updates.</li>
+              <li><strong>Announcement Banner:</strong> Broadcast notices or discounts across all user dashboards.</li>
+            </ul>
+          </li>
+          <li>To customize logos and favicons, simply replace <code class="inline-code">public/favicon.ico</code> and update your logo in Business Settings.</li>
+        </ol>
+      </section>
+
+      <!-- Post-Installation Step 6: MCP Hub & IDE Integration -->
+      <section id="mcp-hub" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">13</span> Step 6: Connect IDEs via Model Context Protocol (MCP)
+          </h2>
+        </div>
+        <p class="section-lead">
+          SRS Genie bridges specifications directly into modern AI code editors like <strong>Cursor</strong>, <strong>Windsurf</strong>, <strong>Claude Desktop</strong>, and <strong>Antigravity</strong> using the standard Model Context Protocol.
+        </p>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">How MCP Integration Works:</h3>
+        <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+          The standalone script <code class="inline-code">mcp/server.mjs</code> runs as a JSON-RPC STDIO server. When an AI agent needs requirements, it queries the SRS Genie MCP server, which safely reads the <code class="inline-code">.specs/</code> hierarchy and passes exact architectural context to the AI assistant.
+        </p>
+
+        <div class="tab-group">
+          <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab(this, 'tab-mcp-cursor')">Cursor IDE</button>
+            <button class="tab-btn" onclick="switchTab(this, 'tab-mcp-claude')">Claude Desktop</button>
+            <button class="tab-btn" onclick="switchTab(this, 'tab-mcp-windsurf')">Windsurf & Antigravity</button>
+          </div>
+
+          <!-- Cursor Tab -->
+          <div class="tab-panel active" id="tab-mcp-cursor">
+            <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+              In your project folder, create or edit <code class="inline-code">.cursor/mcp.json</code> (or in Cursor Settings &gt; Features &gt; MCP &gt; Add New MCP Server):
+            </p>
+            <div class="code-wrapper">
+              <div class="code-header">
+                <span class="code-lang-tag">json (.cursor/mcp.json)</span>
+                <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+              </div>
+              <pre class="code-content">{
+  "mcpServers": {
+    "srs-genie": {
+      "command": "node",
+      "args": ["./mcp/server.mjs", "--key=YOUR_MCP_API_KEY"],
+      "env": {
+        "SRS_MCP_KEY": "YOUR_MCP_API_KEY"
+      }
+    }
+  }
+}</pre>
+            </div>
+          </div>
+
+          <!-- Claude Desktop Tab -->
+          <div class="tab-panel" id="tab-mcp-claude">
+            <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+              Edit your Claude Desktop configuration file (<code class="inline-code">%APPDATA%\Claude\claude_desktop_config.json</code> on Windows or <code class="inline-code">~/Library/Application Support/Claude/claude_desktop_config.json</code> on macOS):
+            </p>
+            <div class="code-wrapper">
+              <div class="code-header">
+                <span class="code-lang-tag">json (claude_desktop_config.json)</span>
+                <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+              </div>
+              <pre class="code-content">{
+  "mcpServers": {
+    "srs-genie": {
+      "command": "node",
+      "args": ["/absolute/path/to/srs_genie/mcp/server.mjs"],
+      "env": {
+        "SRS_MCP_KEY": "YOUR_MCP_API_KEY"
+      }
+    }
+  }
+}</pre>
+            </div>
+          </div>
+
+          <!-- Windsurf / Antigravity Tab -->
+          <div class="tab-panel" id="tab-mcp-windsurf">
+            <p style="color:var(--text-muted);margin-bottom:0.75rem;">
+              Configure MCP in Windsurf or Google Antigravity config file:
+            </p>
+            <div class="code-wrapper">
+              <div class="code-header">
+                <span class="code-lang-tag">json (mcp_config.json)</span>
+                <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+              </div>
+              <pre class="code-content">{
+  "mcpServers": {
+    "srs-genie-protocol": {
+      "command": "node",
+      "args": ["mcp/server.mjs"],
+      "env": {
+        "SRS_MCP_KEY": "YOUR_MCP_API_KEY"
+      }
+    }
+  }
+}</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Post-Installation Step 7: Fraud & Security -->
+      <section id="fraud-security" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">14</span> Step 7: Anti-Fraud & Blacklisting Engine
+          </h2>
+        </div>
+        <p class="section-lead">
+          Protect your OpenAI and Gemini API token quotas from spam and disposable email bots:
+        </p>
+
+        <div class="card-grid">
+          <div class="info-card">
+            <h4 class="card-title">Disposable Email Blocker</h4>
+            <p class="card-desc">SRS Genie automatically checks registrations against a database of 3,500+ temporary email providers (e.g. Mailinator, GuerrillaMail, 10MinuteMail) and rejects trial creation.</p>
+          </div>
+          <div class="info-card">
+            <h4 class="card-title">Rate Limiting Protection</h4>
+            <p class="card-desc">The built-in sliding window rate limiter prevents script abuse by capping specification requests per tenant, per IP, and per API key.</p>
+          </div>
+          <div class="info-card">
+            <h4 class="card-title">Domain & IP Blacklist</h4>
+            <p class="card-desc">In <strong>Admin Console &gt; Blacklist</strong>, you can permanently ban malicious domains, email suffixes, or IP ranges with one click.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Troubleshooting & FAQ -->
+      <section id="troubleshooting" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">15</span> Troubleshooting & Frequently Asked Questions
+          </h2>
+        </div>
+        <p class="section-lead">
+          Solutions to the most common configuration and deployment questions:
+        </p>
+
+        <div class="faq-list">
+          <div class="faq-item">
+            <button class="faq-trigger" onclick="toggleFaq(this)">
+              <span>Q: I see a 500 Internal Server Error when visiting /api/health.php. What should I check?</span>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-body">
+              A 500 error on <code class="inline-code">health.php</code> almost always means the MySQL database credentials in <code class="inline-code">api/config.php</code> are incorrect, or the MySQL user does not have permissions to create tables.
+              <br><br>
+              <strong>Checklist to resolve:</strong>
+              <ul style="margin-left:1.25rem;margin-top:0.35rem;">
+                <li>Verify your database host. On shared hosting like cPanel or StackCP, check if your host uses <code class="inline-code">localhost</code> or a specialized host like <code class="inline-code">sdb-xx.hosting.stackcp.net</code>.</li>
+                <li>Verify that you entered the exact database name and database user (including any cPanel prefix like <code class="inline-code">user_dbname</code>).</li>
+                <li>Make sure the user has <strong>ALL PRIVILEGES</strong> granted in MySQL.</li>
+                <li>Check your server's PHP error log (<code class="inline-code">error_log</code> in the web root or <code class="inline-code">/var/log/nginx/error.log</code>) for the specific PDO exception.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-trigger" onclick="toggleFaq(this)">
+              <span>Q: Clicking buttons or refreshing pages gives a 404 Not Found error. How do I fix this?</span>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-body">
+              This happens when URL rewriting is not active for the React Single Page Application:
+              <ul style="margin-left:1.25rem;margin-top:0.35rem;">
+                <li><strong>On Apache / cPanel:</strong> Ensure that <code class="inline-code">.htaccess</code> is uploaded to your web root and that <code class="inline-code">mod_rewrite</code> is enabled in your Apache configuration.</li>
+                <li><strong>On Nginx:</strong> Ensure your server block contains <code class="inline-code">try_files $uri $uri/ /index.html;</code> inside <code class="inline-code">location /</code>.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-trigger" onclick="toggleFaq(this)">
+              <span>Q: License activation says "Unregistered Domain" or "Handshake Failed".</span>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-body">
+              Check the following:
+              <ul style="margin-left:1.25rem;margin-top:0.35rem;">
+                <li>Your server must have outbound internet access on port 443 to contact <code class="inline-code">agapeinfosys.com</code>. Ensure your PHP <code class="inline-code">curl</code> extension is enabled.</li>
+                <li>Ensure you typed your exact Envato Purchase Code without extra spaces.</li>
+                <li>If your purchase code was previously activated on another domain, go to your previous domain and click <strong>Deactivate License</strong>, or open a ticket at Agape Support to request a domain reset.</li>
+                <li>Remember: Local test domains like <code class="inline-code">localhost</code> or <code class="inline-code">staging.*</code> automatically bypass license locking for development!</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-trigger" onclick="toggleFaq(this)">
+              <span>Q: AI Generation times out or returns "API Key is missing".</span>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-body">
+              Log into the <strong>Admin Console &gt; AI Providers</strong>. Make sure at least one provider (such as Google Gemini or OpenAI) is toggled to <strong>Active</strong>, has a valid API key, and has a Default model selected. Use the <strong>Test Connection</strong> button next to the provider to confirm that your server can communicate with the AI API.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-trigger" onclick="toggleFaq(this)">
+              <span>Q: Can I run SRS Genie without Cashfree or disable subscriptions completely?</span>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-body">
+              Yes! If you are using SRS Genie for internal company use or providing it free to your team:
+              <ul style="margin-left:1.25rem;margin-top:0.35rem;">
+                <li>Simply leave Cashfree Gateway toggled to <strong>Inactive</strong> in Business Settings.</li>
+                <li>In <strong>Pricing Plans</strong>, you can set the Free Plan quota to unlimited or assign all users to the Enterprise tier.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Backups & Updates -->
+      <section id="backups-updates" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">16</span> Software Updates & Safe Backup Strategy
+          </h2>
+        </div>
+        <p class="section-lead">
+          Best practices for updating SRS Genie and keeping your data protected:
+        </p>
+
+        <h3 style="font-size:1.15rem;margin:1.25rem 0 0.5rem;">How to Safely Update to New Releases:</h3>
+        <ol style="margin-left:1.5rem;color:var(--text-muted);display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;">
+          <li><strong>Always backup your database first:</strong>
+            <div class="code-wrapper">
+              <div class="code-header">
+                <span class="code-lang-tag">bash (MySQL Backup)</span>
+                <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+              </div>
+              <pre class="code-content">mysqldump -u srsgenie_user -p srsgenie_db &gt; backup_$(date +%F).sql</pre>
+            </div>
+          </li>
+          <li>Download the latest release zip from your Envato Market downloads or Agape Client Portal.</li>
+          <li>Replace the <code class="inline-code">assets/</code> folder and <code class="inline-code">index.html</code> with the new version.</li>
+          <li>Replace files in <code class="inline-code">api/</code> <strong>EXCEPT</strong> your <code class="inline-code">api/config.php</code> file (which holds your database credentials).</li>
+          <li>Visit <code class="inline-code">https://yourdomain.com/api/health.php</code> once. Any new database columns or schema migrations will execute automatically!</li>
+        </ol>
+      </section>
+
+      <!-- Official Support Channels -->
+      <section id="support-channels" class="guide-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-title-num">17</span> Official Agape Support & Resources
+          </h2>
+        </div>
+        <p class="section-lead">
+          We are dedicated to your success. Reach out whenever you need technical assistance:
+        </p>
+
+        <div class="card-grid">
+          <div class="info-card">
+            <div class="card-icon-wrap" style="color:var(--info);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <h4 class="card-title">Customer Support Helpdesk</h4>
+            <p class="card-desc">Submit technical tickets, request domain resets, or report bugs directly to our engineering team.</p>
+            <a href="https://agapeinfosys.com/support" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="margin-top:1rem;display:inline-flex;">Open Support Ticket</a>
+          </div>
+
+          <div class="info-card">
+            <div class="card-icon-wrap" style="color:var(--accent-light);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            </div>
+            <h4 class="card-title">Official Product Portal</h4>
+            <p class="card-desc">Explore release notes, upcoming feature roadmaps, documentation, and extension plugins.</p>
+            <a href="https://agapeinfosys.com/products/srs-genie" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="margin-top:1rem;display:inline-flex;">Visit Portal</a>
+          </div>
+
+          <div class="info-card">
+            <div class="card-icon-wrap" style="color:var(--success);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+            </div>
+            <h4 class="card-title">Rate & Review on CodeCanyon</h4>
+            <p class="card-desc">If you enjoy SRS Genie, please consider leaving a 5-star review on Envato Market to support ongoing updates!</p>
+            <a href="https://codecanyon.net/downloads" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="margin-top:1rem;display:inline-flex;">Leave 5-Star Review</a>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="page-footer">
+    <ul class="footer-links">
+      <li><a href="#welcome">Top</a></li>
+      <li><a href="#requirements">Requirements</a></li>
+      <li><a href="#deploy-cpanel">cPanel Guide</a></li>
+      <li><a href="#deploy-vps">VPS Guide</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+      <li><a href="https://agapeinfosys.com" target="_blank" rel="noopener noreferrer">Agape Infosys Inc.</a></li>
+    </ul>
+    <p>&copy; 2026 Agape Infosys. All rights reserved. SRS Genie&trade; is a registered trademark of Agape Infosys.</p>
+    <p style="margin-top:0.35rem;font-size:0.75rem;">Document Version 2.5.0 LTS | Generated for Authorized Licensees</p>
+  </footer>
+
+  <!-- Interactive Scripts -->
+  <script>
+    // =========================================================================
+    // SRS GENIE CLIENT SETUP GUIDE - INTERACTIVE CONTROLS
+    // =========================================================================
+
+    // 1. Reading Progress Bar & Active Navigation Scrollspy
+    window.addEventListener('scroll', () => {
+      const winScroll = document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      const bar = document.getElementById('readingProgressBar');
+      if (bar) bar.style.width = scrolled + '%';
+
+      // Update Active Navigation Item
+      const sections = document.querySelectorAll('section[id]');
+      const navLinks = document.querySelectorAll('.nav-item a');
+      let currentId = '';
+
+      sections.forEach(section => {
+        const top = section.offsetTop - 120;
+        if (winScroll >= top) {
+          currentId = section.getAttribute('id');
+        }
+      });
+
+      navLinks.forEach(link => {
+        const href = link.getAttribute('href').replace('#', '');
+        if (href === currentId) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+    });
+
+    // 2. Dark / Light Theme Toggle with LocalStorage
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const themeIconDark = document.getElementById('themeIconDark');
+    const themeIconLight = document.getElementById('themeIconLight');
+
+    function applyTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+      if (theme === 'light') {
+        themeIconDark.style.display = 'none';
+        themeIconLight.style.display = 'block';
+      } else {
+        themeIconDark.style.display = 'block';
+        themeIconLight.style.display = 'none';
+      }
+      try {
+        localStorage.setItem('srs_guide_theme', theme);
+      } catch (e) {}
+    }
+
+    const savedTheme = (() => {
+      try {
+        return localStorage.getItem('srs_guide_theme') || 'dark';
+      } catch (e) {
+        return 'dark';
+      }
+    })();
+    applyTheme(savedTheme);
+
+    themeToggleBtn.addEventListener('click', () => {
+      const current = document.body.getAttribute('data-theme') || 'dark';
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+    });
+
+    // 3. Interactive Setup Checklist with LocalStorage
+    const CHECKLIST_STORAGE_KEY = 'srs_setup_checklist_state';
+
+    function loadChecklistState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(CHECKLIST_STORAGE_KEY) || '{}');
+        document.querySelectorAll('.checklist-checkbox').forEach(cb => {
+          const task = cb.getAttribute('data-task');
+          if (saved[task]) {
+            cb.checked = true;
+            cb.parentElement.querySelector('.checklist-label').classList.add('completed');
+          }
+        });
+      } catch (e) {}
+      updateProgress(false);
+    }
+
+    function updateProgress(save = true) {
+      const checkboxes = document.querySelectorAll('.checklist-checkbox');
+      let completed = 0;
+      const state = {};
+
+      checkboxes.forEach(cb => {
+        const task = cb.getAttribute('data-task');
+        const label = cb.parentElement.querySelector('.checklist-label');
+        if (cb.checked) {
+          completed++;
+          label.classList.add('completed');
+          state[task] = true;
+        } else {
+          label.classList.remove('completed');
+          state[task] = false;
+        }
+      });
+
+      const total = checkboxes.length;
+      const pct = Math.round((completed / total) * 100);
+
+      const textElem = document.getElementById('checklistProgressText');
+      const meterFill = document.getElementById('checklistMeterFill');
+      const sidebarBadge = document.getElementById('sidebarChecklistBadge');
+
+      if (textElem) textElem.textContent = `${completed} of ${total} Completed (${pct}%)`;
+      if (meterFill) meterFill.style.width = pct + '%';
+      if (sidebarBadge) sidebarBadge.textContent = `${completed}/${total}`;
+
+      if (save) {
+        try {
+          localStorage.setItem(CHECKLIST_STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {}
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadChecklistState);
+
+    // 4. Tab Group Switching
+    function switchTab(btn, panelId) {
+      const group = btn.closest('.tab-group');
+      group.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      group.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+      btn.classList.add('active');
+      const targetPanel = document.getElementById(panelId);
+      if (targetPanel) targetPanel.classList.add('active');
+    }
+
+    // 5. Accordion FAQ Toggle
+    function toggleFaq(btn) {
+      const item = btn.closest('.faq-item');
+      item.classList.toggle('open');
+    }
+
+    // 6. Copy Code Snippet Helper with Feedback
+    function copySnippet(btn) {
+      const wrapper = btn.closest('.code-wrapper');
+      const code = wrapper.querySelector('pre.code-content').innerText;
+      
+      navigator.clipboard.writeText(code).then(() => {
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.style.background = 'var(--success)';
+        btn.style.color = '#fff';
+        btn.style.borderColor = 'var(--success)';
+
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '';
+          btn.style.color = '';
+          btn.style.borderColor = '';
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+      });
+    }
+
+    // 7. Interactive Database Config Generator
+    function generateDbConfig() {
+      const host = document.getElementById('genDbHost').value.trim() || 'localhost';
+      const name = document.getElementById('genDbName').value.trim() || 'srsgenie_db';
+      const user = document.getElementById('genDbUser').value.trim() || 'srsgenie_admin';
+      const pass = document.getElementById('genDbPass').value.trim() || 'SecretPass123';
+
+      const output = `<?php
+/**
+ * SRS Genie - Database Configuration
+ * Auto-generated by Client Setup Tool
+ */
+return [
+    'db_host'    => getenv('DB_HOST') ?: '${host}',
+    'db_name'    => getenv('DB_NAME') ?: '${name}',
+    'db_user'    => getenv('DB_USER') ?: '${user}',
+    'db_pass'    => getenv('DB_PASS') ?: '${pass}',
+    'db_charset' => 'utf8mb4'
+];`;
+
+      document.getElementById('genDbOutput').textContent = output;
+    }
+
+    // 8. Interactive Server Config Generator
+    function generateServerConfig() {
+      const domain = document.getElementById('genDomain').value.trim() || 'srs.yourdomain.com';
+      const type = document.getElementById('genServerType').value;
+      const root = document.getElementById('genDocRoot').value.trim() || '/var/www/srsgenie';
+      const outputElem = document.getElementById('genServerOutput');
+      const langElem = document.getElementById('genServerLang');
+
+      if (type === 'nginx') {
+        langElem.textContent = 'nginx config';
+        outputElem.textContent = `server {
+    listen 80;
+    server_name ${domain};
+
+    root ${root};
+    index index.html index.php;
+    client_max_body_size 32M;
+
+    # Gzip Compression
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
+
+    # Forward API calls to PHP backend handlers
+    location /api/ {
+        try_files $uri $uri/ @api_rewrite;
+
+        location ~ \\.php$ {
+            include snippets/fastcgi-php.conf;
+            fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        }
+    }
+
+    location @api_rewrite {
+        rewrite ^/api/(.*)$ /api/$1.php last;
+    }
+
+    # SPA routing for React Vite
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache static assets
+    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg|woff2)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location ~ /\\. {
+        deny all;
+    }
+}`;
+      } else {
+        langElem.textContent = 'apache vhost config';
+        outputElem.textContent = `<VirtualHost *:80>
+    ServerName ${domain}
+    DocumentRoot "${root}"
+
+    <Directory "${root}">
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # Forward PHP to PHP-FPM socket or module
+    <FilesMatch \\.php$>
+        SetHandler "proxy:unix:/var/run/php/php8.2-fpm.sock|fcgi://localhost/"
+    </FilesMatch>
+
+    ErrorLog \${APACHE_LOG_DIR}/${domain}_error.log
+    CustomLog \${APACHE_LOG_DIR}/${domain}_access.log combined
+</VirtualHost>`;
+      }
+    }
+
+    // Initialize generators on load
+    document.addEventListener('DOMContentLoaded', () => {
+      generateDbConfig();
+      generateServerConfig();
+    });
+
+    // 9. Live Search Filter
+    const searchInput = document.getElementById('guideSearchInput');
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      const sections = document.querySelectorAll('section.guide-section');
+
+      if (!q) {
+        sections.forEach(sec => sec.style.display = 'block');
+        return;
+      }
+
+      sections.forEach(sec => {
+        const text = sec.innerText.toLowerCase();
+        if (text.includes(q)) {
+          sec.style.display = 'block';
+        } else {
+          sec.style.display = 'none';
+        }
+      });
+    });
+
+    // Keyboard shortcut (Ctrl+K or Cmd+K) to focus search
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -52,18 +52,19 @@ import { AdminAiProvidersView } from './AdminAiProvidersView';
 import { AdminAuditLogView } from './AdminAuditLogView';
 import { AdminBlacklistView } from './AdminBlacklistView';
 import { AdminBusinessSettingsView } from './AdminBusinessSettingsView';
+import { AdminLicenseView } from './AdminLicenseView';
 
 interface AdminConsoleProps {
   onBackToDashboard: () => void;
 }
 
-type AdminTab = 'overview' | 'analytics' | 'customers' | 'staff' | 'plans' | 'ai_providers' | 'billing' | 'cashfree_gateway' | 'mcp_telemetry' | 'security_audit' | 'blacklist' | 'business_settings';
+type AdminTab = 'overview' | 'analytics' | 'customers' | 'staff' | 'plans' | 'ai_providers' | 'billing' | 'cashfree_gateway' | 'mcp_telemetry' | 'security_audit' | 'blacklist' | 'business_settings' | 'license';
 
 export const AdminConsole: React.FC<AdminConsoleProps> = ({ onBackToDashboard }) => {
   const [activeTab, setActiveTabState] = useState<AdminTab>(() => {
     try {
       const saved = sessionStorage.getItem('srs_admin_active_tab') as AdminTab;
-      const validTabs = ['overview', 'analytics', 'customers', 'staff', 'plans', 'ai_providers', 'billing', 'cashfree_gateway', 'mcp_telemetry', 'security_audit', 'blacklist', 'business_settings'];
+      const validTabs = ['overview', 'analytics', 'customers', 'staff', 'plans', 'ai_providers', 'billing', 'cashfree_gateway', 'mcp_telemetry', 'security_audit', 'blacklist', 'business_settings', 'license'];
       if (saved && validTabs.includes(saved)) return saved;
     } catch {}
     return 'overview';
@@ -500,6 +501,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({ onBackToDashboard })
           { id: 'security_audit', label: 'Security & Audit Logs', icon: ShieldAlert },
           { id: 'blacklist', label: 'Fraud & Blacklist', icon: ShieldBan },
           { id: 'business_settings', label: 'Business Settings', icon: Building2 },
+          { id: 'license', label: 'License & Updates', icon: Key },
         ].map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1527,6 +1529,11 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({ onBackToDashboard })
       {/* TAB: BUSINESS & ENTERPRISE SETTINGS */}
       {activeTab === 'business_settings' && (
         <AdminBusinessSettingsView onToast={showToast} />
+      )}
+
+      {/* TAB: LICENSING & SOFTWARE PROTECTION */}
+      {activeTab === 'license' && (
+        <AdminLicenseView onToast={showToast} />
       )}
 
       {/* MODAL: ADD CUSTOMER */}
