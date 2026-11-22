@@ -852,6 +852,74 @@ export function synthesizeSpecsSuite(
 }
 
 /**
+ * Generates tailored AI coding agent configuration rules for popular IDEs (Cursor, Claude Code, Windsurf, Antigravity)
+ */
+export function generateIdeRules(projectName: string = 'Application'): {
+  cursorRules: string;
+  claudeMd: string;
+  windsurfRules: string;
+  agentRules: string;
+} {
+  const cursorRules = `# Cursor AI Rules for ${projectName}
+
+You are an expert autonomous software engineer working on **${projectName}**.
+This repository strictly follows the **SRS Genie™ Canonical Specification Architecture**.
+
+## Priority Reading Protocol:
+1. Always inspect \`.specs/_index.md\` first to understand the system map, component dependencies, and design contracts.
+2. Read \`.specs/state/current_state.md\` to ascertain active sprint milestones, completed tasks, and immediate blockers.
+3. Consult \`.specs/foundation/brief.md\` for product scope and non-negotiable architectural boundaries.
+4. Review \`.specs/domain/domain_rules.md\` to ensure business invariants (DR-001..DR-NNN) are strictly maintained.
+
+## Execution Directives:
+- Check \`.specs/execution/tasks.md\` and \`.specs/execution/dependency_graph.md\` for the next unblocked atomic task. Work on exactly one task at a time.
+- Read corresponding contracts in \`.specs/contracts/\` (api_contracts.md, database_schema.md, ui_contracts.md) before writing implementation code.
+- Follow \`.specs/implementation/coding_standards.md\` for language idioms, linters, and strict TypeScript types (never use \`any\`).
+- Enforce \`.specs/architecture/security_model.md\` for token validation, zero-trust RBAC, and input sanitization.
+- When finishing a task, record architectural trade-offs in \`.specs/state/decisions_log.md\` and update \`.specs/state/current_state.md\`.
+`;
+
+  const claudeMd = `# Claude Code Guidelines: ${projectName}
+
+## System Overview
+- **Project Name:** ${projectName}
+- **Architecture Standard:** SRS Genie™ Canonical 6-Tier Specification Suite (\`.specs/\`)
+- **Strategic Blueprints:** \`strategic_plans/\` (PRD, Architecture SAD, Tech Spec TSD, Project Plan)
+
+## Core Commands
+- Build: \`npm run build\`
+- Dev Server: \`npm run dev\`
+- Tests: \`npm test\`
+- Typecheck: \`npx tsc --noEmit\`
+
+## Autonomous Agent Invariants
+- **Contracts First:** Never invent schemas, DB columns, or API routes outside of \`.specs/contracts/\`.
+- **Domain Rules:** Always verify logic against business invariants in \`.specs/domain/domain_rules.md\`.
+- **Security:** Follow \`.specs/architecture/security_model.md\`. All endpoints must enforce tenant isolation and input sanitization.
+- **Workflow:** Execute tasks defined in \`.specs/execution/tasks.md\`.
+- **Session Hand-off:** Update \`.specs/state/current_state.md\` with session summary and unblocked next steps.
+`;
+
+  const windsurfRules = `# Windsurf Cascade Rules: ${projectName}
+
+- **Entrypoint:** Prioritize reading \`.specs/_index.md\` and \`.specs/state/current_state.md\` before generating or modifying source code.
+- **Contract Enforcement:** All API endpoints and database models must strictly adhere to \`.specs/contracts/api_contracts.md\` and \`.specs/contracts/database_schema.md\`.
+- **Quality Gates:** Code must pass \`.specs/implementation/coding_standards.md\` without compiler errors, linter warnings, or type compromises.
+- **Audit Logging:** Maintain architectural consistency and document design decisions in \`.specs/state/decisions_log.md\`.
+`;
+
+  const agentRules = `# Autonomous Agent Global Rules: ${projectName}
+
+1. Consult \`.specs/_index.md\` before modifying any repository source code.
+2. Maintain strict backward compatibility with contracts defined in \`.specs/contracts/\`.
+3. Adhere to zero-trust RBAC and multi-tenant isolation outlined in \`.specs/architecture/security_model.md\`.
+4. Update \`.specs/state/current_state.md\` after task completion.
+`;
+
+  return { cursorRules, claudeMd, windsurfRules, agentRules };
+}
+
+/**
  * Packages the entire .specs hierarchy and strategic planning documents into a downloadable .zip file
  */
 export async function downloadSpecsZip(
@@ -878,6 +946,13 @@ export async function downloadSpecsZip(
     }
   }
 
+  // Generate and include IDE agent rules
+  const ideRules = generateIdeRules(projectName);
+  zip.file('.cursorrules', ideRules.cursorRules);
+  zip.file('CLAUDE.md', ideRules.claudeMd);
+  zip.file('.windsurfrules', ideRules.windsurfRules);
+  zip.file('.agentrules', ideRules.agentRules);
+
   // Also include a root README.md for the developer
   zip.file('README_FOR_AI_AGENTS.md', `# ${projectName} - Agent-Executable Specification & Planning Suite
 
@@ -895,6 +970,11 @@ This repository contains a full **.specs/** directory and **strategic_plans/** d
   7. \`risk_management.md\` - Enterprise Risk Management Plan (Senior Risk Management Architect)
   8. \`qa.md\` - Quality Assurance & Software Test Plan (Senior QA Manager & Test Architect)
   9. \`deployment_releaseplan.md\` - Deployment, Release & Ops Plan (Senior Release & DevOps Architect)
+- **AI Agent IDE Rules Included:**
+  - \`.cursorrules\` (Cursor IDE)
+  - \`CLAUDE.md\` (Claude Code / Anthropic CLI)
+  - \`.windsurfrules\` (Windsurf Cascade)
+  - \`.agentrules\` (Antigravity & General Autonomous Agents)
 
 ## How to use with your AI Agent:
 1. **Cursor IDE:** Point Cursor to \`.specs/_index.md\` or configure your Cursor MCP settings.

@@ -14,12 +14,14 @@ import { executeMcpToolCall, generateAgentMcpConfig } from '../services/mcpClien
 
 interface McpHubProps {
   currentSpecs?: Record<string, string>;
+  strategicPlans?: Record<string, string>;
   projectName?: string;
   onBack: () => void;
 }
 
 export const McpHub: React.FC<McpHubProps> = ({
   currentSpecs = {},
+  strategicPlans = {},
   projectName = 'Current Project',
   onBack
 }) => {
@@ -68,6 +70,8 @@ export const McpHub: React.FC<McpHubProps> = ({
 
     if (testTool === 'get_spec_file') {
       args = { filePath: testFilePath };
+    } else if (testTool === 'get_strategic_plan') {
+      args = { filename: testFilePath };
     } else if (testTool === 'append_decision_log') {
       args = {
         title: testDecisionTitle,
@@ -77,7 +81,7 @@ export const McpHub: React.FC<McpHubProps> = ({
     }
 
     setTimeout(() => {
-      const res = executeMcpToolCall(testTool, args, currentSpecs);
+      const res = executeMcpToolCall(testTool, args, currentSpecs, strategicPlans);
       setTestResult(res.resultText);
       setExecutionMs(res.executionTimeMs);
       setIsExecuting(false);
@@ -358,13 +362,23 @@ export const McpHub: React.FC<McpHubProps> = ({
                 <label className="field__label">Select MCP Tool</label>
                 <select
                   value={testTool}
-                  onChange={e => setTestTool(e.target.value)}
+                  onChange={e => {
+                    const nextTool = e.target.value;
+                    setTestTool(nextTool);
+                    if (nextTool === 'get_strategic_plan') {
+                      setTestFilePath('PRD.md');
+                    } else if (nextTool === 'get_spec_file') {
+                      setTestFilePath('contracts/api_contracts.md');
+                    }
+                  }}
                   className="w-full bg-ink border border-line px-3.5 py-2 text-xs text-white focus:border-accent outline-none font-mono"
                 >
                   <option value="get_spec_index">get_spec_index (Read _index.md)</option>
                   <option value="get_spec_file">get_spec_file (Read specific tier spec)</option>
                   <option value="list_spec_tasks">list_spec_tasks (Read execution tasks)</option>
                   <option value="get_current_state">get_current_state (Read active sprint state)</option>
+                  <option value="list_strategic_plans">list_strategic_plans (List 9 Staging Plans)</option>
+                  <option value="get_strategic_plan">get_strategic_plan (Read Staging Plan)</option>
                   <option value="append_decision_log">append_decision_log (Append Architecture ADR)</option>
                 </select>
               </div>
@@ -383,6 +397,27 @@ export const McpHub: React.FC<McpHubProps> = ({
                     <option value="architecture/system_design.md">architecture/system_design.md</option>
                     <option value="implementation/backend_guide.md">implementation/backend_guide.md</option>
                     <option value="execution/tasks.md">execution/tasks.md</option>
+                  </select>
+                </div>
+              )}
+
+              {testTool === 'get_strategic_plan' && (
+                <div className="field">
+                  <label className="field__label">Target Planning Document</label>
+                  <select
+                    value={testFilePath}
+                    onChange={e => setTestFilePath(e.target.value)}
+                    className="w-full bg-ink border border-line px-3.5 py-2 text-xs text-white focus:border-accent outline-none font-mono"
+                  >
+                    <option value="PRD.md">PRD.md</option>
+                    <option value="architecture.md">architecture.md</option>
+                    <option value="tech_spec.md">tech_spec.md</option>
+                    <option value="designs.md">designs.md</option>
+                    <option value="project_plan.md">project_plan.md</option>
+                    <option value="roadmap_resourceplan.md">roadmap_resourceplan.md</option>
+                    <option value="risk_management.md">risk_management.md</option>
+                    <option value="qa.md">qa.md</option>
+                    <option value="deployment_releaseplan.md">deployment_releaseplan.md</option>
                   </select>
                 </div>
               )}

@@ -15,7 +15,8 @@ export interface McpToolCallResult {
 export function executeMcpToolCall(
   toolName: string,
   args: Record<string, any>,
-  specs: Record<string, string>
+  specs: Record<string, string>,
+  strategicPlans?: Record<string, string>
 ): McpToolCallResult {
   const start = performance.now();
 
@@ -30,7 +31,13 @@ export function executeMcpToolCall(
       case 'get_spec_file': {
         const filePath = args.filePath as string;
         if (!filePath) throw new Error('Missing parameter: filePath');
-        const content = specs[filePath];
+        let content = specs[filePath];
+        if (!content && strategicPlans) {
+          const stripped = filePath.replace(/^strategic_plans\//, '');
+          if (strategicPlans[stripped]) {
+            content = strategicPlans[stripped];
+          }
+        }
         if (!content) throw new Error(`Spec file "${filePath}" not found in .specs suite.`);
         resultText = content;
         break;
@@ -41,6 +48,23 @@ export function executeMcpToolCall(
       }
       case 'get_current_state': {
         resultText = specs['state/current_state.md'] || 'No current state file available.';
+        break;
+      }
+      case 'list_strategic_plans': {
+        if (!strategicPlans || Object.keys(strategicPlans).length === 0) {
+          resultText = 'No strategic planning documents found in current session.';
+        } else {
+          resultText = Object.keys(strategicPlans).join('\n');
+        }
+        break;
+      }
+      case 'get_strategic_plan': {
+        const filename = (args.filename as string) || (args.filePath as string) || '';
+        if (!filename) throw new Error('Missing parameter: filename');
+        const stripped = filename.replace(/^strategic_plans\//, '');
+        const plan = strategicPlans?.[stripped] || strategicPlans?.[filename];
+        if (!plan) throw new Error(`Strategic planning document "${filename}" not found.`);
+        resultText = plan;
         break;
       }
       case 'append_decision_log': {

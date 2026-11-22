@@ -9,7 +9,7 @@ import { AdminConsole } from './components/admin/AdminConsole';
 import { McpHub } from './components/McpHub';
 import { ClientBillingPage } from './components/ClientBillingPage';
 import { UserProfilePage } from './components/UserProfilePage';
-import { AppState, ProjectInput, GeneratedContent, User, SubscriptionTier, GenerationProgressState, GenerationPhase } from './types';
+import { AppState, ProjectInput, GeneratedContent, User, SubscriptionTier, GenerationProgressState, GenerationPhase, GenerationPhaseId } from './types';
 import { generateComprehensiveSpecPackage, downloadSpecsZip } from './services/specGeneratorService';
 import { AgentGenerationViewport } from './components/AgentGenerationViewport';
 import { authService } from './services/authService';
@@ -192,35 +192,37 @@ export default function App() {
         setGeneratedContent({
           srsMarkdown: (proj.specsHierarchy['foundation/brief.md'] || '') + '\n\n' + (proj.specsHierarchy['architecture/system_design.md'] || ''),
           agentContext: proj.specsHierarchy['_index.md'] || '',
-          implementationTasks: [
-            {
-              id: 'TASK-001',
-              title: 'Initialize Project Repository & Configuration',
-              description: 'Base framework setup, linters, tsconfig, and containerization configs.',
-              prompt: 'Initialize the repository using .specs/implementation/coding_standards.md and .specs/implementation/infrastructure.md.',
-              type: 'setup',
-              status: 'done',
-              complexity: 'XS'
-            },
-            {
-              id: 'TASK-002',
-              title: 'Configure Database & Run Initial Migrations',
-              description: 'Create database tables, indexes, triggers, and migrations from database_schema.md.',
-              prompt: 'Execute SQL migrations specified in .specs/contracts/database_schema.md.',
-              type: 'database',
-              status: 'todo',
-              complexity: 'S'
-            },
-            {
-              id: 'TASK-003',
-              title: 'Implement Authentication & RBAC Middleware',
-              description: 'Build JWT registration, login, and permission verification guards.',
-              prompt: 'Implement auth routes per .specs/contracts/api_contracts.md.',
-              type: 'backend',
-              status: 'todo',
-              complexity: 'M'
-            }
-          ],
+          implementationTasks: (proj.vibeTasks && proj.vibeTasks.length > 0)
+            ? proj.vibeTasks
+            : [
+                {
+                  id: 'TASK-001',
+                  title: 'Initialize Project Repository & Configuration',
+                  description: 'Base framework setup, linters, tsconfig, and containerization configs.',
+                  prompt: 'Initialize the repository using .specs/implementation/coding_standards.md and .specs/implementation/infrastructure.md.',
+                  type: 'setup',
+                  status: 'done',
+                  complexity: 'XS'
+                },
+                {
+                  id: 'TASK-002',
+                  title: 'Configure Database & Run Initial Migrations',
+                  description: 'Create database tables, indexes, triggers, and migrations from database_schema.md.',
+                  prompt: 'Execute SQL migrations specified in .specs/contracts/database_schema.md.',
+                  type: 'database',
+                  status: 'todo',
+                  complexity: 'S'
+                },
+                {
+                  id: 'TASK-003',
+                  title: 'Implement Authentication & RBAC Middleware',
+                  description: 'Build JWT registration, login, and permission verification guards.',
+                  prompt: 'Implement auth routes per .specs/contracts/api_contracts.md.',
+                  type: 'backend',
+                  status: 'todo',
+                  complexity: 'M'
+                }
+              ],
           specsHierarchy: proj.specsHierarchy,
           strategicPlans: proj.strategicPlans,
           projectMeta: {
@@ -233,7 +235,7 @@ export default function App() {
         });
       } else {
         const pkg = await generateComprehensiveSpecPackage(proj);
-        projectStore.saveFullProject(proj, pkg.specsHierarchy, null, pkg.strategicPlans);
+        projectStore.saveFullProject(proj, pkg.specsHierarchy, user, pkg.strategicPlans, pkg.implementationTasks);
         setGeneratedContent(pkg);
       }
       setAppState(AppState.RESULT);
@@ -350,8 +352,14 @@ export default function App() {
         }
       );
 
-      // Persist real project to projectStore with full specs and all 9 strategic planning documents
-      projectStore.saveFullProject(projectPayload, packageResult.specsHierarchy, null, packageResult.strategicPlans);
+      // Persist real project to projectStore with full specs, all 9 strategic planning documents, and extracted vibeTasks
+      projectStore.saveFullProject(
+        projectPayload,
+        packageResult.specsHierarchy,
+        user,
+        packageResult.strategicPlans,
+        packageResult.implementationTasks
+      );
       setGeneratedContent(packageResult);
 
       setGenerationProgress(prev => ({
@@ -522,6 +530,7 @@ export default function App() {
           <div className="w-full animate-in fade-in duration-500">
             <McpHub
               currentSpecs={generatedContent?.specsHierarchy || {}}
+              strategicPlans={generatedContent?.strategicPlans}
               projectName={activeProjectName}
               onBack={handleBackToDash}
             />

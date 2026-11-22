@@ -19,12 +19,16 @@ import {
   Save,
   RotateCcw,
   Trash2,
-  Layers
+  Layers,
+  Printer,
+  BookOpen,
+  Sliders
 } from 'lucide-react';
-import { downloadSpecsZip, SPEC_TIERS } from '../services/specGeneratorService';
+import { downloadSpecsZip, SPEC_TIERS, generateIdeRules } from '../services/specGeneratorService';
 import { STRATEGIC_PLAN_DEFINITIONS } from '../services/specAgentPrompts';
 import { McpHub } from './McpHub';
 import { projectStore } from '../services/projectStore';
+import { compileConsolidatedIeee830SRS } from '../services/srsDocumentCompiler';
 
 interface DocumentPreviewProps {
   content: GeneratedContent;
@@ -34,8 +38,9 @@ interface DocumentPreviewProps {
 }
 
 export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onReset, onOpenMcpHub, onDeleteProject }) => {
-  const [activeTab, setActiveTab] = useState<'specs_suite' | 'strategic_plans' | 'tasks' | 'mcp_connect'>('specs_suite');
+  const [activeTab, setActiveTab] = useState<'specs_suite' | 'strategic_plans' | 'formal_srs' | 'tasks' | 'ide_rules' | 'mcp_connect'>('specs_suite');
   const [selectedPlanFilename, setSelectedPlanFilename] = useState<string>('project_plan.md');
+  const [selectedIdeRule, setSelectedIdeRule] = useState<'cursor' | 'claude' | 'windsurf' | 'agent'>('cursor');
   const [selectedFilePath, setSelectedFilePath] = useState<string>('_index.md');
   const [viewSource, setViewSource] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -47,6 +52,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
 
   const specs = content.specsHierarchy || {};
   const activeFileContent = specs[selectedFilePath] || content.srsMarkdown || '# Specification\n\nNo content loaded.';
+  const projectName = content.projectMeta?.projectName || 'Project';
+  const ideRules = generateIdeRules(projectName);
+  const formalIeeeSrs = compileConsolidatedIeee830SRS(content);
 
   useEffect(() => {
     setEditedText(activeFileContent);
@@ -153,6 +161,18 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
           )}
 
           <button
+            onClick={() => setActiveTab('formal_srs')}
+            className={`flex items-center px-4 py-2 transition-all whitespace-nowrap ${
+              activeTab === 'formal_srs'
+                ? 'bg-accent text-white font-semibold'
+                : 'text-muted hover:text-white'
+            }`}
+          >
+            <BookOpen className="w-4 h-4 mr-2" />
+            Formal SRS (IEEE 830)
+          </button>
+
+          <button
             onClick={() => setActiveTab('tasks')}
             className={`flex items-center px-4 py-2 transition-all whitespace-nowrap ${
               activeTab === 'tasks'
@@ -162,6 +182,18 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
           >
             <Terminal className="w-4 h-4 mr-2" />
             Tasks ({content.implementationTasks?.length || 6})
+          </button>
+
+          <button
+            onClick={() => setActiveTab('ide_rules')}
+            className={`flex items-center px-4 py-2 transition-all whitespace-nowrap ${
+              activeTab === 'ide_rules'
+                ? 'bg-accent text-white font-semibold'
+                : 'text-muted hover:text-white'
+            }`}
+          >
+            <Code2 className="w-4 h-4 mr-2" />
+            AI IDE Rules
           </button>
 
           <button
@@ -179,6 +211,65 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
+          {activeTab === 'formal_srs' && (
+            <>
+              <button
+                onClick={() => window.print()}
+                className="btn btn-sm btn--ghost"
+                title="Print or Save as PDF"
+              >
+                <Printer className="w-3.5 h-3.5 mr-1" />
+                Print / Save PDF
+              </button>
+              <button
+                onClick={() => copyToClipboard(formalIeeeSrs, 'ieee_srs')}
+                className="btn btn-sm btn--ghost"
+              >
+                {copiedKey === 'ieee_srs' ? <Check className="w-3.5 h-3.5 mr-1 text-accent" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
+                Copy SRS
+              </button>
+              <button
+                onClick={() => handleDownloadSingleFile(`${projectName.toLowerCase().replace(/[^a-z0-9_-]/g, '_')}-IEEE-830-SRS.md`, formalIeeeSrs)}
+                className="btn btn-sm btn--ghost"
+                title="Download IEEE 830 SRS Markdown"
+              >
+                <Download className="w-3.5 h-3.5 mr-1" />
+                .md
+              </button>
+            </>
+          )}
+
+          {activeTab === 'ide_rules' && (
+            <>
+              <button
+                onClick={() => {
+                  const targetContent = selectedIdeRule === 'cursor' ? ideRules.cursorRules :
+                    selectedIdeRule === 'claude' ? ideRules.claudeMd :
+                    selectedIdeRule === 'windsurf' ? ideRules.windsurfRules : ideRules.agentRules;
+                  copyToClipboard(targetContent, 'ide_rule');
+                }}
+                className="btn btn-sm btn--ghost"
+              >
+                {copiedKey === 'ide_rule' ? <Check className="w-3.5 h-3.5 mr-1 text-accent" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
+                Copy Rule
+              </button>
+              <button
+                onClick={() => {
+                  const targetFile = selectedIdeRule === 'cursor' ? '.cursorrules' :
+                    selectedIdeRule === 'claude' ? 'CLAUDE.md' :
+                    selectedIdeRule === 'windsurf' ? '.windsurfrules' : '.agentrules';
+                  const targetContent = selectedIdeRule === 'cursor' ? ideRules.cursorRules :
+                    selectedIdeRule === 'claude' ? ideRules.claudeMd :
+                    selectedIdeRule === 'windsurf' ? ideRules.windsurfRules : ideRules.agentRules;
+                  handleDownloadSingleFile(targetFile, targetContent);
+                }}
+                className="btn btn-sm btn--ghost"
+              >
+                <Download className="w-3.5 h-3.5 mr-1" />
+                Download
+              </button>
+            </>
+          )}
           {activeTab === 'specs_suite' && (
             <>
               {/* Edit Mode Toggle */}
@@ -372,7 +463,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
           </div>
         )}
 
-        {/* VIEW: 8 STRATEGIC PLANNING DOCUMENTS */}
+        {/* VIEW: 9 STRATEGIC PLANNING DOCUMENTS */}
         {activeTab === 'strategic_plans' && content.strategicPlans && (
           <div className="flex flex-col md:flex-row h-full">
             {/* Left Sidebar: Staging Plans List */}
@@ -529,11 +620,100 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
           </div>
         )}
 
+        {/* VIEW: FORMAL IEEE 830 SRS DOCUMENT */}
+        {activeTab === 'formal_srs' && (
+          <div className="h-full overflow-y-auto p-4 md:p-8 bg-ink custom-scrollbar">
+            <div className="max-w-4xl mx-auto bg-surface border border-line p-6 md:p-12 shadow-2xl">
+              <div className="flex items-center justify-between pb-4 mb-6 border-b border-line no-print">
+                <div className="flex items-center gap-2">
+                  <span className="badge--on text-[10px]">IEEE Std 830-1998</span>
+                  <span className="text-xs text-muted font-mono">Formal Baselined Software Requirements Specification</span>
+                </div>
+                <button
+                  onClick={() => window.print()}
+                  className="btn btn-sm btn--accent"
+                >
+                  <Printer className="w-3.5 h-3.5 mr-1.5" />
+                  Print / Save as PDF
+                </button>
+              </div>
+              <MarkdownViewer content={formalIeeeSrs} />
+            </div>
+          </div>
+        )}
+
+        {/* VIEW: AI IDE AGENT RULES */}
+        {activeTab === 'ide_rules' && (
+          <div className="flex flex-col md:flex-row h-full">
+            {/* Left Sidebar: Select IDE Rule */}
+            <div className="w-full md:w-80 border-b md:border-b-0 md:border-r border-line bg-surface overflow-y-auto p-4 space-y-4">
+              <div className="px-1 py-1 flex items-center justify-between border-b border-line pb-2">
+                <span className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+                  Agent Harness Rules
+                </span>
+                <span className="badge--on text-[9px]">4 IDE Formats</span>
+              </div>
+
+              <div className="space-y-1.5 font-mono text-xs">
+                {[
+                  { id: 'cursor', label: '.cursorrules', title: 'Cursor IDE', desc: 'Rules & specification index reader for Cursor agent' },
+                  { id: 'claude', label: 'CLAUDE.md', title: 'Claude Code', desc: 'Anthropic CLI & Claude Desktop memory file' },
+                  { id: 'windsurf', label: '.windsurfrules', title: 'Windsurf Cascade', desc: 'Invariants & contract enforcement for Cascade' },
+                  { id: 'agent', label: '.agentrules', title: 'Autonomous Agents', desc: 'Global rules for Antigravity & custom subagents' }
+                ].map(r => (
+                  <button
+                    key={r.id}
+                    onClick={() => setSelectedIdeRule(r.id as any)}
+                    className={`w-full text-left p-3 border transition-all ${
+                      selectedIdeRule === r.id
+                        ? 'border-accent bg-box text-white'
+                        : 'border-line/40 bg-ink/40 text-gray-300 hover:text-white hover:border-line'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-accent">{r.label}</span>
+                      <span className="text-[10px] text-muted">{r.title}</span>
+                    </div>
+                    <p className="text-[10px] text-muted line-clamp-1">{r.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Pane: Code Preview */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-ink custom-scrollbar">
+              <div className="max-w-4xl mx-auto">
+                <div className="mb-4 pb-3 border-b border-line/60 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-display text-sm font-semibold text-white uppercase tracking-wider">
+                      {selectedIdeRule === 'cursor' ? '.cursorrules (Cursor IDE Agent Instructions)' :
+                       selectedIdeRule === 'claude' ? 'CLAUDE.md (Claude Code Context Protocol)' :
+                       selectedIdeRule === 'windsurf' ? '.windsurfrules (Windsurf Cascade Directives)' :
+                       '.agentrules (Antigravity & Agent Roster Specification)'}
+                    </h3>
+                    <p className="text-xs text-muted">
+                      Drop this file in your project's root folder so your AI coding agent automatically follows the specification.
+                    </p>
+                  </div>
+                </div>
+
+                <pre className="p-6 bg-box border border-line text-xs font-mono text-body whitespace-pre-wrap leading-relaxed overflow-x-auto">
+                  {selectedIdeRule === 'cursor' ? ideRules.cursorRules :
+                   selectedIdeRule === 'claude' ? ideRules.claudeMd :
+                   selectedIdeRule === 'windsurf' ? ideRules.windsurfRules :
+                   ideRules.agentRules}
+                </pre>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* VIEW 3: MCP DIRECT AGENT CONNECT */}
         {activeTab === 'mcp_connect' && (
           <div className="h-full overflow-y-auto p-4 bg-ink">
             <McpHub
               currentSpecs={specs}
+              strategicPlans={content.strategicPlans}
               projectName={content.projectMeta?.projectName || 'Project'}
               onBack={() => setActiveTab('specs_suite')}
             />

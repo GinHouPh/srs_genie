@@ -214,10 +214,6 @@ class AuthService {
    * Public registration: ALWAYS creates a client account for customers.
    * Admin and staff can only be created by the Business Owner.
    */
-  /**
-   * Public registration: ALWAYS creates a client account for customers.
-   * Admin and staff can only be created by the Business Owner.
-   */
   async register(params: {
     name: string;
     email: string;

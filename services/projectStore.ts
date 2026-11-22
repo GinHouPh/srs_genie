@@ -46,6 +46,17 @@ class ProjectStore {
       if (serverProjects && serverProjects.length > 0) {
         for (const sp of serverProjects) {
           const idx = this.projects.findIndex(p => p.id === sp.id);
+          let restoredSpecs = sp.specsHierarchy;
+          let restoredPlans = sp.strategicPlans;
+          if ((!restoredSpecs || Object.keys(restoredSpecs).length === 0) && sp.content) {
+            try {
+              const parsed = typeof sp.content === 'string' ? JSON.parse(sp.content) : sp.content;
+              if (parsed && typeof parsed === 'object') {
+                if (parsed.specsHierarchy) restoredSpecs = parsed.specsHierarchy;
+                if (parsed.strategicPlans) restoredPlans = parsed.strategicPlans;
+              }
+            } catch {}
+          }
           const mapped: SavedProjectRecord = {
             id: sp.id,
             name: sp.title || 'Untitled',
@@ -58,7 +69,9 @@ class ProjectStore {
             lastModified: new Date(sp.updatedAt || Date.now()),
             formData: sp.formData,
             content: sp.content,
-            vibeTasks: sp.vibeTasks
+            specsHierarchy: restoredSpecs || (idx >= 0 ? this.projects[idx].specsHierarchy : undefined),
+            strategicPlans: restoredPlans || (idx >= 0 ? this.projects[idx].strategicPlans : undefined),
+            vibeTasks: sp.vibeTasks || (idx >= 0 ? this.projects[idx].vibeTasks : undefined)
           };
           if (idx >= 0) {
             this.projects[idx] = { ...this.projects[idx], ...mapped };
@@ -121,6 +134,13 @@ class ProjectStore {
       localStorage.setItem(STORAGE_PROJECTS_KEY, JSON.stringify(this.projects));
       const target = projectToSync || this.projects[0];
       if (target) {
+        let contentPayload = target.content;
+        if (!contentPayload && (target.specsHierarchy || target.strategicPlans)) {
+          contentPayload = JSON.stringify({
+            specsHierarchy: target.specsHierarchy,
+            strategicPlans: target.strategicPlans
+          });
+        }
         apiService.saveProject({
           id: target.id,
           userId: target.userId,
@@ -130,7 +150,7 @@ class ProjectStore {
           status: target.status,
           tierCompletion: 100,
           formData: target.formData,
-          content: target.content,
+          content: contentPayload,
           vibeTasks: target.vibeTasks
         }).catch(() => {});
       }
@@ -204,7 +224,7 @@ class ProjectStore {
 
     newProj.specsHierarchy = synthesizeSpecsSuite(newProj);
     this.projects = [newProj, ...this.projects];
-    this.saveToStorage();
+    this.saveToStorage(newProj);
 
     auditLogger.log({
       actorId: input.userId || 'system',
@@ -225,7 +245,8 @@ class ProjectStore {
     project: ProjectInput,
     specs?: Record<string, string>,
     user?: User | null,
-    strategicPlans?: Record<string, string>
+    strategicPlans?: Record<string, string>,
+    vibeTasks?: any[]
   ): SavedProjectRecord {
     const existingIdx = this.projects.findIndex(p => p.id === project.id);
     const now = new Date().toISOString();
@@ -241,7 +262,8 @@ class ProjectStore {
       updatedAt: now,
       createdAt: existingIdx >= 0 ? this.projects[existingIdx].createdAt : now,
       specsHierarchy: specs || (existingIdx >= 0 ? this.projects[existingIdx].specsHierarchy : synthesizeSpecsSuite(project)),
-      strategicPlans: strategicPlans || (existingIdx >= 0 ? this.projects[existingIdx].strategicPlans : undefined)
+      strategicPlans: strategicPlans || (existingIdx >= 0 ? this.projects[existingIdx].strategicPlans : undefined),
+      vibeTasks: vibeTasks || (project as any).vibeTasks || (existingIdx >= 0 ? this.projects[existingIdx].vibeTasks : undefined)
     };
 
     if (existingIdx >= 0) {
@@ -250,7 +272,7 @@ class ProjectStore {
       this.projects = [record, ...this.projects];
     }
 
-    this.saveToStorage();
+    this.saveToStorage(record);
 
     auditLogger.log({
       actorId: userId || 'anonymous',
@@ -278,7 +300,7 @@ class ProjectStore {
       lastModified: new Date()
     };
 
-    this.saveToStorage();
+    this.saveToStorage(this.projects[idx]);
     return this.projects[idx];
   }
 
@@ -294,7 +316,7 @@ class ProjectStore {
     this.projects[idx].updatedAt = new Date().toISOString();
     this.projects[idx].lastModified = new Date();
 
-    this.saveToStorage();
+    this.saveToStorage(this.projects[idx]);
     return true;
   }
 
