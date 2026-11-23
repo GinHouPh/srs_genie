@@ -149,19 +149,57 @@ export function buildCanonicalSpecsSuite(
 
   const industryGlossary = getIndustryGlossary(industry);
 
+  // 0. AGENTS.md (Root Universal Manifest)
+  recordFile('AGENTS.md', 'Root', 'Universal Agent Directives & Universal Manifest', `# AGENTS.md — Autonomous Agent Directives & Universal Manifest: ${projectName}
+
+> **Mandatory Reading for All AI Agents:**  
+> This repository operates under a cross-platform, multi-agent engineering specification system.
+> Before taking any action, inspecting code, or making edits, you MUST read and follow the master navigation index at \`.specs/_index.md\` and the coordination protocol at \`.specs/coordination/protocol.md\`.
+
+---
+
+## 1. Core Operating Principles
+1. **Never Infer Unstated Requirements:** Authoritative truth flows strictly from \`.specs/foundation/brief.md\` and downstream tier specifications.
+2. **Never Write Without a Confirmed Lease:** You must claim an unblocked task on \`.specs/coordination/task_board.md\` and announce it in your session stream before modifying any file.
+3. **Respect File Scope Boundaries:** Only touch files explicitly declared under your task's \`Scope boundary: INCLUDED\` list. Modifying files outside your boundary is a critical protocol violation.
+4. **Isolate Concurrent Work:** Always work inside an independent Git worktree (\`agent/{session_id}\`). Never edit directly on the shared \`main\` trunk.
+5. **Evidence-Based Completion:** Never mark a task \`done\` without providing reproducible test commands, test logs, and acceptance verification in your completion report.
+
+---
+
+## 2. Fast Bootstrap Commands
+- **Install Dependencies:** \`npm install\` (Use clean install: \`npm ci --prefer-offline\`)
+- **Lint & Static Typecheck:** \`npm run lint\` && \`npx tsc --noEmit\`
+- **Unit & Integration Tests:** \`npm test\`
+- **Build Production Bundle:** \`npm run build\`
+- **Local Sandbox Server:** \`npm run dev\`
+
+---
+
+## 3. Specification Navigation Index
+- **Master Index & Cascade Rules:** \`.specs/_index.md\`
+- **Agent Onboarding Guide:** \`.specs/agents/onboarding.md\`
+- **Multi-Agent Coordination Protocol:** \`.specs/coordination/protocol.md\`
+- **Active Task Board:** \`.specs/coordination/task_board.md\`
+- **Agent Session Registry:** \`.specs/coordination/agent_registry.md\`
+- **Current System State:** \`.specs/state/current_state.md\`
+- **Architectural Decision Records (ADRs):** \`.specs/state/decisions_log.md\`
+`);
+
   // 1. _index.md
   recordFile('_index.md', 'Entry', 'Project Index & Navigation Manifest', `---
 tier: entry
-role: navigation-manifest
+role: multi-agent-navigation-manifest
 read: every session, before any other file
 updated: ${dateStr}
 ---
 
-# Project Index & Agent Navigation Manifest: ${projectName}
+# Project Index & Multi-Agent Runbook: ${projectName}
 
 > **Autonomous AI Agent Instruction:**  
-> Read this file first. Do not read any other specification file until you have parsed the file map below.
-> Then read only the files relevant to your current task. Always read \`/state/current_state.md\` immediately after this file.
+> Read this file first (or \`AGENTS.md\` at repository root). Do not read any other file until you have parsed the full file table below.
+> Next, read \`coordination/protocol.md\` and check \`coordination/task_board.md\` before claiming or modifying any work.
+> Always read \`state/current_state.md\` immediately after this file to understand active session streams.
 
 ---
 
@@ -179,43 +217,69 @@ ${projectSummary.trim() ? `\n> **Authoritative Build Vision:**  \n> ${projectSum
 
 ---
 
-## 6-Tier Canonical Specification Map
+## Spec File Map
 
-| File Path | Tier | Scope & Contents | Mandatory Reading Trigger |
-|:---|:---:|:---|:---|
-| \`foundation/brief.md\` | 0 | Root vision, business scope, non-negotiables, user personas | Always — first spec read for system boundaries |
-| \`foundation/glossary.md\` | 0 | Canonical domain terminology, invariants, acronyms | Before authoring business logic or database schemas |
-| \`domain/user_stories.md\` | 1 | Gherkin user stories, acceptance criteria, role permissions | When generating service endpoints or E2E tests |
-| \`domain/domain_rules.md\` | 1 | Business invariants (DR-001..DR-008), validation constraints | Before writing controllers, mutations, or transactions |
-| \`architecture/system_design.md\` | 2 | Topology flowchart, component map, queue pipelines | When designing or debugging inter-service communication |
-| \`architecture/data_model.md\` | 2 | Entity-Relationship diagram, attributes, foreign keys | Before creating database tables or migration scripts |
-| \`architecture/security_model.md\` | 2 | RBAC permission matrix, Argon2id auth, encryption keys | Before writing authentication, sessions, or route guards |
-| \`contracts/api_contracts.md\` | 3 | OpenAPI REST endpoints, request/response JSON schemas | When generating backend routes or client API SDKs |
-| \`contracts/database_schema.md\` | 3 | Production PostgreSQL DDL SQL migrations, indexes, RLS | When creating database tables or modifying columns |
-| \`contracts/ui_contracts.md\` | 3 | Route tree, global state store, component prop types | When generating frontend components and pages |
-| \`implementation/backend_guide.md\` | 4 | Clean architecture, service-repository patterns, errors | When writing backend service modules |
-| \`implementation/frontend_guide.md\` | 4 | React 19 guidelines, custom hooks, optimistic state | When authoring UI views and responsive layouts |
-| \`implementation/infrastructure.md\` | 4 | Dockerfile multi-stage, docker-compose, CI/CD deploy | When writing container setups or deployment configs |
-| \`implementation/testing_strategy.md\` | 4 | Vitest unit tests, Supertest API tests, Playwright E2E | When authoring automated test suites |
-| \`implementation/coding_standards.md\` | 4 | TypeScript strict mode, ESLint, Git Conventional Commits | Before submitting pull requests or committing code |
-| \`execution/tasks.md\` | 5 | All ${dynamicTasks.length} atomic tasks with agent prompts & context | When selecting the next unblocked task |
-| \`execution/dependency_graph.md\` | 5 | Directed Acyclic Graph (DAG) of task dependencies | When determining task execution order |
-| \`execution/sprint_plan.md\` | 5 | 4-sprint roadmap, deliverables, and milestone checkpoints | When reviewing sprint goals and releases |
-| \`state/current_state.md\` | State | Live operational state, health metrics, next actions | Read every session immediately after this index |
-| \`state/decisions_log.md\` | State | Architectural Decision Records (ADR-001..ADR-005) | Before proposing any architectural refactor |
-| \`state/known_issues.md\` | State | Known constraints, intentional tech debt, v2.0 backlog | Before modifying areas with open watchpoints |
+| File | Tier | Contains | When to read |
+|------|------|----------|--------------|
+| \`foundation/brief.md\` | 0 | Product vision, constraints, non-negotiables | Always — first spec read |
+| \`foundation/glossary.md\` | 0 | Canonical terms and definitions | Before writing any spec or code |
+| \`domain/user_stories.md\` | 1 | User roles, stories, acceptance criteria | When generating tasks or tests |
+| \`domain/domain_rules.md\` | 1 | Business invariants and logic constraints | Before generating business logic |
+| \`architecture/system_design.md\` | 2 | Component map, patterns, communication style | When designing or debugging architecture |
+| \`architecture/data_model.md\` | 2 | Canonical entities, fields, relationships | Before touching schema or API |
+| \`architecture/security_model.md\` | 2 | Auth strategy, roles, permission matrix | Before generating auth code or endpoints |
+| \`contracts/api_contracts.md\` | 3 | Endpoint definitions, request/response schemas | When generating backend routes or frontend calls |
+| \`contracts/database_schema.md\` | 3 | Table definitions, indexes, migrations | When generating DB code or migrations |
+| \`contracts/ui_contracts.md\` | 3 | Component props, state, events, routes | When generating frontend components |
+| \`implementation/backend_guide.md\` | 4 | Folder layout, service patterns, code conventions | When writing backend code |
+| \`implementation/frontend_guide.md\` | 4 | Component structure, routing, state management | When writing frontend code |
+| \`implementation/infrastructure.md\` | 4 | Cloud, environments, CI/CD, env vars | When writing deploy configs |
+| \`implementation/testing_strategy.md\` | 4 | Coverage targets, test patterns, mocking rules | When writing tests |
+| \`implementation/coding_standards.md\` | 4 | Naming, formatting, PR process | Before writing any code |
+| \`execution/tasks.md\` | 5 | Master canonical task list with multi-agent scope & leases | When planning work breakdown |
+| \`execution/dependency_graph.md\` | 5 | Task dependency map & parallel groups | When determining task ordering |
+| \`execution/sprint_plan.md\` | 5 | Multi-agent sprint allocations and active milestones | When starting a sprint milestone |
+| \`coordination/protocol.md\` | coord | Multi-agent collaboration protocol & claiming rules | Mandatory before claiming any task |
+| \`coordination/task_board.md\` | coord | Live task board with active leases & claimants | When picking an unblocked task |
+| \`coordination/agent_registry.md\` | coord | Ledger of active and historical agent sessions | At session start, heartbeat, and exit |
+| \`coordination/messages/\` | coord | Append-only message streams per agent session | When announcing claims, handoffs, or milestones |
+| \`agents/onboarding.md\` | runbook | Step-by-step agent bootstrap and worktree setup | When initializing a new agent session |
+| \`agents/lifecycle.md\` | runbook | 6-phase agent lifecycle from bootstrap to completion | To follow standard execution phases |
+| \`agents/task_execution.md\` | runbook | Bounded implementation and scope enforcement rules | During active task implementation |
+| \`agents/communication.md\` | runbook | Message schemas and cross-agent event standards | When posting messages or handoffs |
+| \`agents/verification.md\` | runbook | Evidence-based completion and peer review guide | When validating work before PR submission |
+| \`agents/conflict_resolution.md\` | runbook | Concurrency, collision, and contract drift recovery | When resolving conflicts or stale state |
+| \`state/current_state.md\` | state | Multi-session workstreams, health, confirmed state | Every session — read after this file |
+| \`state/decisions_log.md\` | state | Architecture Decision Records (append-only with attribution) | Before making any architectural change |
+| \`state/known_issues.md\` | state | Bugs, tech debt, deferred decisions | Before touching affected areas |
 
 ---
 
-## Regeneration & Cascade Invariants
+## Regeneration rules
+
+> If an upstream specification file changes, regenerate all files that depend on it. Do not edit derived files directly.
 
 \`\`\`
-foundation/brief.md changed     → Regenerate all downstream tiers (Tiers 1 through 5)
-foundation/glossary.md changed  → Review all files for terminology consistency
-architecture/data_model.md      → Regenerate database_schema.md + api_contracts.md + ui_contracts.md
-contracts/api_contracts.md     → Regenerate ui_contracts.md + update testing_strategy.md
-domain/user_stories.md changed  → Regenerate execution/tasks.md + testing_strategy.md
+brief.md changed          → regenerate everything below Tier 0
+glossary.md changed       → review all files for term consistency
+data_model.md changed     → regenerate database_schema.md + api_contracts.md + ui_contracts.md
+api_contracts.md changed  → regenerate ui_contracts.md + update testing_strategy.md + notify frontend/backend agents
+user_stories.md changed   → regenerate tasks.md + testing_strategy.md + update task_board.md
 \`\`\`
+
+---
+
+## Multi-Agent Session Protocol
+
+1. Read \`AGENTS.md\` (root) and \`_index.md\` (this file).
+2. Execute onboarding: generate \`session_id\`, spin up isolated Git worktree (\`agent/{session_id}\`), and register in \`coordination/agent_registry.md\`.
+3. Read \`state/current_state.md\` and check active sessions.
+4. Scan \`coordination/task_board.md\` and select an unblocked \`todo\` task matching your capabilities.
+5. Secure lease via atomic commit/push; announce \`TASK_CLAIMED\` in your message stream (\`coordination/messages/{session_id}.messages.md\`).
+6. Read the tier files listed in your task's \`Spec refs\`.
+7. Execute implementation strictly within the task's \`Scope boundary: INCLUDED\` files.
+8. Validate implementation: run tests, verify acceptance criteria, compile completion evidence.
+9. Publish \`TASK_COMPLETED\` with evidence, submit PR to \`main\`, and update \`state/current_state.md\`.
 `);
 
   // 2. foundation/brief.md
@@ -1063,10 +1127,23 @@ updated: ${dateStr}
 
   // 17. execution/tasks.md
   const tasksMarkdown = dynamicTasks.map(t => `### ${t.id}: ${t.title}
-- **Status:** \`${t.status || 'todo'}\` | **Complexity:** \`${t.complexity || 'M'}\` | **Type:** \`${t.type}\`
-- **Depends On:** ${t.dependsOn ? `\`${t.dependsOn}\`` : 'None (Genesis Task)'}
-${t.fileContext ? `- **File Context:** \`${t.fileContext}\`` : ''}
-
+**Status:** ${t.status || 'todo'}  
+**Complexity:** ${t.complexity || 'M'}  
+**Governs:** ${t.governs || 'US-001 · DR-001'}  
+**Spec refs:** ${(t.specRefs && t.specRefs.length > 0) ? t.specRefs.map(r => `\`${r}\``).join(' · ') : '`implementation/coding_standards.md` · `contracts/api_contracts.md`'}  
+**Depends on:** ${t.dependsOn || '—'}  
+**Required capabilities:** ${(t.requiredCapabilities && t.requiredCapabilities.length > 0) ? t.requiredCapabilities.map(c => `\`${c}\``).join(', ') : '`backend`'}  
+**Claimed by:** ${t.claimedBy || '—'}  
+**Claimed at:** ${t.claimedAt || '—'}  
+**Lease expires:** ${t.leaseExpires || '—'}  
+**Scope boundary:**  
+- **INCLUDED:** ${(t.scopeIncluded && t.scopeIncluded.length > 0) ? t.scopeIncluded.map(p => `\`${p}\``).join(', ') : `\`${t.fileContext || 'src/'}\``}  
+- **EXCLUDED:** ${(t.scopeExcluded && t.scopeExcluded.length > 0) ? t.scopeExcluded.map(p => `\`${p}\``).join(', ') : '`.specs/**`'}  
+**Verification target:** ${t.verificationTarget || 'npm test and npm run build succeed with 0 errors.'}  
+**Review required:** ${t.reviewRequired ? 'yes' : 'no'}  
+**Reviewer:** ${t.reviewer || '—'}  
+**Completion evidence:** ${t.completionEvidence || '—'}  
+${t.notes ? `**Notes:** ${t.notes}  \n` : ''}
 **Description:**
 ${t.description}
 
@@ -1074,17 +1151,45 @@ ${t.description}
 > ${t.prompt}
 `).join('\n---\n\n');
 
-  recordFile('execution/tasks.md', 'Tier 5', 'Atomic Task Backlog', `---
+  const taskIndexTable = dynamicTasks.map(t => `| ${t.id} | ${t.title.slice(0, 36)} | ${t.type} | ${t.status || 'todo'} | ${t.complexity || 'M'} | ${t.dependsOn || '—'} | ${(t.requiredCapabilities || ['backend']).map(c => `\`${c}\``).join(', ')} |`).join('\n');
+
+  recordFile('execution/tasks.md', 'Tier 5', 'Master Canonical Task Backlog', `---
 tier: 5
-role: atomic-task-list
-depends-on: domain/user_stories.md · architecture/system_design.md
+role: canonical-task-list
+depends-on: all Tier 4 guides · domain/user_stories.md
+feeds-into: execution/sprint_plan.md · coordination/task_board.md · state/current_state.md
+owner: AI-generated · human-curated priorities
 updated: ${dateStr}
 ---
 
-# Dynamic Implementation Task Backlog: ${projectName}
-Total Formulated Tasks: **${dynamicTasks.length}**
+# Master Task List & Work Breakdown: ${projectName}
+
+> AI instruction: This is the canonical work breakdown for the project.
+> For active execution and claiming, refer to \`.specs/coordination/task_board.md\`.
+> Never start a task whose dependencies are not marked \`done\`.
+> Every task must be executed strictly within its declared \`Scope boundary: INCLUDED\` files.
+
+---
+
+## Status Values
+\`todo\` · \`claimed\` · \`in-progress\` · \`review\` · \`done\` · \`blocked\` · \`abandoned\`
+
+## Complexity Values
+\`XS\` (< 1h) · \`S\` (1–3h) · \`M\` (3–6h) · \`L\` (1–2d) · \`XL\` (2–5d — must be decomposed)
+
+---
+
+## Detailed Task Manifests (${dynamicTasks.length} Formulated Tasks)
 
 ${tasksMarkdown}
+
+---
+
+## Task Index
+
+| ID | Title | Phase | Status | Complexity | Depends on | Required Capabilities |
+|----|-------|:---:|:---:|:---:|:---:|:---:|
+${taskIndexTable}
 `);
 
   // 18. execution/dependency_graph.md
@@ -1110,90 +1215,900 @@ ${mermaidEdges || '    T001["TASK-001: Genesis Setup"] --> T002["TASK-002: Relat
 
   // 19. execution/sprint_plan.md
   const quarter = Math.ceil(dynamicTasks.length / 4);
-  const sprint1Tasks = dynamicTasks.slice(0, quarter).map(t => t.id).join(', ');
-  const sprint2Tasks = dynamicTasks.slice(quarter, quarter * 2).map(t => t.id).join(', ');
-  const sprint3Tasks = dynamicTasks.slice(quarter * 2, quarter * 3).map(t => t.id).join(', ');
-  const sprint4Tasks = dynamicTasks.slice(quarter * 3).map(t => t.id).join(', ');
+  const sprint1List = dynamicTasks.slice(0, Math.min(quarter, 6));
+  const sprint2List = dynamicTasks.slice(quarter, quarter + Math.min(quarter, 6));
+  const sprint1Rows = sprint1List.map(t => `| \`${t.id}\` | ${t.title.slice(0, 32)} | P0 | ${(t.requiredCapabilities || ['devops']).map(c => `\`${c}\``).join(', ')} | — | — | ${t.status || 'todo'} |`).join('\n');
 
   recordFile('execution/sprint_plan.md', 'Tier 5', 'Sprint Roadmap', `---
 tier: 5
-role: sprint-plan
-depends-on: execution/tasks.md
+role: current-sprint-scope
+depends-on: execution/tasks.md · execution/dependency_graph.md · coordination/task_board.md
+feeds-into: state/current_state.md
+owner: human-curated · AI-drafted
 updated: ${dateStr}
 ---
 
-# 4-Sprint Implementation Roadmap: ${projectName}
+# Sprint Plan (Multi-Agent Scope): ${projectName}
 
-- **Sprint 1 (Genesis Setup, Database DDL & Scaffolding):** ${sprint1Tasks || 'TASK-001, TASK-002'}.
-  - *Target Deliverable:* Initialized repository, database migrations, connection pool, and local container environment.
-- **Sprint 2 (Authentication, Security Guards & Core Domain):** ${sprint2Tasks || 'TASK-003, TASK-004'}.
-  - *Target Deliverable:* Working Argon2id authentication, JWT sliding sessions, RBAC guards, and core resource services.
-- **Sprint 3 (Frontend Interface, Responsive Shell & Billing):** ${sprint3Tasks || 'TASK-005, TASK-006'}.
-  - *Target Deliverable:* Complete React 19 application shell, responsive views, Cashfree billing, and webhook receivers.
-- **Sprint 4 (MCP Agent Gateway, E2E Testing & Release):** ${sprint4Tasks || 'TASK-007, TASK-008'}.
-  - *Target Deliverable:* Live MCP specification server, Playwright automation suites, CI/CD pipeline, and production deployment.
+> AI instruction: When asked "what should I work on next?", check this file and \`coordination/task_board.md\`.
+> Only claim tasks listed as In Scope below. If a task not in this sprint is needed
+> to complete a sprint task, flag it via a message rather than pulling it in silently.
+
+---
+
+## Current Sprint
+
+**Sprint:** Sprint 1 — MVP Foundation  
+**Start:** ${dateStr}  
+**Goal:** Establish repository infrastructure, database containerization, initial migration, and secure authentication endpoints.
+
+---
+
+## In Scope
+
+| Task ID | Title | Priority | Required Capabilities | Claimed By (Session ID) | Worktree Branch | Status |
+|:--- |:--- |:---:|:--- |:--- |:--- |:---:|
+${sprint1Rows}
+
+---
+
+## Out of Scope this Sprint
+
+> Explicitly excluded — do not start these even if time allows.
+
+- Feature tasks beyond Sprint 1 (${sprint2List.map(t => `\`${t.id}\``).join(', ')}) — Deferred to Sprint 2
+- Production deployment scripts — Deferred to Release Sprint
+
+---
+
+## Sprint Notes
+
+- Multi-agent teams must adhere to \`.specs/coordination/protocol.md\`.
+- \`${dynamicTasks[0]?.id || 'TASK-001'}\` must be completed and merged before subsequent tasks can be claimed.
+- Core features begin once foundations pass verification gates.
+
+---
+
+## Multi-Agent Definition of Done
+
+- [ ] All in-scope tasks marked \`done\` in \`coordination/task_board.md\`.
+- [ ] Every completed task includes verified completion evidence per \`agents/verification.md\`.
+- [ ] Peer reviews executed and approved for all Tier 2/3 impacted tasks.
+- [ ] CI pipeline passes on \`main\` branch with zero regressions.
 `);
 
-  // 20. state/current_state.md
-  recordFile('state/current_state.md', 'State', 'Current System State', `---
-tier: state
-role: live-state
-read: every session, after _index.md
+  // 20. coordination/protocol.md
+  recordFile('coordination/protocol.md', 'Coordination', 'Multi-Agent Coordination Protocol', `---
+tier: coordination
+role: multi-agent-collaboration-protocol
+read: mandatory before claiming or executing any task
 updated: ${dateStr}
 ---
 
-# Current Operational System State: ${projectName}
+# Multi-Agent Coordination Protocol: ${projectName}
 
-- **What's Built & Verified:**
-  - Ingested 15-section comprehensive questionnaire.
-  - Formulated ${dynamicTasks.length} bespoke atomic tasks with dependency mapping.
-  - Synthesized full 22-file canonical specification hierarchy across all 6 tiers.
-  - Generated Model Context Protocol (MCP) server endpoints.
-- **Immediate Next Action:**
-  - Execute **${dynamicTasks[0]?.id || 'TASK-001'}**: ${dynamicTasks[0]?.title || 'Initialize Repository'}.
+> AI instruction: This document defines the non-negotiable rules of engagement for all AI coding agents working on this project.
+> No agent is permitted to write or edit source code without an active, confirmed task claim secured through this protocol.
+> Violation of scope boundaries or silent contract alteration will result in automated rejection during peer review and CI integration.
+
+---
+
+## 1. Identity & Session Conventions
+
+### 1.1 Agent Identity vs. Session Identity
+- **Platform Identity:** The vendor or runtime executing the code (e.g. \`codex\`, \`claude-code\`, \`cursor\`, \`windsurf\`, \`gemini-cli\`, \`copilot\`, \`antigravity\`).
+- **Session Identity (\`session_id\`):** A unique, deterministic string generated at startup representing this specific execution instance.
+  
+Format:
+\`\`\`
+{platform_short}-{YYYYMMDD}-{HHMMSS}
+\`\`\`
+Platform Prefix Map:
+- \`cx\` = OpenAI Codex CLI / Desktop
+- \`cc\` = Claude Code (Anthropic)
+- \`cr\` = Cursor IDE Agent
+- \`ws\` = Windsurf / Cascade (Codeium)
+- \`gm\` = Google Gemini CLI / Jules
+- \`cp\` = GitHub Copilot Coding Agent
+- \`ag\` = Google Antigravity Agent
+- \`xx\` = Generic / Custom Coding Agent
+
+*Example:* \`cc-20261123-143022\`
+
+---
+
+## 2. Workspace Isolation: Git Worktrees
+
+To prevent filesystem conflicts, \`index.lock\` collisions, and partial file reads between concurrent agents:
+1. Every session **must** create its own isolated Git worktree:
+   \`\`\`bash
+   git fetch origin main
+   git worktree add -b agent/{session_id} ../wt-{session_id} origin/main
+   \`\`\`
+2. The agent executes all commands, edits, and test runs strictly inside its dedicated worktree directory (\`../wt-{session_id}\`).
+3. The main working directory and \`main\` branch are strictly read-only trunks merged only via Pull Requests.
+
+---
+
+## 3. Task Claiming & Lease Protocol
+
+### 3.1 Eligibility Check
+Before claiming a task from \`.specs/coordination/task_board.md\`, the agent must verify:
+- Task status is \`todo\`.
+- All prerequisite tasks listed under \`Depends on\` are marked \`done\` on \`main\`.
+- The task's \`Required Capabilities\` match the agent's declared skills.
+- The task's \`Scope boundary: INCLUDED\` does not intersect with any actively running task's included files.
+
+### 3.2 Atomic Push Claim
+To guarantee distributed, race-condition-free claiming without requiring a centralized database:
+1. Agent edits \`.specs/coordination/task_board.md\` setting:
+   - \`Status: claimed\`
+   - \`Claimed by: {session_id}\`
+   - \`Claimed at: {UTC ISO timestamp}\`
+   - \`Lease expires: {Claimed at + 4 hours}\`
+2. Agent commits and attempts to push to the coordination tracking branch:
+   \`\`\`bash
+   git commit -m "chore(claim): TASK-NNN by {session_id}"
+   git push origin agent/{session_id}
+   \`\`\`
+3. If the push or subsequent PR fails due to a concurrent write collision:
+   - Run \`git pull --rebase\`.
+   - If another agent has claimed the target task, abort your claim immediately, revert your local board change, and pick another unblocked task.
+
+### 3.3 Lease Durations & Heartbeats
+- **Default Lease:** 4 hours from the claim timestamp.
+- **Heartbeat Requirement:** Agents working on long tasks should publish a \`SESSION_HEARTBEAT\` message every 30–60 minutes in their message stream.
+- **Stale Claim Reclaim:** If a task remains \`claimed\` or \`in-progress\` for > 4 hours with no active heartbeat or PR activity, any newly joined agent may reclaim the task by logging a \`TASK_RECLAIMED\` notice and resetting the lease.
+
+---
+
+## 4. Scope Boundary Enforcement
+
+Every task defines strict scope boundaries:
+- **\`Scope boundary: INCLUDED\`:** The exact files and directories the agent is authorized to create or edit.
+- **\`Scope boundary: EXCLUDED\`:** Files the agent must NEVER modify directly (e.g. shared configs, database schemas, API contracts, specification files).
+
+> **Enforcement Rule:** A Pull Request that modifies files outside the task's \`INCLUDED\` boundary will fail independent peer review and will be rejected with \`REVISION_REQUIRED\`.
+
+---
+
+## 5. Contract Change Protocol
+
+If an agent discovers that implementing its assigned task requires changing an approved shared contract (e.g. \`api_contracts.md\`, \`database_schema.md\`, \`data_model.md\`):
+1. **Never edit the contract silently.**
+2. Post a \`CONTRACT_CHANGE_PROPOSED\` message in your session message stream detailing:
+   - The exact proposed change.
+   - The architectural justification.
+   - Which other tasks/agents are impacted.
+3. Pause implementation of the affected interface until a human or designated architecture agent approves the change and updates the authoritative spec.
+
+---
+
+## 6. Communication & Logging Standards
+
+- Agents communicate exclusively through append-only markdown streams in \`.specs/coordination/messages/\`.
+- Every agent writes **only** to \`.specs/coordination/messages/{session_id}.messages.md\`.
+- No agent ever edits or overwrites another agent's message file.
+- All messages follow the schemas specified in \`.specs/agents/communication.md\`.
 `);
 
-  // 21. state/decisions_log.md
+  // 21. coordination/task_board.md
+  const todoCount = dynamicTasks.filter(t => !t.status || t.status === 'todo').length;
+  const claimedCount = dynamicTasks.filter(t => t.status === 'claimed').length;
+  const inProgressCount = dynamicTasks.filter(t => t.status === 'in-progress').length;
+  const reviewCount = dynamicTasks.filter(t => t.status === 'review').length;
+  const doneCount = dynamicTasks.filter(t => t.status === 'done').length;
+  const blockedCount = dynamicTasks.filter(t => t.status === 'blocked').length;
+
+  const taskBoardRows = dynamicTasks.map(t =>
+    `| \`${t.id}\` | ${t.title.slice(0, 36)} | ${t.status || 'todo'} | ${t.complexity || 'M'} | ${t.claimedBy || '—'} | ${t.leaseExpires || '—'} | ${t.dependsOn ? `\`${t.dependsOn}\`` : '—'} | ${t.reviewer || '—'} |`
+  ).join('\n');
+
+  const taskManifestsBoard = dynamicTasks.map(t => `### ${t.id}: ${t.title}
+- **Status:** ${t.status || 'todo'}
+- **Complexity:** ${t.complexity || 'M'}
+- **Governs:** ${t.governs || 'US-001 · DR-001'}
+- **Spec refs:** ${(t.specRefs && t.specRefs.length > 0) ? t.specRefs.map(r => `\`${r}\``).join(' · ') : '`implementation/coding_standards.md` · `contracts/api_contracts.md`'}
+- **Depends on:** ${t.dependsOn || '—'}
+- **Required capabilities:** ${(t.requiredCapabilities && t.requiredCapabilities.length > 0) ? t.requiredCapabilities.map(c => `\`${c}\``).join(', ') : '`backend`'}
+- **Claimed by:** ${t.claimedBy || '—'}
+- **Claimed at:** ${t.claimedAt || '—'}
+- **Lease expires:** ${t.leaseExpires || '—'}
+- **Scope boundary:**
+  - **INCLUDED:**
+${(t.scopeIncluded || ['src/**']).map(p => `    - \`${p}\``).join('\n')}
+  - **EXCLUDED:**
+${(t.scopeExcluded || ['.specs/**']).map(p => `    - \`${p}\``).join('\n')}
+- **Verification target:** ${t.verificationTarget || 'npm test and npm run build succeed with zero errors.'}
+- **Review required:** ${t.reviewRequired ? 'yes' : 'no'}
+- **Reviewer:** ${t.reviewer || '—'}
+- **Completion evidence:** ${t.completionEvidence || '—'}
+${t.notes ? `- **Notes:** ${t.notes}\n` : ''}`).join('\n---\n\n');
+
+  recordFile('coordination/task_board.md', 'Coordination', 'Live Task Board & Active Leases', `---
+tier: coordination
+role: live-task-board
+read: before selecting or claiming any task
+updated: ${dateStr}
+---
+
+# Live Task Board: ${projectName}
+
+> AI instruction: Use this board to identify unblocked tasks, check current ownership, and manage task leases.
+> Before starting work on any task, secure your claim following \`.specs/coordination/protocol.md\` §3.
+> Always check that \`Blocked by\` dependencies are marked \`done\` before claiming.
+
+---
+
+## 1. Task Summary Metrics
+
+| Total Tasks | Todo | Claimed | In Progress | In Review | Done | Blocked |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| ${dynamicTasks.length} | ${todoCount} | ${claimedCount} | ${inProgressCount} | ${reviewCount} | ${doneCount} | ${blockedCount} |
+
+---
+
+## 2. Active Task Table
+
+| Task ID | Title | Status | Complexity | Claimed By | Lease Expires (UTC) | Blocked By | Reviewer |
+| :--- | :--- | :--- | :---: | :--- | :--- | :--- | :--- |
+${taskBoardRows}
+
+---
+
+## 3. Detailed Task Manifests
+
+${taskManifestsBoard}
+`);
+
+  // 22. coordination/agent_registry.md
+  recordFile('coordination/agent_registry.md', 'Coordination', 'Agent Session Registry', `---
+tier: coordination
+role: agent-session-registry
+read: start and end of every session
+updated: ${dateStr}
+---
+
+# Agent Session Registry: ${projectName}
+
+> AI instruction: Every agent session must register itself in the table below upon initialization.
+> Format your \`Session ID\` as \`{platform}-{YYYYMMDD}-{HHMMSS}\` (see \`.specs/coordination/protocol.md\` §1).
+> Update your \`Last Heartbeat\` and \`Status\` during execution, and mark your session \`completed\` before exiting.
+
+---
+
+## Active & Historical Sessions
+
+| Session ID | Platform | Agent Role | Worktree Branch | Status | Started At (UTC) | Last Heartbeat (UTC) | Current Task |
+| :--- | :--- | :--- | :--- | :---: | :--- | :--- | :--- |
+| \`example-session-001\` | Antigravity | orchestrator | \`main\` | completed | ${dateStr}T10:00:00Z | ${dateStr}T10:45:00Z | — |
+
+---
+
+## Session Status Definitions
+- \`active\`: Session is actively computing, editing, or executing tests.
+- \`idle\`: Session is initialized or waiting on peer review / contract decision.
+- \`completed\`: Session has finished all claimed work, submitted PRs, and exited cleanly.
+- \`abandoned\`: Session exceeded the 4-hour lease threshold with no heartbeat or activity.
+
+---
+
+## Heartbeat & Recovery Guidelines
+1. **Heartbeat Cadence:** Update your \`Last Heartbeat\` timestamp every 30 to 60 minutes if working on long-running tasks.
+2. **Crash Detection:** If an agent session has no heartbeat update for > 4 hours and holds an active task claim, any newly initializing agent may mark that session \`abandoned\` and reclaim the task per \`.specs/coordination/protocol.md\` §3.3.
+`);
+
+  // 23. coordination/messages/.gitkeep
+  recordFile('coordination/messages/.gitkeep', 'Coordination', 'Message Stream Directory Marker', `# Directory for per-session append-only agent message logs (.specs/coordination/messages/{session_id}.messages.md)\n`);
+
+  // 24. agents/onboarding.md
+  recordFile('agents/onboarding.md', 'Agents', 'Agent Onboarding Runbook', `---
+tier: agents
+role: agent-onboarding-runbook
+read: first action of any new agent joining the repository
+updated: ${dateStr}
+---
+
+# Agent Onboarding Runbook: ${projectName}
+
+> AI instruction: Follow this exact 5-step checklist whenever you start a new session or join this project repository.
+> Do not begin inspecting code or editing files until Step 5 is completed.
+
+---
+
+## Step 1: Establish Your Session Identity
+Generate your unique \`session_id\` using the platform prefix and UTC timestamp:
+\`\`\`text
+{platform_prefix}-{YYYYMMDD}-{HHMMSS}
+\`\`\`
+*Platform Prefixes:*
+\`cx\` (Codex), \`cc\` (Claude Code), \`cr\` (Cursor), \`ws\` (Windsurf), \`gm\` (Gemini CLI), \`cp\` (Copilot), \`ag\` (Antigravity), \`xx\` (Other).
+
+*Example:* \`cc-20261123-143022\`
+
+---
+
+## Step 2: Create Your Isolated Git Worktree
+Never work directly in the root repository directory or on the \`main\` branch.
+Run the following shell commands:
+\`\`\`bash
+# Fetch latest repository state
+git fetch origin main
+
+# Create a clean worktree on a new branch named after your session
+git worktree add -b agent/{session_id} ../wt-{session_id} origin/main
+
+# Change directory into your worktree
+cd ../wt-{session_id}
+
+# Install dependencies offline/cached
+npm ci --prefer-offline
+\`\`\`
+
+---
+
+## Step 3: Register in the Agent Session Registry
+Open \`.specs/coordination/agent_registry.md\` and append your session entry to the **Active & Historical Sessions** table:
+\`\`\`markdown
+| \`{session_id}\` | {Platform Name} | {Role/Specialization} | \`agent/{session_id}\` | active | {UTC Start Time} | {UTC Start Time} | — |
+\`\`\`
+
+---
+
+## Step 4: Initialize Your Message Stream
+Create a dedicated append-only message file at:
+\`\`\`text
+.specs/coordination/messages/{session_id}.messages.md
+\`\`\`
+Add the header block and emit your initial \`SESSION_STARTED\` message:
+\`\`\`markdown
+# Session Message Stream: {session_id}
+**Platform:** {Platform Name}  
+**Started:** {UTC Start Time}  
+**Worktree:** agent/{session_id}  
+
+---
+
+## MSG-001: SESSION_STARTED
+- **Timestamp:** {UTC Start Time}
+- **Task:** none
+- **Priority:** info
+- **Payload:**
+  Agent session initialized on branch \`agent/{session_id}\`. Worktree created. Onboarding completed.
+\`\`\`
+
+---
+
+## Step 5: Read Current State & Select Task
+1. Read \`.specs/_index.md\` and \`.specs/state/current_state.md\`.
+2. Open \`.specs/coordination/task_board.md\` and claim an unblocked task per \`.specs/coordination/protocol.md\` §3.
+`);
+
+  // 25. agents/lifecycle.md
+  recordFile('agents/lifecycle.md', 'Agents', 'Agent Session Lifecycle', `---
+tier: agents
+role: agent-lifecycle-runbook
+read: during every stage of session execution
+updated: ${dateStr}
+---
+
+# Agent Session Lifecycle: ${projectName}
+
+> AI instruction: All agents must execute their tasks following the 6 sequential phases defined below.
+> Never skip phases or advance to task completion without satisfying verification gates.
+
+---
+
+## Lifecycle Overview
+
+\`\`\`
+Phase 1: Bootstrap & Orient  ──►  Phase 2: Task Claiming  ──►  Phase 3: Bounded Implementation
+             ▲                                                               │
+             │ (Recovery/Rebase)                                             ▼
+Phase 6: Rebase & Recover    ◄──  Phase 5: Evidence & Done  ◄──  Phase 4: Verification & Audit
+\`\`\`
+
+---
+
+## Phase 1: Bootstrap & Orient
+1. Execute \`.specs/agents/onboarding.md\` steps (generate \`session_id\`, create worktree, register session, create message log).
+2. Read \`.specs/_index.md\`, \`.specs/coordination/protocol.md\`, and \`.specs/state/current_state.md\`.
+3. Check \`.specs/state/decisions_log.md\` for past architectural decisions (ADRs) that constrain the project.
+
+---
+
+## Phase 2: Task Selection & Claiming
+1. Inspect \`.specs/coordination/task_board.md\`.
+2. Filter for tasks with \`Status: todo\` whose \`Blocked by\` dependencies are marked \`done\`.
+3. Select a task matching your capabilities (\`Required capabilities\`).
+4. Secure the lease:
+   - Edit \`.specs/coordination/task_board.md\` setting status to \`claimed\`, your \`session_id\`, and \`lease_expires\` (+4 hours).
+   - Commit and push to \`agent/{session_id}\`.
+   - If a merge/push conflict occurs because another agent claimed first, pull rebase and pick another unblocked task.
+5. Emit \`TASK_CLAIMED\` in your message stream.
+
+---
+
+## Phase 3: Bounded Implementation
+1. Read all specification files cited under the task's \`Spec refs\` field.
+2. Formulate an internal implementation plan.
+3. Review the task's \`Scope boundary: INCLUDED\` and \`EXCLUDED\` lists.
+4. Modify and create files **strictly within** the \`INCLUDED\` boundary.
+5. Never edit \`EXCLUDED\` files. If a shared contract change is needed, emit \`CONTRACT_CHANGE_PROPOSED\` and wait for sign-off.
+6. Post a \`PROGRESS_UPDATE\` message when reaching major milestones.
+
+---
+
+## Phase 4: Verification & Audit
+1. Run local test suites:
+   \`\`\`bash
+   npm test
+   npm run lint
+   npx tsc --noEmit
+   \`\`\`
+2. Check that the task's specific \`Verification target\` is completely met.
+3. Verify that all domain rules (DR-NNN) and acceptance criteria (AC-NNN) governed by the task pass without regressions.
+4. Compile the mandatory **Completion Evidence Block** (see \`.specs/agents/verification.md\`).
+
+---
+
+## Phase 5: Completion & Handoff
+1. Publish \`TASK_COMPLETED\` with full evidence block to your message stream.
+2. Update \`.specs/coordination/task_board.md\` setting status to \`done\` (or \`review\` if review is required).
+3. Update \`.specs/state/current_state.md\` recording completed work in your active session workstream.
+4. Push your branch and open a Pull Request targeting \`main\`.
+5. If exiting session, update \`.specs/coordination/agent_registry.md\` setting status to \`completed\`.
+
+---
+
+## Phase 6: Conflict Recovery & Rebase
+If PR integration or lease check encounters a collision:
+- Follow \`.specs/agents/conflict_resolution.md\` to rebase cleanly or release lease.
+`);
+
+  // 26. agents/task_execution.md
+  recordFile('agents/task_execution.md', 'Agents', 'Bounded Task Execution Guide', `---
+tier: agents
+role: task-execution-guide
+read: during Phase 3 implementation
+updated: ${dateStr}
+---
+
+# Bounded Task Execution Guide: ${projectName}
+
+> AI instruction: This guide governs the code writing process.
+> Adhere strictly to scope boundaries, follow coding standards, and avoid unauthorized architectural changes.
+
+---
+
+## 1. Scope Boundary Invariants
+
+Every task in \`.specs/coordination/task_board.md\` contains an explicit scope boundary definition.
+
+\`\`\`markdown
+**Scope boundary:**
+  - INCLUDED: [Explicit file/directory allowlist]
+  - EXCLUDED: [Explicit read-only allowlist]
+\`\`\`
+
+### The 4 Boundary Rules:
+1. **Zero Out-of-Scope Writes:** You may only create, modify, or delete files matching the patterns under \`INCLUDED\`.
+2. **Read-Only Context:** Files under \`EXCLUDED\` may be read for reference (e.g. types, shared utilities, contracts), but must **never** be edited directly during task execution.
+3. **Spec Files are Immutable During Coding:** Never edit files inside \`.specs/\` (except your own message file and the task board status) without following the Decision/Proposal protocol.
+4. **Pre-Commit Verification:** Run \`git status\` and \`git diff --name-only\` before committing. If any modified file is not in \`INCLUDED\`, revert it immediately:
+   \`\`\`bash
+   git checkout origin/main -- path/to/unauthorized/file
+   \`\`\`
+
+---
+
+## 2. Shared Code Patterns & Standards
+
+- **TypeScript Strictness:** Never use \`any\`. Use \`unknown\` and type guards, or define explicit domain types in module schemas.
+- **Layered Architecture:**
+  - Routers only bind endpoints to controllers and middleware.
+  - Controllers only parse requests, invoke services, and serialize response envelopes.
+  - Services contain business logic, calculations, and domain rule checks (DR-NNN).
+  - Repositories execute database queries and return domain models.
+- **Error Handling:** Always throw specific domain errors from \`shared/errors.ts\` (\`ValidationError\`, \`DomainRuleError\`, \`NotFoundError\`, \`ForbiddenError\`). Never throw raw generic errors or return unhandled 500s.
+- **Logging:** Use structured JSON logging with \`{ timestamp, level, request_id, user_id, action }\`. Never log credentials, passwords, or PII.
+
+---
+
+## 3. Dependency Management Guardrails
+
+- **No Unauthorized Packages:** Never run \`npm install <new-package>\` without documenting the requirement in a proposal. Use existing libraries listed in \`package.json\`.
+- **Environment Variables:** Never reference \`process.env.VARIABLE_NAME\` directly in business logic. All configuration must be accessed through validated \`config/env.ts\` as defined in \`implementation/infrastructure.md\`.
+`);
+
+  // 27. agents/communication.md
+  recordFile('agents/communication.md', 'Agents', 'Cross-Agent Communication Standard', `---
+tier: agents
+role: cross-agent-communication-standard
+read: when formatting or parsing messages
+updated: ${dateStr}
+---
+
+# Cross-Agent Communication Standard: ${projectName}
+
+> AI instruction: All communication between agents is persisted in \`.specs/coordination/messages/{session_id}.messages.md\`.
+> Every entry must follow the standardized markdown message format defined below.
+
+---
+
+## 1. Universal Message Envelope Format
+
+\`\`\`markdown
+---
+
+## MSG-{sequence_number}: {MESSAGE_TYPE}
+- **Timestamp:** {ISO 8601 UTC Timestamp}
+- **Task:** {TASK-NNN or "none" or "general"}
+- **Priority:** info | action-required | urgent
+- **Payload:**
+  {Structured description, evidence, proposal, or handoff details}
+\`\`\`
+
+---
+
+## 2. Standard Message Types & Templates
+
+### 2.1 \`SESSION_STARTED\`
+Emitted upon completing onboarding.
+\`\`\`markdown
+## MSG-001: SESSION_STARTED
+- **Timestamp:** ${dateStr}T14:30:25Z
+- **Task:** none
+- **Priority:** info
+- **Payload:**
+  Agent session initialized on branch \`agent/cc-auth\`. Clean worktree created from \`origin/main\`. Read \`_index.md\` and \`protocol.md\`. Ready to evaluate tasks.
+\`\`\`
+
+### 2.2 \`TASK_CLAIMED\`
+Emitted immediately upon updating \`.specs/coordination/task_board.md\`.
+\`\`\`markdown
+## MSG-002: TASK_CLAIMED
+- **Timestamp:** ${dateStr}T14:32:00Z
+- **Task:** TASK-003
+- **Priority:** action-required
+- **Payload:**
+  Claimed TASK-003 (Auth Endpoints). Prerequisite TASK-002 confirmed done. Lease active for 4 hours.
+\`\`\`
+
+### 2.3 \`PROGRESS_UPDATE\`
+Emitted at key implementation milestones.
+\`\`\`markdown
+## MSG-003: PROGRESS_UPDATE
+- **Timestamp:** ${dateStr}T15:15:00Z
+- **Task:** TASK-003
+- **Priority:** info
+- **Payload:**
+  Implemented JWT signing service and Argon2id password hasher. Passing unit tests.
+\`\`\`
+
+### 2.4 \`CONTRACT_CHANGE_PROPOSED\`
+Emitted when an agent discovers a schema or contract deficiency.
+\`\`\`markdown
+## MSG-004: CONTRACT_CHANGE_PROPOSED
+- **Timestamp:** ${dateStr}T15:45:00Z
+- **Task:** TASK-003
+- **Priority:** urgent
+- **Payload:**
+  Propose adding 'mfa_enabled' boolean column to users table in contracts/database_schema.md.
+\`\`\`
+
+### 2.5 \`TASK_COMPLETED\`
+Emitted upon completing implementation and satisfying verification gates.
+\`\`\`markdown
+## MSG-005: TASK_COMPLETED
+- **Timestamp:** ${dateStr}T16:30:00Z
+- **Task:** TASK-003
+- **Priority:** action-required
+- **Payload:**
+  Completed implementation of TASK-003. Verification evidence included. PR opened for review.
+\`\`\`
+`);
+
+  // 28. agents/verification.md
+  recordFile('agents/verification.md', 'Agents', 'Evidence-Based Verification Standard', `---
+tier: agents
+role: verification-and-review-standard
+read: during Phase 4 and Phase 5
+updated: ${dateStr}
+---
+
+# Evidence-Based Verification & Peer Review Standard: ${projectName}
+
+> AI instruction: An agent must never mark a task \`done\` or \`review\` without providing deterministic proof of correctness.
+> Claims such as "implemented successfully" or "tests passed" without supporting command outputs and file lists are treated as unverified.
+
+---
+
+## 1. Mandatory Completion Evidence Format
+
+Every completed task must produce this standardized markdown evidence block in its Pull Request description and in its session message log:
+
+\`\`\`markdown
+### Verification Evidence: TASK-NNN
+- **Executed By:** {session_id}
+- **Execution Date:** {ISO Timestamp}
+- **Files Created:**
+  - \`path/to/created_file.ts\`
+- **Files Modified (Within Scope):**
+  - \`path/to/modified_file.ts\`
+- **Files Modified Outside Scope:** NONE (Verified clean via git diff)
+- **Deterministic Test Results:**
+  - Command: \`npm test path/to/test.ts\`
+  - Output: \`PASS (N tests, 100% assertions met, 0 failures)\`
+  - Branch Coverage: \`XX.X%\` (Minimum target: 80% for services, 90% for utils)
+- **Invariant & Rule Verification:**
+  - \`DR-001\` (Rule Name): Verified via test case \`file.test.ts#L45\`
+- **Acceptance Criteria Checklist:**
+  - [x] AC-1: [Exact condition verified]
+  - [x] AC-2: [Exact condition verified]
+- **Known Assumptions & Limitations:**
+  - [Any assumptions or "none"]
+\`\`\`
+
+---
+
+## 2. Peer Review Checklist (For Reviewer Agents)
+
+When an agent is requested to review another agent's completed work (\`TASK-NNN\` with status \`review\`):
+
+### 1. Scope Boundary Verification
+- Run \`git diff origin/main...agent/{claimant_session} --name-only\`.
+- Confirm that **every single modified file** is explicitly listed in the task's \`Scope boundary: INCLUDED\` list.
+- If ANY unauthorized file is modified: **REJECT** immediately with \`REVISION_REQUIRED\`.
+
+### 2. Independent Test Execution
+- Check out the PR branch in an isolated reviewer worktree:
+  \`\`\`bash
+  git fetch origin agent/{claimant_session}
+  npm test
+  npm run lint
+  npx tsc --noEmit
+  \`\`\`
+- Verify all automated checks pass with zero warnings or errors.
+`);
+
+  // 29. agents/conflict_resolution.md
+  recordFile('agents/conflict_resolution.md', 'Agents', 'Conflict Resolution & Recovery Guide', `---
+tier: agents
+role: conflict-resolution-and-recovery-guide
+read: when encountering concurrency errors, merge conflicts, or stale state
+updated: ${dateStr}
+---
+
+# Conflict Resolution & Recovery Guide: ${projectName}
+
+> AI instruction: Use this runbook when an operation fails due to concurrency collisions, stale claims, broken merges, or crashes.
+> Follow the deterministic resolution algorithms below.
+
+---
+
+## 1. Simultaneous Task Claim Collision
+
+### Symptom:
+You updated \`.specs/coordination/task_board.md\` to claim \`TASK-NNN\`, but your Git push was rejected with \`[rejected - non-fast-forward]\`.
+
+### Recovery Algorithm:
+1. Fetch latest remote state:
+   \`\`\`bash
+   git fetch origin main
+   \`\`\`
+2. Inspect the latest \`coordination/task_board.md\` on \`origin/main\`.
+3. If another agent successfully committed a claim to \`TASK-NNN\` first:
+   - Revert your local task board change:
+     \`\`\`bash
+     git checkout origin/main -- .specs/coordination/task_board.md
+     \`\`\`
+   - Log \`MSG-XXX: CLAIM_COLLISION_RESOLVED\` in your session stream:
+     *"Task TASK-NNN was claimed by {competing_session}. Releasing local attempt."*
+   - Return to \`coordination/task_board.md\` and claim the next available unblocked task.
+4. If the conflict was merely an unrelated message or file edit:
+   - Run \`git rebase origin/main\`.
+   - Re-push your claim.
+
+---
+
+## 2. Crashed Agent / Expired Lease Reclaim
+
+### Symptom:
+A task is marked \`claimed\` or \`in-progress\`, but its \`lease_expires\` timestamp has passed (> 4 hours), or the owning agent session in \`agent_registry.md\` has no heartbeat for > 4 hours.
+
+### Recovery Algorithm:
+1. Verify that no open Pull Request exists from the claimant's branch.
+2. In your session stream, post \`TASK_RECLAIM_ANNOUNCED\`:
+   *"Task TASK-NNN lease expired at {timestamp} with no activity. Reclaiming task."*
+3. Update \`.specs/coordination/agent_registry.md\` marking the old session as \`abandoned\`.
+4. Update \`.specs/coordination/task_board.md\`:
+   - Reset task status to \`claimed\`.
+   - Set \`Claimed by\` to your own \`session_id\`.
+   - Set \`Lease expires\` to current UTC time + 4 hours.
+5. Commit and push the reclaim.
+
+---
+
+## 3. Git Merge Conflicts on Feature Integration
+
+### Symptom:
+When rebasing your worktree branch on \`origin/main\`, Git halts with merge conflicts.
+
+### Recovery Algorithm:
+1. If the conflict is inside your task's \`Scope boundary: INCLUDED\` files:
+   - Inspect upstream changes from \`origin/main\`.
+   - Resolve conflict preserving both upstream contract compliance and your task's implementation.
+   - Run \`npm test\` to verify zero regressions.
+   - Run \`git add <file>\` and \`git rebase --continue\`.
+2. If the conflict is inside an \`EXCLUDED\` file (e.g. a shared config or schema modified by another merged PR):
+   - **Do NOT manually resolve the conflict.**
+   - Abort rebase: \`git rebase --abort\`.
+   - Check if the upstream contract change invalidates your implementation.
+   - Post a \`CONTRACT_DRIFT_DETECTED\` message in your stream and request peer coordination.
+`);
+
+  // 30. state/current_state.md
+  recordFile('state/current_state.md', 'State', 'Multi-Session Handoff Ledger', `---
+role: multi-session-handoff-ledger
+read: start of EVERY session (immediately after _index.md)
+write: end of EVERY session
+owner: AI writes · human reviews
+format: append-and-prune multi-session ledger
+updated: ${dateStr}
+---
+
+# Current State & Multi-Session Runtime Ledger: ${projectName}
+
+> AI instruction: Read this at the start of every session before reading any spec.
+> Write to this at the END of every session.
+> Do NOT overwrite other agents' active session workstreams. Update your own session block.
+
+---
+
+## ⚡ Quick Context (Read First)
+
+**Active Milestone:** Sprint 1 — MVP Foundation  
+**Trunk Status:** \`main\` branch passing all lint and test gates  
+**Active Workstreams:** No active external claims; all Sprint 1 tasks currently available  
+**Next Recommended Action:** Claim \`${dynamicTasks[0]?.id || 'TASK-001'}\` (${dynamicTasks[0]?.title || 'Initialize project repository'}) on \`.specs/coordination/task_board.md\`  
+
+---
+
+## Active Session Workstreams
+
+<!-- Agents add and update their active session blocks here. Prune once merged to main. -->
+
+*(No active sessions currently running. Ready for agent onboarding.)*
+
+---
+
+## Persistent State
+
+### What's Working (Confirmed)
+- System 2 multi-agent specification architecture fully formulated (${dynamicTasks.length} bespoke tasks across Tiers 0–5 + Coordination + Agents + State).
+- Universal agent entrypoint established at \`AGENTS.md\`.
+
+### What's Broken or Incomplete
+- Source code implementation not yet begun (all Phase 0 tasks in \`todo\` status).
+- Tracked issues: None currently open (see \`state/known_issues.md\`).
+
+### Active Constraints
+- Git worktree isolation is mandatory for all parallel agent sessions.
+- Zero out-of-scope modifications allowed during task execution.
+
+---
+
+## Pending Cross-Agent Decisions & Proposals
+
+*(None pending).*
+`);
+
+  // 31. state/decisions_log.md
   recordFile('state/decisions_log.md', 'State', 'Architecture Decision Records (ADR)', `---
 tier: state
 role: decisions-log
+read: scan at session start · read fully before making architectural decisions
+owner: AI appends · human reviews
 updated: ${dateStr}
 ---
 
-# Architecture Decision Records (ADR): ${projectName}
+# Architecture Decisions Log (ADR): ${projectName}
 
-### ADR-001: Adoption of 6-Tier Hierarchical Specification Framework
-- **Status:** Accepted
-- **Context:** Large monolithic specification documents overwhelm LLM context windows and cause hallucination.
-- **Decision:** Decompose specifications into 22 atomic, structured files across 6 tiers.
-- **Consequences:** AI coding agents load only the specific files relevant to their current task.
+> AI instruction: Before making any architectural decision, scan this log.
+> If a relevant past decision exists, follow it — do not relitigate it.
+> If you make a new decision during a session, append it here immediately.
+> Every ADR must declare session/agent attribution (\`Decided by\` and \`Proposed in\`).
+> Never edit or delete past entries. Mark superseded decisions as [SUPERSEDED by ADR-NNN].
 
-### ADR-002: Dynamic Task Decomposition
-- **Status:** Accepted
-- **Context:** Generic task lists do not reflect bespoke feature selections.
-- **Decision:** Dynamically formulate atomic tasks tailored to the 15-section questionnaire.
-- **Consequences:** Tasks accurately span setup, relational schema, security guards, feature services, UI shell, MCP server, and tests.
+---
 
-### ADR-003: Multi-Tenant Row-Level Security
-- **Status:** Accepted
-- **Context:** Ensuring zero-bleed data isolation in multi-tenant environments.
-- **Decision:** Implement PostgreSQL Row-Level Security (RLS) linked to session \`tenant_id\`.
-- **Consequences:** Database enforces tenant separation even if application queries omit where clauses.
+## ADR-001: Modular Monolith over Microservices for v1
+**Date:** ${dateStr}  
+**Status:** accepted  
+**Decided by:** Human Architect  
+**Proposed in:** Project Scaffolding  
+**Reviewers:** Human Team  
 
-### ADR-004: Stateless Authentication with Refresh Token Rotation
-- **Status:** Accepted
-- **Context:** Balancing security and horizontal scalability.
-- **Decision:** Use short-lived JWTs (15 mins) with rotating refresh tokens stored in HttpOnly cookies.
-- **Consequences:** Eliminates central session bottleneck while enabling immediate session revocation.
+**Context:** Team is small (1–3 engineers or parallel AI sessions). Splitting into distributed microservices would add deployment, network, and operational complexity before domain boundaries stabilize.
 
-### ADR-005: Model Context Protocol (MCP) Live Agent Gateway
-- **Status:** Accepted
-- **Context:** Allowing Cursor, Windsurf, and Claude Code to autonomously query live specs.
-- **Decision:** Expose a standardized MCP server endpoint delivering file contents and task checklists.
-- **Consequences:** Autonomous agents can code continuously with live context sync.
+**Options considered:**
+- A. Microservices — independent deployment, but high operational overhead and network latency.
+- B. Modular monolith — single deployable artifact, strict module boundaries enforced by directory layout.
+- C. Fully flat monolith — simple to start, but difficult to refactor or untangle later.
+
+**Decision:** Option B (Modular Monolith). Clean module boundaries enforced via folder structure (\`src/modules/[resource]\`) make future service splits tractable while keeping CI/CD, local testing, and Docker setup simple.
+
+**Consequences:** Simplifies CI/CD and local development. Agents must strictly enforce module boundaries — no cross-module imports except through defined public interfaces and shared types.
+
+**Affects:** \`architecture/system_design.md\` · \`implementation/backend_guide.md\`
+
+---
+
+## ADR-002: Cross-Platform Multi-Agent Collaboration Protocol (System 2 Architecture)
+**Date:** ${dateStr}  
+**Status:** accepted  
+**Decided by:** Antigravity Architect  
+**Proposed in:** Specification Reengineering Master Initiative  
+**Reviewers:** Lead Project Architect  
+
+**Context:** The project requires coordination among multiple independent AI coding platforms (Codex, Claude Code, Cursor, Windsurf, Copilot, Gemini CLI) without relying on a proprietary central AI orchestrator.
+
+**Options considered:**
+- A. Pure shared markdown files — zero isolation, high write collisions and merge conflicts.
+- B. Central custom orchestration server — high operational complexity and non-baseline requirement.
+- C. Hybrid Specification + Git Worktrees + Append-Only Message Streams — repository-native, zero custom infrastructure, strict filesystem isolation via Git worktrees, atomic claiming, and independent peer review.
+
+**Decision:** Option C (Hybrid Specification + Git Worktrees + Append-Only Message Streams). Leverages the \`AGENTS.md\` open standard as universal entry point, Git worktrees for filesystem safety, and lock-free append-only message logs for communication.
+
+**Consequences:** Enables vendor-neutral parallel development. Requires agents to follow the 6-phase lifecycle, respect scope boundaries, and provide reproducible test evidence before marking tasks complete.
+
+**Affects:** \`AGENTS.md\` · \`.specs/_index.md\` · \`.specs/coordination/**\` · \`.specs/agents/**\` · \`.specs/execution/tasks.md\` · \`.specs/state/current_state.md\`
+
+---
+
+## ADR-003: Multi-Tenant Row-Level Security
+**Date:** ${dateStr}  
+**Status:** accepted  
+**Decided by:** Lead Security Architect  
+**Proposed in:** Database Security Baseline  
+**Reviewers:** Backend Engineering Team  
+
+**Context:** Ensuring zero-bleed data isolation in multi-tenant environments.
+**Decision:** Implement PostgreSQL Row-Level Security (RLS) linked to session \`tenant_id\`.
+**Consequences:** Database enforces tenant separation even if application queries omit where clauses.
+**Affects:** \`architecture/security_model.md\` · \`contracts/database_schema.md\`
+
+---
+
+## ADR-004: Stateless Authentication with Refresh Token Rotation
+**Date:** ${dateStr}  
+**Status:** accepted  
+**Decided by:** Backend Engineering Lead  
+**Proposed in:** Authentication Design Review  
+**Reviewers:** Security Review Board  
+
+**Context:** Balancing security and horizontal scalability.
+**Decision:** Use short-lived JWTs (15 mins) with rotating refresh tokens stored in HttpOnly cookies.
+**Consequences:** Eliminates central session bottleneck while enabling immediate session revocation.
+**Affects:** \`architecture/security_model.md\` · \`contracts/api_contracts.md\`
+
+---
+
+## ADR-005: Model Context Protocol (MCP) Live Agent Gateway
+**Date:** ${dateStr}  
+**Status:** accepted  
+**Decided by:** Principal AI Systems Engineer  
+**Proposed in:** Agent Tooling Initiative  
+**Reviewers:** Developer Experience Team  
+
+**Context:** Allowing Cursor, Windsurf, and Claude Code to autonomously query live specs.
+**Decision:** Expose a standardized MCP server endpoint delivering file contents and task checklists.
+**Consequences:** Autonomous agents can code continuously with live context sync.
+**Affects:** \`public/api/mcp.php\` · \`mcp/**\`
 `);
 
-  // 22. state/known_issues.md
+  // 32. state/known_issues.md
   recordFile('state/known_issues.md', 'State', 'Known Issues & Tech Debt', `---
 tier: state
 role: tech-debt-and-bugs

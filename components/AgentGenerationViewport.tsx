@@ -84,6 +84,8 @@ export const AgentGenerationViewport: React.FC<AgentGenerationViewportProps> = (
       .map(l => l.meta!.file!)
   );
 
+  const totalSpecFiles = CANONICAL_SPEC_TIERS.reduce((acc, t) => acc + t.files.length, 0);
+
   return (
     <div className="shell flex flex-col h-[calc(100vh-80px)] py-3">
       {/* Top Telemetry Header */}
@@ -186,8 +188,8 @@ export const AgentGenerationViewport: React.FC<AgentGenerationViewportProps> = (
           {/* 22 Canonical Specs Compilation Matrix */}
           <div className="bg-box border border-line p-3 flex-1 min-h-0 flex flex-col overflow-hidden">
             <div className="font-display text-xs text-muted uppercase tracking-wider mb-2 flex items-center justify-between">
-              <span>Hierarchical .specs Hierarchy</span>
-              <span className="text-[10px] text-accent font-mono">{createdFiles.size} / 22 Compiled</span>
+              <span>System 2 .specs Hierarchy</span>
+              <span className="text-[10px] text-accent font-mono">{createdFiles.size} / {totalSpecFiles} Compiled</span>
             </div>
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 font-mono text-xs custom-scrollbar">
               {CANONICAL_SPEC_TIERS.map(tier => (

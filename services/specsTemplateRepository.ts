@@ -3,14 +3,14 @@ import fallbackTemplates from './specsTemplateFallback.json';
 /**
  * Master .specs Template Repository
  * 
- * Provides access to the pristine canonical 22-file .specs template directory.
+ * Provides access to the pristine canonical 33-file System 2 multi-agent .specs template directory.
  * Every time a user creates a specification, the AI Agent creates an isolated copy
  * of this template suite specifically for the project, leaving the master templates intact.
  */
 
-// Use Vite's glob import to bundle all 22 markdown files from the .specs template folder (with Node fallback)
+// Use Vite's glob import to bundle all markdown files from the .specs template folder and AGENTS.md (with Node fallback)
 const templateModules: Record<string, string> = (typeof (import.meta as any).glob === 'function')
-  ? (import.meta as any).glob('/.specs/**/*.md', {
+  ? (import.meta as any).glob(['/.specs/**/*.md', '/AGENTS.md'], {
       query: '?raw',
       import: 'default',
       eager: true
@@ -23,11 +23,12 @@ const templateModules: Record<string, string> = (typeof (import.meta as any).glo
 function normalizeTemplatePath(rawPath: string): string {
   return rawPath
     .replace(/^(\.\/|\/)?\.specs\//, '')
+    .replace(/^(\.\/|\/)/, '')
     .replace(/\\/g, '/');
 }
 
 /**
- * Returns a pristine dictionary of all 22 raw canonical .specs template files
+ * Returns a pristine dictionary of all 33 raw canonical .specs template files
  */
 export function getMasterSpecsTemplates(): Record<string, string> {
   const templates: Record<string, string> = {};
@@ -36,7 +37,7 @@ export function getMasterSpecsTemplates(): Record<string, string> {
     templates[cleanPath] = content;
   }
 
-  // Ensure all 22 files exist using the fallback if glob missed anything
+  // Ensure all 33 files exist using the fallback if glob missed anything
   for (const [key, val] of Object.entries(fallbackTemplates as Record<string, string>)) {
     if (!templates[key]) {
       templates[key] = val;

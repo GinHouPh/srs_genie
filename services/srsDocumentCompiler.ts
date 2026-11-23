@@ -39,6 +39,10 @@ export function compileConsolidatedIeee830SRS(
   const testingStrategy = specs['implementation/testing_strategy.md'] || '';
   const codingStandards = specs['implementation/coding_standards.md'] || '';
   const sprintPlan = specs['execution/sprint_plan.md'] || '';
+  const agentsManifest = specs['AGENTS.md'] || '';
+  const coordinationProtocol = specs['coordination/protocol.md'] || '';
+  const taskBoard = specs['coordination/task_board.md'] || '';
+  const verificationStandard = specs['agents/verification.md'] || '';
 
   return `# Software Requirements Specification (SRS)
 ## For **${projectName}**
@@ -98,6 +102,11 @@ export function compileConsolidatedIeee830SRS(
    - 6.1 [Quality Assurance & Testing Strategy](#61-quality-assurance--testing-strategy)
    - 6.2 [Sprint Roadmap & Release Checkpoints](#62-sprint-roadmap--release-checkpoints)
    - 6.3 [Coding Standards & Engineering Guidelines](#63-coding-standards--engineering-guidelines)
+7. [7. Autonomous Multi-Agent Coordination & Execution Protocol](#7-autonomous-multi-agent-coordination--execution-protocol)
+   - 7.1 [Universal Agent Directives & Repository Manifest (AGENTS.md)](#71-universal-agent-directives--repository-manifest-agentsmd)
+   - 7.2 [Multi-Agent Coordination Protocol & Workspace Isolation](#72-multi-agent-coordination-protocol--workspace-isolation)
+   - 7.3 [Live Task Board, Leases & Bounded Implementation](#73-live-task-board-leases--bounded-implementation)
+   - 7.4 [Evidence-Based Verification Gates & Completion Audit](#74-evidence-based-verification-gates--completion-audit)
 
 ---
 
@@ -202,6 +211,22 @@ ${sprintPlan ? sprintPlan.replace(/^#+.*$/gm, '#### $&') : `Milestone roadmap an
 
 ### 6.3 Coding Standards & Engineering Guidelines
 ${codingStandards ? codingStandards.replace(/^#+.*$/gm, '#### $&') : `TypeScript strict-mode coding conventions and linting rules.`}
+
+---
+
+## 7. Autonomous Multi-Agent Coordination & Execution Protocol
+
+### 7.1 Universal Agent Directives & Repository Manifest (AGENTS.md)
+${agentsManifest ? agentsManifest.replace(/^#+.*$/gm, '#### $&') : `Universal open-standard directives for autonomous AI coding agents operating across independent platforms.`}
+
+### 7.2 Multi-Agent Coordination Protocol & Workspace Isolation
+${coordinationProtocol ? coordinationProtocol.replace(/^#+.*$/gm, '#### $&') : `Rules of engagement governing distributed agent execution, session identification, and Git worktree isolation.`}
+
+### 7.3 Live Task Board, Leases & Bounded Implementation
+${taskBoard ? taskBoard.replace(/^#+.*$/gm, '#### $&') : `Real-time task claiming, 4-hour lease enforcement, and explicit INCLUDED/EXCLUDED scope boundary allowlists.`}
+
+### 7.4 Evidence-Based Verification Gates & Completion Audit
+${verificationStandard ? verificationStandard.replace(/^#+.*$/gm, '#### $&') : `Deterministic verification targets, reproducible test logs, and peer review gates required before task completion.`}
 
 ---
 *End of IEEE Std 830-1998 Software Requirements Specification for ${projectName}.*

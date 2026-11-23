@@ -1,15 +1,15 @@
 ---
 tier: entry
-role: navigation-manifest
+role: multi-agent-navigation-manifest
 read: every session, before any other file
 updated: YYYY-MM-DD
 ---
 
-# Project index
+# Project Index & Multi-Agent Runbook
 
-> AI instruction: Read this file first. Do not read any other file until you have parsed
-> the full file table below. Then read only the files relevant to your current task.
-> Always read `/state/current_state.md` immediately after this file.
+> AI instruction: Read this file first (or `AGENTS.md` at repository root). Do not read any other file until you have parsed the full file table below.
+> Next, read `coordination/protocol.md` and check `coordination/task_board.md` before claiming or modifying any work.
+> Always read `state/current_state.md` immediately after this file to understand active session streams.
 
 ## Project summary
 
@@ -22,7 +22,7 @@ updated: YYYY-MM-DD
 
 ---
 
-## Spec file map
+## Spec File Map
 
 | File | Tier | Contains | When to read |
 |------|------|----------|--------------|
@@ -41,35 +41,47 @@ updated: YYYY-MM-DD
 | `implementation/infrastructure.md` | 4 | Cloud, environments, CI/CD, env vars | When writing deploy configs |
 | `implementation/testing_strategy.md` | 4 | Coverage targets, test patterns, mocking rules | When writing tests |
 | `implementation/coding_standards.md` | 4 | Naming, formatting, PR process | Before writing any code |
-| `execution/tasks.md` | 5 | Atomic task list with status | When picking the next task |
-| `execution/dependency_graph.md` | 5 | Task dependency map | When determining task order |
-| `execution/sprint_plan.md` | 5 | Current sprint scope and priorities | When starting a work session |
-| `state/current_state.md` | state | What's built, what's broken, next action | Every session — read after this file |
-| `state/decisions_log.md` | state | Architecture Decision Records (append-only) | Before making any architectural decision |
+| `execution/tasks.md` | 5 | Master canonical task list with multi-agent scope & leases | When planning work breakdown |
+| `execution/dependency_graph.md` | 5 | Task dependency map & parallel groups | When determining task ordering |
+| `execution/sprint_plan.md` | 5 | Multi-agent sprint allocations and active milestones | When starting a sprint milestone |
+| `coordination/protocol.md` | coord | Multi-agent collaboration protocol & claiming rules | Mandatory before claiming any task |
+| `coordination/task_board.md` | coord | Live task board with active leases & claimants | When picking an unblocked task |
+| `coordination/agent_registry.md` | coord | Ledger of active and historical agent sessions | At session start, heartbeat, and exit |
+| `coordination/messages/` | coord | Append-only message streams per agent session | When announcing claims, handoffs, or milestones |
+| `agents/onboarding.md` | runbook | Step-by-step agent bootstrap and worktree setup | When initializing a new agent session |
+| `agents/lifecycle.md` | runbook | 6-phase agent lifecycle from bootstrap to completion | To follow standard execution phases |
+| `agents/task_execution.md` | runbook | Bounded implementation and scope enforcement rules | During active task implementation |
+| `agents/communication.md` | runbook | Message schemas and cross-agent event standards | When posting messages or handoffs |
+| `agents/verification.md` | runbook | Evidence-based completion and peer review guide | When validating work before PR submission |
+| `agents/conflict_resolution.md` | runbook | Concurrency, collision, and contract drift recovery | When resolving conflicts or stale state |
+| `state/current_state.md` | state | Multi-session workstreams, health, confirmed state | Every session — read after this file |
+| `state/decisions_log.md` | state | Architecture Decision Records (append-only with attribution) | Before making any architectural change |
 | `state/known_issues.md` | state | Bugs, tech debt, deferred decisions | Before touching affected areas |
 
 ---
 
 ## Regeneration rules
 
-> If a file changes, regenerate all files that depend on it. Do not edit derived files directly.
+> If an upstream specification file changes, regenerate all files that depend on it. Do not edit derived files directly.
 
 ```
 brief.md changed          → regenerate everything below Tier 0
 glossary.md changed       → review all files for term consistency
 data_model.md changed     → regenerate database_schema.md + api_contracts.md + ui_contracts.md
-api_contracts.md changed  → regenerate ui_contracts.md + update testing_strategy.md
-user_stories.md changed   → regenerate tasks.md + testing_strategy.md
+api_contracts.md changed  → regenerate ui_contracts.md + update testing_strategy.md + notify frontend/backend agents
+user_stories.md changed   → regenerate tasks.md + testing_strategy.md + update task_board.md
 ```
 
 ---
 
-## Session protocol for AI
+## Multi-Agent Session Protocol
 
-1. Read `_index.md` (this file)
-2. Read `state/current_state.md`
-3. Read `state/decisions_log.md` (scan only — check for relevant past decisions)
-4. Read only the tier files needed for the current task (see file map above)
-5. Execute task
-6. Write results to `state/current_state.md`
-7. Append any new decisions to `state/decisions_log.md`
+1. Read `AGENTS.md` (root) and `_index.md` (this file).
+2. Execute onboarding: generate `session_id`, spin up isolated Git worktree (`agent/{session_id}`), and register in `coordination/agent_registry.md`.
+3. Read `state/current_state.md` and check active sessions.
+4. Scan `coordination/task_board.md` and select an unblocked `todo` task matching your capabilities.
+5. Secure lease via atomic commit/push; announce `TASK_CLAIMED` in your message stream (`coordination/messages/{session_id}.messages.md`).
+6. Read the tier files listed in your task's `Spec refs`.
+7. Execute implementation strictly within the task's `Scope boundary: INCLUDED` files.
+8. Validate implementation: run tests, verify acceptance criteria, compile completion evidence.
+9. Publish `TASK_COMPLETED` with evidence, submit PR to `main`, and update `state/current_state.md`.

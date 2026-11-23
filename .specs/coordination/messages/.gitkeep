@@ -1,0 +1,2 @@
+# This directory stores per-session append-only message streams.
+# Format: {session_id}.messages.md

@@ -1,5 +1,137 @@
 import { ProjectInput, VibeTask, AgentLogEntry } from '../types';
 
+export function enrichTaskWithMultiAgentScope(task: Partial<VibeTask>, idx: number): VibeTask {
+  const type = task.type || 'backend';
+  
+  // 1. Required Capabilities
+  let requiredCapabilities = task.requiredCapabilities;
+  if (!requiredCapabilities || requiredCapabilities.length === 0) {
+    if (type === 'setup') requiredCapabilities = ['devops', 'infrastructure'];
+    else if (type === 'database') requiredCapabilities = ['database', 'backend'];
+    else if (type === 'frontend') requiredCapabilities = ['frontend'];
+    else if (type === 'testing') requiredCapabilities = ['testing', 'qa'];
+    else if (type === 'deployment') requiredCapabilities = ['devops', 'infrastructure'];
+    else {
+      const lower = ((task.title || '') + ' ' + (task.description || '')).toLowerCase();
+      if (lower.includes('auth') || lower.includes('security') || lower.includes('token') || lower.includes('rbac') || lower.includes('mfa')) {
+        requiredCapabilities = ['backend', 'security'];
+      } else if (lower.includes('query') || lower.includes('migration') || lower.includes('schema') || lower.includes('sql') || lower.includes('redis')) {
+        requiredCapabilities = ['backend', 'database'];
+      } else {
+        requiredCapabilities = ['backend'];
+      }
+    }
+  }
+
+  // 2. Scope Included
+  let scopeIncluded = task.scopeIncluded;
+  if (!scopeIncluded || scopeIncluded.length === 0) {
+    if (task.fileContext) {
+      scopeIncluded = task.fileContext.split(',').map(s => s.trim()).filter(Boolean);
+    } else if (type === 'setup') {
+      scopeIncluded = ['package.json', 'tsconfig.json', '.eslintrc.*', '.prettierrc.*', '.gitignore'];
+    } else if (type === 'database') {
+      scopeIncluded = ['src/config/database.ts', 'migrations/**', 'docker-compose.yml'];
+    } else if (type === 'frontend') {
+      scopeIncluded = ['src/pages/**', 'src/components/**', 'src/hooks/**'];
+    } else if (type === 'testing') {
+      scopeIncluded = ['tests/**', 'jest.config.ts', 'playwright.config.ts'];
+    } else if (type === 'deployment') {
+      scopeIncluded = ['Dockerfile', 'docker-compose.yml', '.github/workflows/**'];
+    } else {
+      scopeIncluded = ['src/modules/**', 'src/services/**'];
+    }
+  }
+
+  // 3. Scope Excluded
+  let scopeExcluded = task.scopeExcluded;
+  if (!scopeExcluded || scopeExcluded.length === 0) {
+    if (type === 'setup') {
+      scopeExcluded = ['src/**', '.specs/**'];
+    } else if (type === 'frontend') {
+      scopeExcluded = ['src/modules/**', 'src/config/**', '.specs/**'];
+    } else if (type === 'database') {
+      scopeExcluded = ['src/pages/**', 'src/components/**', '.specs/**'];
+    } else {
+      scopeExcluded = ['src/pages/**', 'src/components/**', '.specs/**'];
+    }
+  }
+
+  // 4. Verification Target
+  let verificationTarget = task.verificationTarget;
+  if (!verificationTarget) {
+    if (type === 'setup') {
+      verificationTarget = 'npm install && npm run build succeed with 0 errors.';
+    } else if (type === 'database') {
+      verificationTarget = 'Database migrations execute cleanly in local Docker container; database healthcheck returns 200 OK.';
+    } else if (type === 'frontend') {
+      verificationTarget = 'Component renders loading skeleton, error banner with retry, and empty state CTA matching contracts/ui_contracts.md.';
+    } else if (type === 'testing') {
+      verificationTarget = 'All unit, integration, and contract tests pass with 0 regressions; coverage gates satisfied.';
+    } else if (type === 'deployment') {
+      verificationTarget = 'Multi-stage Docker build passes; health check endpoint returns status: "healthy".';
+    } else {
+      verificationTarget = 'All endpoints match contracts/api_contracts.md exactly; domain rules enforced; integration tests pass.';
+    }
+  }
+
+  // 5. Governs
+  let governs = task.governs;
+  if (!governs) {
+    if (type === 'setup') governs = 'Foundation setup';
+    else if (type === 'database') governs = 'Database foundations · Data model';
+    else if (type === 'deployment') governs = 'Infrastructure & Release';
+    else {
+      const usNum = String((idx % 8) + 1).padStart(3, '0');
+      const drNum = String((idx % 6) + 1).padStart(3, '0');
+      governs = `US-${usNum} · DR-${drNum}`;
+    }
+  }
+
+  // 6. Spec Refs
+  let specRefs = task.specRefs;
+  if (!specRefs || specRefs.length === 0) {
+    if (type === 'setup') {
+      specRefs = ['implementation/coding_standards.md', 'implementation/infrastructure.md'];
+    } else if (type === 'database') {
+      specRefs = ['contracts/database_schema.md', 'architecture/data_model.md'];
+    } else if (type === 'frontend') {
+      specRefs = ['contracts/ui_contracts.md', 'implementation/frontend_guide.md'];
+    } else if (type === 'testing') {
+      specRefs = ['implementation/testing_strategy.md', 'domain/user_stories.md'];
+    } else if (type === 'deployment') {
+      specRefs = ['implementation/infrastructure.md'];
+    } else {
+      specRefs = ['contracts/api_contracts.md', 'domain/domain_rules.md', 'implementation/backend_guide.md'];
+    }
+  }
+
+  return {
+    id: task.id || `TASK-${String(idx + 1).padStart(3, '0')}`,
+    title: task.title || `Engineering Task ${idx + 1}`,
+    description: task.description || '',
+    prompt: task.prompt || task.description || '',
+    fileContext: task.fileContext || scopeIncluded.join(', '),
+    type,
+    status: (task.status as any) || (idx === 0 ? 'done' : 'todo'),
+    complexity: task.complexity || 'M',
+    dependsOn: task.dependsOn || (idx > 0 ? `TASK-${String(idx).padStart(3, '0')}` : undefined),
+    governs,
+    specRefs,
+    requiredCapabilities,
+    claimedBy: task.claimedBy || '—',
+    claimedAt: task.claimedAt || '—',
+    leaseExpires: task.leaseExpires || '—',
+    scopeIncluded,
+    scopeExcluded,
+    verificationTarget,
+    reviewRequired: task.reviewRequired ?? true,
+    reviewer: task.reviewer || '—',
+    completionEvidence: task.completionEvidence || '—',
+    notes: task.notes || ''
+  };
+}
+
 /**
  * AI-Driven Deep Work Breakdown Structure (WBS) & Atomic Task Formulation Engine
  * Generates an exhaustive, production-grade backlog of 60 to 100+ granular atomic tasks
@@ -118,7 +250,7 @@ function synthesizeExhaustiveBacklog(input: ProjectInput, existingAiTasks: VibeT
 
   // If the AI model returned 60+ complete tasks, use them directly
   if (existingAiTasks.length >= 60) {
-    return existingAiTasks;
+    return existingAiTasks.map((t, idx) => enrichTaskWithMultiAgentScope(t, idx));
   }
 
   const tasks: VibeTask[] = [];
@@ -749,5 +881,5 @@ function synthesizeExhaustiveBacklog(input: ProjectInput, existingAiTasks: VibeT
     }
   }
 
-  return tasks;
+  return tasks.map((t, idx) => enrichTaskWithMultiAgentScope(t, idx));
 }

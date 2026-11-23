@@ -340,7 +340,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     {proj.name}
                   </h3>
                   <p className="font-mono text-xs text-muted mb-4">
-                    v{proj.version} · {Object.keys(proj.specsHierarchy || {}).length || 22} Atomic Spec Files
+                    v{proj.version} · {Object.keys(proj.specsHierarchy || {}).length || 33} Atomic Spec Files
                   </p>
                 </div>
 

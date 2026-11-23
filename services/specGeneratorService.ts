@@ -11,9 +11,10 @@ import { GoogleGenAI } from '@google/genai';
 import { saasStore } from './saasStore';
 import { cryptoService } from './cryptoService';
 import { buildCanonicalSpecsSuite } from './specTemplates';
+import { enrichTaskWithMultiAgentScope } from './specTaskDecomposer';
 
 /**
- * Metadata table of all 22 canonical spec files in the .specs hierarchy
+ * Metadata table of all 33 canonical spec files in the System 2 Multi-Agent .specs hierarchy
  */
 export const SPEC_TIERS: {
   tier: string;
@@ -23,12 +24,21 @@ export const SPEC_TIERS: {
   files: { path: string; title: string; desc: string }[];
 }[] = [
   {
-    tier: 'Entry',
-    name: 'Navigation & Root Manifest',
-    category: 'entry',
-    description: 'Entrypoint parsed by AI Agents before touching any source code',
+    tier: 'Root',
+    name: 'Universal Agent Directives',
+    category: 'root',
+    description: 'Universal root manifest parsed by AI agents before touching any file',
     files: [
-      { path: '_index.md', title: 'Project Index & Navigation Manifest', desc: 'AI agent roadmap and regeneration rules' }
+      { path: 'AGENTS.md', title: 'Universal Agent Directives & Manifest', desc: 'Core operating principles, fast bootstrap commands, and navigation index' }
+    ]
+  },
+  {
+    tier: 'Entry',
+    name: 'Navigation & Master Runbook',
+    category: 'entry',
+    description: 'Master navigation manifest and regeneration cascade rules',
+    files: [
+      { path: '_index.md', title: 'Project Index & Multi-Agent Runbook', desc: 'Spec file map, regeneration rules, and multi-agent session protocol' }
     ]
   },
   {
@@ -92,9 +102,34 @@ export const SPEC_TIERS: {
     category: 'execution',
     description: 'Atomic tasks, dependency graph, and sprint roadmaps ready for AI agents',
     files: [
-      { path: 'execution/tasks.md', title: 'Atomic Task Backlog', desc: 'TASK-001..NNN with complexity, specs, and outputs' },
-      { path: 'execution/dependency_graph.md', title: 'Task Dependency Graph', desc: 'Mermaid graph and unblocked task queue' },
-      { path: 'execution/sprint_plan.md', title: 'Sprint Roadmap', desc: 'Sprint 1 through Launch milestone plan' }
+      { path: 'execution/tasks.md', title: 'Master Canonical Task Backlog', desc: 'TASK-001..NNN with scope boundaries, capabilities, and verification targets' },
+      { path: 'execution/dependency_graph.md', title: 'Task Dependency Graph', desc: 'Mermaid DAG, parallel task groups, and critical path' },
+      { path: 'execution/sprint_plan.md', title: 'Sprint Roadmap (Multi-Agent)', desc: 'Multi-agent sprint allocations, worktree branches, and DoD' }
+    ]
+  },
+  {
+    tier: 'Coordination',
+    name: 'Multi-Agent Collaboration',
+    category: 'coordination',
+    description: 'Autonomous collaboration rules, atomic task leases, and session registration',
+    files: [
+      { path: 'coordination/protocol.md', title: 'Multi-Agent Coordination Protocol', desc: 'Worktree isolation, atomic push claiming, leases, and boundary rules' },
+      { path: 'coordination/task_board.md', title: 'Live Task Board & Active Leases', desc: 'Real-time task claiming, lease expiration tracking, and task manifests' },
+      { path: 'coordination/agent_registry.md', title: 'Agent Session Registry', desc: 'Session ledger, platform identity tracking, and heartbeat monitoring' }
+    ]
+  },
+  {
+    tier: 'Agents',
+    name: 'Autonomous Agent Runbooks',
+    category: 'agents',
+    description: 'Standardized operational procedures and recovery algorithms for AI coding agents',
+    files: [
+      { path: 'agents/onboarding.md', title: 'Agent Onboarding Runbook', desc: '5-step bootstrap checklist, worktree setup, and session registration' },
+      { path: 'agents/lifecycle.md', title: '6-Phase Agent Session Lifecycle', desc: 'Bootstrap, claiming, bounded coding, verification, and completion' },
+      { path: 'agents/task_execution.md', title: 'Bounded Task Execution Guide', desc: 'Scope boundary rules (INCLUDED/EXCLUDED) and coding patterns' },
+      { path: 'agents/communication.md', title: 'Cross-Agent Communication Standard', desc: 'Standardized event schemas and append-only message stream rules' },
+      { path: 'agents/verification.md', title: 'Evidence-Based Verification Standard', desc: 'Mandatory completion evidence, test logs, and peer review gates' },
+      { path: 'agents/conflict_resolution.md', title: 'Conflict Resolution & Recovery Guide', desc: 'Handling claim collisions, stale lease reclaims, and merge conflicts' }
     ]
   },
   {
@@ -103,8 +138,8 @@ export const SPEC_TIERS: {
     category: 'state',
     description: 'Session state, append-only architecture decision records, and known debt',
     files: [
-      { path: 'state/current_state.md', title: 'Current System State', desc: 'Live build status and immediate next actions' },
-      { path: 'state/decisions_log.md', title: 'Architecture Decision Records (ADR)', desc: 'Historical architectural rationale' },
+      { path: 'state/current_state.md', title: 'Multi-Session Handoff Ledger', desc: 'Live build status, active workstreams, and immediate next actions' },
+      { path: 'state/decisions_log.md', title: 'Architecture Decision Records (ADR)', desc: 'Historical architectural rationale with session attribution' },
       { path: 'state/known_issues.md', title: 'Known Issues & Tech Debt', desc: 'Workarounds, deferred items, and bug backlog' }
     ]
   }
@@ -539,7 +574,7 @@ export function generateDynamicProjectTasks(input: ProjectInput): VibeTask[] {
     dependsOn: tqa1
   });
 
-  return tasks;
+  return tasks.map((t, idx) => enrichTaskWithMultiAgentScope(t, idx));
 }
 
 /**
@@ -863,27 +898,30 @@ export function generateIdeRules(projectName: string = 'Application'): {
   const cursorRules = `# Cursor AI Rules for ${projectName}
 
 You are an expert autonomous software engineer working on **${projectName}**.
-This repository strictly follows the **SRS Genie™ Canonical Specification Architecture**.
+This repository strictly operates under the **Cross-Platform Multi-Agent Specification Architecture (System 2)**.
 
-## Priority Reading Protocol:
-1. Always inspect \`.specs/_index.md\` first to understand the system map, component dependencies, and design contracts.
-2. Read \`.specs/state/current_state.md\` to ascertain active sprint milestones, completed tasks, and immediate blockers.
-3. Consult \`.specs/foundation/brief.md\` for product scope and non-negotiable architectural boundaries.
-4. Review \`.specs/domain/domain_rules.md\` to ensure business invariants (DR-001..DR-NNN) are strictly maintained.
+## Mandatory Reading Protocol:
+1. Parse \`AGENTS.md\` at repository root and \`.specs/_index.md\` first before inspecting or editing any file.
+2. Read \`.specs/coordination/protocol.md\` for worktree isolation, atomic task claiming, and lease rules.
+3. Check \`.specs/coordination/task_board.md\` and \`.specs/state/current_state.md\` to ascertain active sprint milestones, open tasks, and immediate blockers.
+4. Consult \`.specs/foundation/brief.md\` for product scope and non-negotiable architectural boundaries.
+5. Review \`.specs/domain/domain_rules.md\` to ensure business invariants (DR-001..DR-NNN) are strictly maintained.
 
 ## Execution Directives:
-- Check \`.specs/execution/tasks.md\` and \`.specs/execution/dependency_graph.md\` for the next unblocked atomic task. Work on exactly one task at a time.
+- Claim an unblocked task on \`.specs/coordination/task_board.md\` before making edits. Work on exactly one task at a time.
+- Respect \`Scope boundary: INCLUDED\` and \`EXCLUDED\`. Modifying files outside your declared scope is a protocol violation.
 - Read corresponding contracts in \`.specs/contracts/\` (api_contracts.md, database_schema.md, ui_contracts.md) before writing implementation code.
 - Follow \`.specs/implementation/coding_standards.md\` for language idioms, linters, and strict TypeScript types (never use \`any\`).
 - Enforce \`.specs/architecture/security_model.md\` for token validation, zero-trust RBAC, and input sanitization.
-- When finishing a task, record architectural trade-offs in \`.specs/state/decisions_log.md\` and update \`.specs/state/current_state.md\`.
+- When finishing a task, satisfy verification targets per \`.specs/agents/verification.md\` and update \`.specs/state/current_state.md\`.
 `;
 
   const claudeMd = `# Claude Code Guidelines: ${projectName}
 
 ## System Overview
 - **Project Name:** ${projectName}
-- **Architecture Standard:** SRS Genie™ Canonical 6-Tier Specification Suite (\`.specs/\`)
+- **Architecture Standard:** SRS Genie™ System 2 Multi-Agent Architecture (\`AGENTS.md\` + \`.specs/\`)
+- **Coordination Protocol:** \`.specs/coordination/protocol.md\` & \`.specs/coordination/task_board.md\`
 - **Strategic Blueprints:** \`strategic_plans/\` (PRD, Architecture SAD, Tech Spec TSD, Project Plan)
 
 ## Core Commands
@@ -893,27 +931,33 @@ This repository strictly follows the **SRS Genie™ Canonical Specification Arch
 - Typecheck: \`npx tsc --noEmit\`
 
 ## Autonomous Agent Invariants
+- **Universal Manifest:** Always follow directives in \`AGENTS.md\` and runbooks in \`.specs/agents/\`.
+- **Worktree Isolation:** Always work in an isolated git worktree (\`agent/{session_id}\`). Never edit directly on \`main\`.
 - **Contracts First:** Never invent schemas, DB columns, or API routes outside of \`.specs/contracts/\`.
 - **Domain Rules:** Always verify logic against business invariants in \`.specs/domain/domain_rules.md\`.
 - **Security:** Follow \`.specs/architecture/security_model.md\`. All endpoints must enforce tenant isolation and input sanitization.
-- **Workflow:** Execute tasks defined in \`.specs/execution/tasks.md\`.
-- **Session Hand-off:** Update \`.specs/state/current_state.md\` with session summary and unblocked next steps.
+- **Task Leases:** Claim tasks on \`.specs/coordination/task_board.md\`. Respect 4-hour lease boundaries.
+- **Evidence-Based Completion:** Provide reproducible test logs and verification evidence before completing tasks.
 `;
 
   const windsurfRules = `# Windsurf Cascade Rules: ${projectName}
 
-- **Entrypoint:** Prioritize reading \`.specs/_index.md\` and \`.specs/state/current_state.md\` before generating or modifying source code.
+- **Universal Entrypoint:** Parse \`AGENTS.md\` and \`.specs/_index.md\` before generating or modifying any code.
+- **Coordination & Leases:** Check \`.specs/coordination/task_board.md\` and follow \`.specs/coordination/protocol.md\`.
+- **Scope Boundary Invariants:** Modify only files declared under your claimed task's \`Scope boundary: INCLUDED\` list.
 - **Contract Enforcement:** All API endpoints and database models must strictly adhere to \`.specs/contracts/api_contracts.md\` and \`.specs/contracts/database_schema.md\`.
-- **Quality Gates:** Code must pass \`.specs/implementation/coding_standards.md\` without compiler errors, linter warnings, or type compromises.
+- **Quality Gates:** Code must pass \`.specs/implementation/coding_standards.md\` and \`.specs/agents/verification.md\` with zero TypeScript errors or linter warnings.
 - **Audit Logging:** Maintain architectural consistency and document design decisions in \`.specs/state/decisions_log.md\`.
 `;
 
   const agentRules = `# Autonomous Agent Global Rules: ${projectName}
 
-1. Consult \`.specs/_index.md\` before modifying any repository source code.
-2. Maintain strict backward compatibility with contracts defined in \`.specs/contracts/\`.
-3. Adhere to zero-trust RBAC and multi-tenant isolation outlined in \`.specs/architecture/security_model.md\`.
-4. Update \`.specs/state/current_state.md\` after task completion.
+1. Consult \`AGENTS.md\` and \`.specs/_index.md\` before inspecting or modifying any repository source code.
+2. Coordinate with peer agents via \`.specs/coordination/protocol.md\` and \`.specs/coordination/task_board.md\`.
+3. Work in an isolated Git worktree (\`agent/{session_id}\`) and respect \`INCLUDED\` scope boundaries.
+4. Maintain strict backward compatibility with contracts defined in \`.specs/contracts/\`.
+5. Adhere to zero-trust RBAC and multi-tenant isolation outlined in \`.specs/architecture/security_model.md\`.
+6. Compile verifiable test evidence per \`.specs/agents/verification.md\` and update \`.specs/state/current_state.md\` after task completion.
 `;
 
   return { cursorRules, claudeMd, windsurfRules, agentRules };
@@ -933,7 +977,16 @@ export async function downloadSpecsZip(
   if (!root) throw new Error('Failed to create zip folder');
 
   for (const [filePath, content] of Object.entries(specs)) {
-    root.file(filePath, content);
+    if (filePath === 'AGENTS.md') {
+      zip.file('AGENTS.md', content);
+    } else {
+      root.file(filePath, content);
+    }
+  }
+
+  // Ensure AGENTS.md exists at zip root
+  if (specs['AGENTS.md'] && !zip.file('AGENTS.md')) {
+    zip.file('AGENTS.md', specs['AGENTS.md']);
   }
 
   // Also include the 9 Strategic Planning Documents in a dedicated folder if available
@@ -948,6 +1001,51 @@ export async function downloadSpecsZip(
 
   // Generate and include IDE agent rules
   const ideRules = generateIdeRules(projectName);
+  zip.file('.cursorrules', ideRules.cursorRules);
+  zip.file('CLAUDE.md', ideRules.claudeMd);
+  zip.file('.windsurfrules', ideRules.windsurfRules);
+  zip.file('.agentrules', ideRules.agentRules);
+
+  // Also include a root README.md for the developer
+  zip.file('README_FOR_AI_AGENTS.md', `# ${projectName} - Autonomous Multi-Agent Specification Suite
+
+This repository contains a full **AGENTS.md** manifest, **.specs/** multi-agent specification directory, and **strategic_plans/** suite generated by **SRS Genie™**.
+
+## Repository Structure
+- \`AGENTS.md\`: Root universal manifest and operational directives for all AI coding agents.
+- \`.specs/\`: 32 canonical specification and coordination files structured across 8 tiers:
+  - **Entry:** \`_index.md\` (Project Index & Master Multi-Agent Runbook)
+  - **Tier 0 (Foundation):** \`brief.md\`, \`glossary.md\`
+  - **Tier 1 (Domain):** \`user_stories.md\`, \`domain_rules.md\`
+  - **Tier 2 (Architecture):** \`system_design.md\`, \`data_model.md\`, \`security_model.md\`
+  - **Tier 3 (Contracts):** \`api_contracts.md\`, \`database_schema.md\`, \`ui_contracts.md\`
+  - **Tier 4 (Implementation):** \`backend_guide.md\`, \`frontend_guide.md\`, \`infrastructure.md\`, \`testing_strategy.md\`, \`coding_standards.md\`
+  - **Tier 5 (Execution):** \`tasks.md\` (WBS atomic task backlog), \`dependency_graph.md\`, \`sprint_plan.md\`
+  - **Coordination:** \`protocol.md\` (Leases, worktrees, claims), \`task_board.md\` (Live board), \`agent_registry.md\`, \`messages/\`
+  - **Agents Runbooks:** \`onboarding.md\`, \`lifecycle.md\`, \`task_execution.md\`, \`communication.md\`, \`verification.md\`, \`conflict_resolution.md\`
+  - **State:** \`current_state.md\`, \`decisions_log.md\` (ADR-001..ADR-005), \`known_issues.md\`
+- \`strategic_plans/\`: 9 specialized strategic planning documents:
+  1. \`project_plan.md\` - Software Development Project Plan (Senior Technical Project Director)
+  2. \`PRD.md\` - Product Requirements Document (Senior Product Manager)
+  3. \`designs.md\` - Design System Documentation (Design System Architect)
+  4. \`architecture.md\` - Software Architecture Document (SAD) (Senior Software Architect)
+  5. \`tech_spec.md\` - Technical Specification Document (TSD) (Lead Technical Specification Analyst)
+  6. \`roadmap_resourceplan.md\` - Project Roadmap & Resource Allocation (Delivery Strategist & Release Planner)
+  7. \`risk_management.md\` - Enterprise Risk Management Plan (Senior Risk Management Architect)
+  8. \`qa.md\` - Quality Assurance & Software Test Plan (Senior QA Manager & Test Architect)
+  9. \`deployment_releaseplan.md\` - Deployment, Release & Ops Plan (Senior Release & DevOps Architect)
+- **AI Agent IDE Rules Included:**
+  - \`.cursorrules\` (Cursor IDE)
+  - \`CLAUDE.md\` (Claude Code / Anthropic CLI)
+  - \`.windsurfrules\` (Windsurf Cascade)
+  - \`.agentrules\` (Antigravity & Universal Autonomous Agents)
+
+## How to use with your AI Agent:
+1. **Cursor IDE:** Point Cursor to \`AGENTS.md\` or configure your Cursor MCP settings.
+2. **Claude Code / Desktop:** Add the MCP server configuration provided in the SRS Genie MCP Hub.
+3. **Windsurf / Antigravity:** Instruct the agent:
+   > "Read \`AGENTS.md\` and \`.specs/_index.md\` first, followed by \`.specs/coordination/protocol.md\` and \`.specs/state/current_state.md\`. Work through unblocked tasks on \`.specs/coordination/task_board.md\`."
+`);
   zip.file('.cursorrules', ideRules.cursorRules);
   zip.file('CLAUDE.md', ideRules.claudeMd);
   zip.file('.windsurfrules', ideRules.windsurfRules);

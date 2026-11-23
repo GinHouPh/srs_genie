@@ -30,9 +30,10 @@ import {
   generateDeterministicQA,
   generateDeterministicDeployment
 } from './planningTemplates';
+import { compileConsolidatedIeee830SRS } from './srsDocumentCompiler';
 
 /**
- * Architecture rules specification describing the 22-file .specs hierarchy,
+ * Architecture rules specification describing the 33-file System 2 Multi-Agent .specs hierarchy,
  * roles, dependency DAG, and regeneration cascade triggers.
  */
 export interface SpecArchitectureRule {
@@ -45,12 +46,21 @@ export interface SpecArchitectureRule {
 }
 
 export const SPEC_ARCHITECTURE_RULES: SpecArchitectureRule[] = [
+  // Root
+  {
+    path: 'AGENTS.md',
+    tier: 'Root',
+    role: 'universal-agent-manifest',
+    triggersRegen: ['_index.md', 'coordination/*', 'agents/*'],
+    description: 'Universal root manifest parsed by AI agents before touching any repository file.'
+  },
   // Entry
   {
     path: '_index.md',
     tier: 'Entry',
-    role: 'navigation-manifest',
-    description: 'Root navigation manifest read first by AI agents before touching source code.'
+    role: 'multi-agent-navigation-manifest',
+    dependsOn: ['AGENTS.md'],
+    description: 'Root navigation manifest and regeneration cascade rules read first by AI agents.'
   },
   // Tier 0
   {
@@ -173,36 +183,101 @@ export const SPEC_ARCHITECTURE_RULES: SpecArchitectureRule[] = [
   {
     path: 'execution/tasks.md',
     tier: 'Tier 5',
-    role: 'atomic-task-list',
+    role: 'canonical-task-list',
     dependsOn: ['domain/user_stories.md', 'architecture/system_design.md', 'contracts/*'],
-    description: 'Granular, atomic task backlog with complexity, dependencies, and agent prompts.'
+    description: 'Granular, atomic task backlog with scope boundaries, capabilities, and verification targets.'
   },
   {
     path: 'execution/dependency_graph.md',
     tier: 'Tier 5',
     role: 'dependency-graph',
     dependsOn: ['execution/tasks.md'],
-    description: 'Mermaid Directed Acyclic Graph (DAG) visualizing execution sequence.'
+    description: 'Mermaid Directed Acyclic Graph (DAG) visualizing execution sequence and parallel groups.'
   },
   {
     path: 'execution/sprint_plan.md',
     tier: 'Tier 5',
     role: 'sprint-plan',
     dependsOn: ['execution/tasks.md'],
-    description: '4-sprint milestone roadmap and release checkpoints.'
+    description: 'Multi-agent sprint scope, task allocations, worktree branches, and Definition of Done.'
+  },
+  // Coordination
+  {
+    path: 'coordination/protocol.md',
+    tier: 'Coordination',
+    role: 'multi-agent-protocol',
+    dependsOn: ['AGENTS.md', '_index.md'],
+    description: 'Rules of engagement, Git worktree isolation, atomic push claiming, leases, and boundary rules.'
+  },
+  {
+    path: 'coordination/task_board.md',
+    tier: 'Coordination',
+    role: 'live-task-board',
+    dependsOn: ['execution/tasks.md', 'coordination/protocol.md'],
+    description: 'Live task board tracking real-time status, active 4-hour leases, blockers, and reviewer assignments.'
+  },
+  {
+    path: 'coordination/agent_registry.md',
+    tier: 'Coordination',
+    role: 'agent-registry',
+    dependsOn: ['coordination/protocol.md'],
+    description: 'Agent session registry monitoring platform identity, active worktree branches, and heartbeats.'
+  },
+  // Agents Runbooks
+  {
+    path: 'agents/onboarding.md',
+    tier: 'Agents',
+    role: 'agent-onboarding-runbook',
+    dependsOn: ['coordination/protocol.md'],
+    description: '5-step bootstrap checklist, worktree setup, session registration, and message log init.'
+  },
+  {
+    path: 'agents/lifecycle.md',
+    tier: 'Agents',
+    role: 'agent-lifecycle-runbook',
+    dependsOn: ['agents/onboarding.md', 'coordination/protocol.md'],
+    description: '6-phase agent lifecycle from bootstrap, task claiming, bounded coding to peer verification.'
+  },
+  {
+    path: 'agents/task_execution.md',
+    tier: 'Agents',
+    role: 'task-execution-guide',
+    dependsOn: ['implementation/coding_standards.md'],
+    description: 'Scope boundary invariants (INCLUDED/EXCLUDED allowlists) and zero-regression coding patterns.'
+  },
+  {
+    path: 'agents/communication.md',
+    tier: 'Agents',
+    role: 'communication-standard',
+    dependsOn: ['coordination/protocol.md'],
+    description: 'Standardized markdown event schemas and append-only message stream specifications.'
+  },
+  {
+    path: 'agents/verification.md',
+    tier: 'Agents',
+    role: 'verification-standard',
+    dependsOn: ['implementation/testing_strategy.md'],
+    description: 'Mandatory completion evidence blocks, deterministic test command logging, and peer review gates.'
+  },
+  {
+    path: 'agents/conflict_resolution.md',
+    tier: 'Agents',
+    role: 'conflict-resolution-guide',
+    dependsOn: ['coordination/protocol.md'],
+    description: 'Deterministic recovery algorithms for claim collisions, crashed agent reclaims, and merge conflicts.'
   },
   // State
   {
     path: 'state/current_state.md',
     tier: 'State',
     role: 'live-state',
-    description: 'Live system status, active blockers, and immediate next actions.'
+    description: 'Multi-session handoff ledger, active workstreams, build status, and next actions.'
   },
   {
     path: 'state/decisions_log.md',
     tier: 'State',
     role: 'decisions-log',
-    description: 'Architecture Decision Records (ADRs) capturing rationale and trade-offs.'
+    description: 'Architecture Decision Records (ADRs) with session attribution and trade-off rationale.'
   },
   {
     path: 'state/known_issues.md',
@@ -551,35 +626,35 @@ ${Object.entries(this.strategicPlans).map(([filename, doc]) => `## Document: ${f
     this.emit({
       type: 'thought',
       title: 'Reading .specs Architecture Blueprint',
-      content: `Inspecting canonical 6-tier .specs architecture. Loaded ${SPEC_ARCHITECTURE_RULES.length} specification targets across Entry, Tier 0 (Foundation), Tier 1 (Domain), Tier 2 (Architecture), Tier 3 (Contracts), Tier 4 (Guides), Tier 5 (Execution), and State tiers.`
+      content: `Inspecting canonical System 2 multi-agent .specs architecture. Loaded ${SPEC_ARCHITECTURE_RULES.length} specification targets across Root (AGENTS.md), Entry, Tier 0 (Foundation), Tier 1 (Domain), Tier 2 (Architecture), Tier 3 (Contracts), Tier 4 (Guides), Tier 5 (Execution), Coordination, Agents Runbooks, and State tiers.`
     });
 
     // Verify cascade rules
     const cascades = [
-      'foundation/brief.md changed → Regenerate all downstream tiers (Tiers 1 through 5)',
+      'AGENTS.md / brief.md changed → Regenerate downstream tiers and coordination task board',
       'foundation/glossary.md changed → Review all files for terminology consistency',
       'architecture/data_model.md changed → Regenerate database_schema.md + api_contracts.md + ui_contracts.md',
       'contracts/api_contracts.md changed → Regenerate ui_contracts.md + update testing_strategy.md',
-      'domain/user_stories.md changed → Regenerate execution/tasks.md + testing_strategy.md'
+      'domain/user_stories.md changed → Regenerate execution/tasks.md + coordination/task_board.md'
     ];
 
     this.emit({
       type: 'action',
       title: 'Validating Tier Dependency DAG & Cascade Rules',
-      content: `Agent parsed regeneration rules:\n${cascades.map(c => `• ${c}`).join('\n')}\nPlanning topological compilation of the 22 canonical spec files mapped from the 8 Strategic Planning Documents.`
+      content: `Agent parsed regeneration rules:\n${cascades.map(c => `• ${c}`).join('\n')}\nPlanning topological compilation of the 33 canonical spec & coordination files mapped from the 9 Strategic Planning Documents.`
     });
 
     return SPEC_ARCHITECTURE_RULES;
   }
 
   /**
-   * Step 4: Derives dynamic tasks and compiles the 22 .specs files from the 9 Strategic Planning Documents
+   * Step 4: Derives dynamic tasks and compiles the 33 .specs files from the 9 Strategic Planning Documents
    */
   async updateSpecsFromPlan(): Promise<{ specs: Record<string, string>; tasks: VibeTask[] }> {
     this.emit({
       type: 'thought',
       title: 'Synthesizing Deep WBS Task Backlog with Autonomous Prompts',
-      content: `Extracting granular atomic tasks across 16 engineering milestones from Parent Project Plan, PRD, and Technical Specification.`
+      content: `Extracting granular atomic tasks across 16 engineering milestones from Parent Project Plan, PRD, and Technical Specification with full multi-agent scope boundaries and verification targets.`
     });
 
     // Derive comprehensive 60–100+ atomic tasks directly matching the plan requirements
@@ -596,21 +671,21 @@ ${Object.entries(this.strategicPlans).map(([filename, doc]) => `## Document: ${f
     this.emit({
       type: 'action',
       title: 'Cloned Master .specs Template Repository',
-      content: `Copied pristine .specs template suite (${Object.keys(projectTemplateCopy).length} files) to initialize isolated project workspace for "${this.input.name}". Master template remains untouched.`
+      content: `Copied pristine System 2 .specs template suite (${Object.keys(projectTemplateCopy).length} files) to initialize isolated project workspace for "${this.input.name}". Master template remains untouched.`
     });
 
     this.emit({
       type: 'action',
-      title: 'Compiling 22 Project .specs Files from Strategic Architecture',
-      content: `Commencing top-down population of all 22 project specification files derived from PRD, designs, architecture, tech specs, roadmap, risk, QA, and deployment plans.`
+      title: 'Compiling 33 Project .specs & Multi-Agent Files from Strategic Architecture',
+      content: `Commencing top-down population of all 33 project specification and multi-agent coordination files derived from PRD, designs, architecture, tech specs, roadmap, risk, QA, and deployment plans.`
     });
 
-    // Synthesize all 22 files using the plan and tasks
+    // Synthesize all 33 files using the plan and tasks
     const recordFileCallback = (path: string, tier: string, title: string, content: string) => {
       this.emit({
         type: 'file_created',
-        title: `Compiled .specs/${path}`,
-        content: `Updated ${title} (${tier}) from Strategic Planning Documents in accordance with architecture rules.`,
+        title: `Compiled ${path.startsWith('AGENTS') ? '' : '.specs/'}${path}`,
+        content: `Updated ${title} (${tier}) from Strategic Planning Documents in accordance with multi-agent architecture rules.`,
         meta: { file: path, tier, tokens: Math.round(content.length / 4) }
       });
     };
@@ -646,12 +721,12 @@ ${Object.entries(this.strategicPlans).map(([filename, doc]) => `## Document: ${f
     this.emit({
       type: 'thought',
       title: 'Specification Package Verification & Ready for Export',
-      content: `All 22 canonical specification files and 8 Strategic Planning Documents verified. ${this.dynamicTasks.length} dynamic tasks ready. Suite packaged for interactive preview, ZIP export, and MCP coding agent tools.`
+      content: `All 33 canonical specification and multi-agent coordination files and 9 Strategic Planning Documents verified. ${this.dynamicTasks.length} dynamic tasks ready. Suite packaged for interactive preview, ZIP export, and MCP coding agent tools.`
     });
 
-    return {
-      srsMarkdown: (this.compiledSpecs['foundation/brief.md'] || '') + '\n\n' + (this.compiledSpecs['architecture/system_design.md'] || ''),
-      agentContext: this.compiledSpecs['_index.md'] || '',
+    const interimContent: GeneratedContent = {
+      srsMarkdown: '',
+      agentContext: this.compiledSpecs['AGENTS.md'] || this.compiledSpecs['_index.md'] || '',
       implementationTasks: this.dynamicTasks,
       specsHierarchy: this.compiledSpecs,
       strategicPlans: this.strategicPlans,
@@ -663,19 +738,24 @@ ${Object.entries(this.strategicPlans).map(([filename, doc]) => `## Document: ${f
         budget: (this.input.formData?.['project_overview']?.['budget_range'] as string) || '$25,000 - $50,000'
       }
     };
+
+    // Compile formal IEEE 830 compliant SRS document
+    interimContent.srsMarkdown = compileConsolidatedIeee830SRS(interimContent, this.input);
+
+    return interimContent;
   }
 
   /**
    * Main entrypoint executing the staged planning protocol
    */
   async execute(): Promise<GeneratedContent> {
-    // 1 & 2. Consolidate answers & Synthesize the 8 Specialized Planning Documents
+    // 1 & 2. Consolidate answers & Synthesize the 9 Specialized Planning Documents
     await this.consolidateAndGenerateStrategicPlans();
 
     // 3. Read & understand .specs architecture rules
     this.readSpecsArchitecture();
 
-    // 4. Update the 22 .specs files & dynamic tasks based on the 9 Strategic Plans
+    // 4. Update the 33 .specs files & dynamic tasks based on the 9 Strategic Plans
     await this.updateSpecsFromPlan();
 
     // 5. Finalize package for preview & export

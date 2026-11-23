@@ -52,8 +52,11 @@ assert(htaccessContent.includes('RewriteRule ^api/mcp(/.*)?$ api/mcp.php'), 'Rou
 assert(htaccessContent.includes('RewriteRule ^api/license(/.*)?$ api/license.php'), 'Route ^api/license configured in public/.htaccess');
 assert(htaccessContent.includes('RewriteRule ^api/projects(/.*)?$ api/projects.php'), 'Route ^api/projects configured in public/.htaccess');
 
-// 3. Verify Canonical 22 .specs Files
-console.log('\n[Suite 3: Canonical .specs Hierarchy]');
+// 3. Verify Canonical System 2 .specs Hierarchy & Universal Manifest
+console.log('\n[Suite 3: Canonical System 2 .specs Hierarchy & Universal Manifest]');
+const agentsManifest = path.join(rootDir, 'AGENTS.md');
+assert(fs.existsSync(agentsManifest) && fs.statSync(agentsManifest).size > 50, 'Universal agent manifest verified: AGENTS.md');
+
 const specsDir = path.join(rootDir, '.specs');
 assert(fs.existsSync(specsDir), '.specs root directory exists');
 const criticalSpecFiles = [
@@ -76,6 +79,15 @@ const criticalSpecFiles = [
   'execution/tasks.md',
   'execution/dependency_graph.md',
   'execution/sprint_plan.md',
+  'coordination/protocol.md',
+  'coordination/task_board.md',
+  'coordination/agent_registry.md',
+  'agents/onboarding.md',
+  'agents/lifecycle.md',
+  'agents/task_execution.md',
+  'agents/communication.md',
+  'agents/verification.md',
+  'agents/conflict_resolution.md',
   'state/current_state.md',
   'state/decisions_log.md',
   'state/known_issues.md'

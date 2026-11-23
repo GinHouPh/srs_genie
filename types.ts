@@ -337,9 +337,23 @@ export interface VibeTask {
   prompt: string;
   fileContext?: string;
   type: 'setup' | 'backend' | 'frontend' | 'database' | 'testing' | 'deployment';
-  status?: 'todo' | 'in-progress' | 'blocked' | 'done';
+  status?: 'todo' | 'claimed' | 'in-progress' | 'review' | 'done' | 'blocked' | 'abandoned';
   complexity?: 'XS' | 'S' | 'M' | 'L' | 'XL';
   dependsOn?: string;
+  // Multi-Agent System 2 Execution & Coordination properties
+  governs?: string;
+  specRefs?: string[];
+  requiredCapabilities?: string[];
+  claimedBy?: string;
+  claimedAt?: string;
+  leaseExpires?: string;
+  scopeIncluded?: string[];
+  scopeExcluded?: string[];
+  verificationTarget?: string;
+  reviewRequired?: boolean;
+  reviewer?: string;
+  completionEvidence?: string;
+  notes?: string;
 }
 
 export enum AppState {
