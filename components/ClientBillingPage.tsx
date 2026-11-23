@@ -429,7 +429,7 @@ export const ClientBillingPage: React.FC<ClientBillingPageProps> = ({
             </span>
             <span className="stat__label">Specs / Month Quota</span>
             <div className="text-[11px] text-muted mt-2 font-body">
-              All 6 Tiers (22 Files)
+              Multi-Agent Hierarchy (33 Files)
             </div>
           </div>
 
@@ -476,7 +476,7 @@ export const ClientBillingPage: React.FC<ClientBillingPageProps> = ({
                   <span className="font-display text-xs uppercase tracking-wider text-white font-semibold">Uncapped Generation</span>
                 </div>
                 <p className="font-body text-xs text-muted leading-relaxed">
-                  Synthesize unlimited 22-file specification packages across any industry domain with zero monthly limits.
+                  Synthesize unlimited 33-file specification packages across any industry domain with zero monthly limits.
                 </p>
               </div>
 

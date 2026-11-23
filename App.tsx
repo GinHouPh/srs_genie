@@ -80,8 +80,8 @@ export default function App() {
   const initialPhases: GenerationPhase[] = [
     { id: 'intake', name: 'Form Intake & Requirements Consolidation', description: 'Consolidate 15-section questionnaire', status: 'completed' },
     { id: 'strategic_planning', name: '9 Staging Plans Synthesis', description: 'Agent drafts Parent Project Plan, PRD, designs, architecture, tech specs, roadmap, risk, QA, deploy', status: 'pending' },
-    { id: 'reading_specs', name: 'Reading .specs Architecture & Rules', description: 'Agent inspects 6-tier hierarchy & cascade rules', status: 'pending' },
-    { id: 'updating_specs', name: 'Updating 22 .specs Files from Plan', description: 'Agent derives dynamic tasks & updates canonical specs', status: 'pending' },
+    { id: 'reading_specs', name: 'Reading .specs Architecture & Rules', description: 'Agent inspects multi-agent hierarchy, AGENTS.md & cascade rules', status: 'pending' },
+    { id: 'updating_specs', name: 'Compiling 33 .specs & Multi-Agent Suite', description: 'Agent derives dynamic tasks, coordination manifests & updates canonical specs', status: 'pending' },
     { id: 'finalizing', name: 'Verification & Package Finalization', description: 'Package .specs suite for download and MCP', status: 'pending' }
   ];
 
@@ -261,8 +261,8 @@ export default function App() {
       phases: [
         { id: 'intake', name: 'Form Intake & Requirements Consolidation', description: 'Consolidate 15-section questionnaire', status: 'completed' },
         { id: 'strategic_planning', name: '9 Staging Plans Synthesis', description: 'Agent drafts Parent Project Plan, PRD, designs, architecture, tech specs, roadmap, risk, QA, deploy', status: 'in_progress' },
-        { id: 'reading_specs', name: 'Reading .specs Architecture & Rules', description: 'Agent inspects 6-tier hierarchy & cascade rules', status: 'pending' },
-        { id: 'updating_specs', name: 'Updating 22 .specs Files from Plan', description: 'Agent derives dynamic tasks & updates canonical specs', status: 'pending' },
+        { id: 'reading_specs', name: 'Reading .specs Architecture & Rules', description: 'Agent inspects multi-agent hierarchy, AGENTS.md & cascade rules', status: 'pending' },
+        { id: 'updating_specs', name: 'Compiling 33 .specs & Multi-Agent Suite', description: 'Agent derives dynamic tasks, coordination manifests & updates canonical specs', status: 'pending' },
         { id: 'finalizing', name: 'Verification & Package Finalization', description: 'Package .specs suite for download and MCP', status: 'pending' }
       ],
       currentPhaseId: 'strategic_planning',
@@ -307,7 +307,7 @@ export default function App() {
             }
 
             if (logEntry.type === 'file_created') {
-              filesCount = Math.min(22, filesCount + 1);
+              filesCount = filesCount + 1;
               currentPhaseId = 'updating_specs';
             } else if (logEntry.type === 'task_extracted') {
               tasksCount = logEntry.meta?.taskCount || tasksCount;
@@ -367,7 +367,7 @@ export default function App() {
         isComplete: true,
         currentPhaseId: 'finalizing',
         strategicPlans: packageResult.strategicPlans || prev.strategicPlans,
-        filesGeneratedCount: 22,
+        filesGeneratedCount: Object.keys(packageResult.specsHierarchy || {}).length || 33,
         tasksExtractedCount: packageResult.implementationTasks.length,
         phases: prev.phases.map(p => ({ ...p, status: 'completed' as const }))
       }));

@@ -141,7 +141,7 @@ export const LicenseActivationModal: React.FC<LicenseActivationModalProps> = ({
           <div className="text-[11px] text-muted space-y-1.5">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Unlocks autonomous 22-tier multi-agent specification synthesis</span>
+              <span>Unlocks autonomous 33-file multi-agent specification synthesis</span>
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />

@@ -58,8 +58,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </h1>
 
             <p className="font-body text-base sm:text-lg text-muted max-w-2xl leading-relaxed mb-8">
-              Transform product requirements into a comprehensive 6-tier, 22-file <code className="text-white bg-box px-2 py-0.5 font-mono text-sm">.specs</code> suite. 
-              Eliminate hallucinations and empower autonomous AI agents like Cursor IDE, Windsurf, and Claude Code to execute clean code right on the first prompt.
+              Transform product requirements into a comprehensive 33-file <code className="text-white bg-box px-2 py-0.5 font-mono text-sm">.specs</code> suite + <code className="text-accent bg-box px-2 py-0.5 font-mono text-sm">AGENTS.md</code> manifest. 
+              Eliminate hallucinations and empower autonomous AI agents like Cursor IDE, Windsurf, Claude Code, and Antigravity to collaborate concurrently with zero drift.
             </p>
 
             <div className="flex flex-wrap items-center gap-4">
@@ -82,7 +82,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 href="#specs-architecture"
                 className="btn btn--ghost text-muted hover:text-white"
               >
-                Explore 6-Tier Architecture
+                Explore Multi-Agent Specs
               </a>
             </div>
           </div>
@@ -93,35 +93,35 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <section className="shell">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="stat">
-            <span className="stat__value text-white">22</span>
+            <span className="stat__value text-white">33</span>
             <span className="stat__label">Atomic .Specs Documents</span>
           </div>
           <div className="stat">
             <span className="stat__value text-accent">100%</span>
-            <span className="stat__label">Agent Prompt Readiness</span>
+            <span className="stat__label">Multi-Agent Readiness</span>
           </div>
           <div className="stat">
-            <span className="stat__value text-white">JSON-RPC</span>
-            <span className="stat__label">Model Context Protocol</span>
+            <span className="stat__value text-white">AGENTS.md</span>
+            <span className="stat__label">Open Standard Manifest</span>
           </div>
           <div className="stat">
             <span className="stat__value text-accent">Zero</span>
-            <span className="stat__label">Context Hallucination</span>
+            <span className="stat__label">Context Drift & Conflicts</span>
           </div>
         </div>
       </section>
 
-      {/* 3. THE 6-TIER .SPECS ARCHITECTURE SHOWCASE */}
+      {/* 3. MULTI-AGENT .SPECS ARCHITECTURE SHOWCASE */}
       <section id="specs-architecture" className="shell scroll-mt-24 space-y-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-line">
           <div>
-            <div className="eyebrow mb-2">Modular Specification Engine</div>
+            <div className="eyebrow mb-2">Autonomous Multi-Agent Architecture</div>
             <h2 className="font-display text-3xl sm:text-4xl font-semibold text-white tracking-[0.04em] uppercase">
-              The 6-Tier Specification System
+              The System 2 Specification Hierarchy
             </h2>
           </div>
           <p className="font-body text-xs text-muted max-w-md">
-            Rather than a single bloated document, SRS Genie synthesizes 22 compartmentalized markdown files designed specifically for token-budgeted AI coding tools.
+            Rather than a single bloated document, SRS Genie synthesizes 33 compartmentalized markdown files + AGENTS.md designed specifically for token-budgeted, concurrent AI coding sessions.
           </p>
         </div>
 
@@ -132,17 +132,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <FolderTree className="w-5 h-5" />
               </div>
               <div className="font-display text-xs uppercase tracking-[0.2em] text-accent font-semibold mb-1">
-                Tier 1
+                Root & Entry
               </div>
               <h3 className="font-display text-lg font-semibold text-white tracking-[0.06em] uppercase mb-2">
-                Foundation & Principles
+                Universal Manifest & Runbook
               </h3>
               <p className="font-body text-xs text-muted leading-relaxed">
-                Contains <code className="text-white font-mono">brief.md</code> and <code className="text-white font-mono">principles.md</code>. Defines core problem scope, non-goals, architectural philosophy, and user persona boundaries.
+                Contains <code className="text-white font-mono">AGENTS.md</code> and <code className="text-white font-mono">_index.md</code>. Core operating directives, fast bootstrap scripts, cascading regeneration rules, and multi-agent session protocols.
               </p>
             </div>
             <div className="mt-4 pt-4 border-t border-line text-xs font-mono text-muted">
-              foundation/brief.md
+              AGENTS.md · .specs/_index.md
             </div>
           </div>
 
@@ -152,17 +152,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <Layers className="w-5 h-5" />
               </div>
               <div className="font-display text-xs uppercase tracking-[0.2em] text-accent font-semibold mb-1">
-                Tier 2
+                Tiers 0 & 1
               </div>
               <h3 className="font-display text-lg font-semibold text-white tracking-[0.06em] uppercase mb-2">
-                Domain Model & Invariants
+                Foundation & Business Rules
               </h3>
               <p className="font-body text-xs text-muted leading-relaxed">
-                Contains <code className="text-white font-mono">glossary.md</code> and <code className="text-white font-mono">invariants.md</code>. Strict domain-driven design vocabulary, business rules, and strict system constraints.
+                Contains <code className="text-white font-mono">brief.md</code>, <code className="text-white font-mono">glossary.md</code>, <code className="text-white font-mono">user_stories.md</code>, and <code className="text-white font-mono">domain_rules.md</code>. Strict DDD invariants, non-negotiables, and Gherkin user scenarios.
               </p>
             </div>
             <div className="mt-4 pt-4 border-t border-line text-xs font-mono text-muted">
-              domain/invariants.md
+              foundation/ · domain/
             </div>
           </div>
 
@@ -172,17 +172,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <FileCode className="w-5 h-5" />
               </div>
               <div className="font-display text-xs uppercase tracking-[0.2em] text-accent font-semibold mb-1">
-                Tier 3
+                Tiers 2 & 3
               </div>
               <h3 className="font-display text-lg font-semibold text-white tracking-[0.06em] uppercase mb-2">
-                Contracts, DB & Schemas
+                Architecture & Contracts
               </h3>
               <p className="font-body text-xs text-muted leading-relaxed">
-                Contains OpenAPI REST endpoints in <code className="text-white font-mono">api_contracts.md</code>, relational PostgreSQL tables, indexes, and triggers in <code className="text-white font-mono">database_schema.md</code>.
+                Contains <code className="text-white font-mono">system_design.md</code>, <code className="text-white font-mono">data_model.md</code>, <code className="text-white font-mono">security_model.md</code>, and machine-verifiable REST/SQL schemas in <code className="text-white font-mono">contracts/</code>.
               </p>
             </div>
             <div className="mt-4 pt-4 border-t border-line text-xs font-mono text-muted">
-              contracts/api_contracts.md
+              architecture/ · contracts/
             </div>
           </div>
 
@@ -195,14 +195,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 Tier 4
               </div>
               <h3 className="font-display text-lg font-semibold text-white tracking-[0.06em] uppercase mb-2">
-                State & Architecture Records
+                Implementation Standards
               </h3>
               <p className="font-body text-xs text-muted leading-relaxed">
-                Tracks current sprint status in <code className="text-white font-mono">current_state.md</code> and records Architectural Decision Records (ADR) in <code className="text-white font-mono">decisions_log.md</code>.
+                Contains complete guides for <code className="text-white font-mono">backend</code>, <code className="text-white font-mono">frontend</code>, <code className="text-white font-mono">infrastructure</code>, testing matrices, and TypeScript coding conventions with strict lint gates.
               </p>
             </div>
             <div className="mt-4 pt-4 border-t border-line text-xs font-mono text-muted">
-              state/decisions_log.md
+              implementation/
             </div>
           </div>
 
@@ -212,17 +212,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <Cpu className="w-5 h-5" />
               </div>
               <div className="font-display text-xs uppercase tracking-[0.2em] text-accent font-semibold mb-1">
-                Tier 5
+                Coordination
               </div>
               <h3 className="font-display text-lg font-semibold text-white tracking-[0.06em] uppercase mb-2">
-                UI Tokens & Layout Primitives
+                Multi-Agent Coordination & Leases
               </h3>
               <p className="font-body text-xs text-muted leading-relaxed">
-                Complete design tokens in <code className="text-white font-mono">design_system.md</code>, component inventory, and UI layout primitives ensuring visual cohesion.
+                Contains <code className="text-white font-mono">protocol.md</code>, <code className="text-white font-mono">task_board.md</code>, and <code className="text-white font-mono">agent_registry.md</code>. Distributed lease claiming, Git worktree isolation, and collision-free session ledgers.
               </p>
             </div>
             <div className="mt-4 pt-4 border-t border-line text-xs font-mono text-muted">
-              ui/design_system.md
+              coordination/task_board.md
             </div>
           </div>
 
@@ -232,17 +232,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <Sparkles className="w-5 h-5" />
               </div>
               <div className="font-display text-xs uppercase tracking-[0.2em] text-accent font-semibold mb-1">
-                Tier 6
+                Runbooks & State
               </div>
               <h3 className="font-display text-lg font-semibold text-white tracking-[0.06em] uppercase mb-2">
-                Autonomous Execution Tasks
+                Autonomous Runbooks & ADRs
               </h3>
               <p className="font-body text-xs text-muted leading-relaxed">
-                Granular, prompt-engineered execution tasks in <code className="text-white font-mono">tasks.md</code> ready to copy straight into Cursor, Windsurf, or Claude Code.
+                Contains 6 standardized agent SOPs (<code className="text-white font-mono">onboarding.md</code>, <code className="text-white font-mono">lifecycle.md</code>, <code className="text-white font-mono">verification.md</code>) plus append-only Architectural Decision Records in <code className="text-white font-mono">decisions_log.md</code>.
               </p>
             </div>
             <div className="mt-4 pt-4 border-t border-line text-xs font-mono text-muted">
-              execution/tasks.md
+              agents/ · state/decisions_log.md
             </div>
           </div>
         </div>
@@ -302,7 +302,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </h2>
           </div>
           <p className="font-body text-xs text-muted max-w-md">
-            Choose the tier tailored to your team size and velocity. All plans include 22-file .specs packages and live MCP agent credentials.
+            Choose the tier tailored to your team size and velocity. All plans include 33-file .specs packages, AGENTS.md open manifest, and live MCP agent credentials.
           </p>
         </div>
 

@@ -124,7 +124,7 @@ export const AgentGenerationViewport: React.FC<AgentGenerationViewportProps> = (
           <div className="flex items-center gap-1.5 bg-ink/60 border border-line px-3 py-1.5">
             <FileCode className="w-3.5 h-3.5 text-accent" />
             <span className="text-muted">Specs Files:</span>
-            <span className="text-accent font-semibold">{progressState.filesGeneratedCount} / 22</span>
+            <span className="text-accent font-semibold">{progressState.filesGeneratedCount} / {totalSpecFiles}</span>
           </div>
 
           <div className="flex items-center gap-1.5 bg-ink/60 border border-line px-3 py-1.5">
@@ -185,7 +185,7 @@ export const AgentGenerationViewport: React.FC<AgentGenerationViewportProps> = (
             </div>
           </div>
 
-          {/* 22 Canonical Specs Compilation Matrix */}
+          {/* System 2 Canonical Specs Compilation Matrix */}
           <div className="bg-box border border-line p-3 flex-1 min-h-0 flex flex-col overflow-hidden">
             <div className="font-display text-xs text-muted uppercase tracking-wider mb-2 flex items-center justify-between">
               <span>System 2 .specs Hierarchy</span>
@@ -503,7 +503,7 @@ export const AgentGenerationViewport: React.FC<AgentGenerationViewportProps> = (
                     Specification Suite Successfully Forged
                   </div>
                   <div className="text-[11px] text-muted">
-                    22 canonical spec files compiled · {progressState.tasksExtractedCount} dynamic atomic tasks extracted
+                    {totalSpecFiles} canonical spec files compiled · {progressState.tasksExtractedCount} dynamic atomic tasks extracted
                   </div>
                 </div>
               </div>

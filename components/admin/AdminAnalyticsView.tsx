@@ -124,7 +124,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ metrics 
           </span>
           <span className="stat__label">Total Specs Synthesized</span>
           <div className="text-[11px] text-muted mt-2 font-body">
-            All 6 Tiers (22 Files each)
+            All Specification Tiers (33 Files each)
           </div>
         </div>
 

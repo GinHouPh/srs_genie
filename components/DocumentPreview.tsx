@@ -22,7 +22,15 @@ import {
   Layers,
   Printer,
   BookOpen,
-  Sliders
+  Sliders,
+  Search,
+  Filter,
+  ShieldCheck,
+  ShieldAlert,
+  GitBranch,
+  Clock,
+  User,
+  CheckSquare
 } from 'lucide-react';
 import { downloadSpecsZip, SPEC_TIERS, generateIdeRules } from '../services/specGeneratorService';
 import { STRATEGIC_PLAN_DEFINITIONS } from '../services/specAgentPrompts';
@@ -40,7 +48,7 @@ interface DocumentPreviewProps {
 export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onReset, onOpenMcpHub, onDeleteProject }) => {
   const [activeTab, setActiveTab] = useState<'specs_suite' | 'strategic_plans' | 'formal_srs' | 'tasks' | 'ide_rules' | 'mcp_connect'>('specs_suite');
   const [selectedPlanFilename, setSelectedPlanFilename] = useState<string>('project_plan.md');
-  const [selectedIdeRule, setSelectedIdeRule] = useState<'cursor' | 'claude' | 'windsurf' | 'agent'>('cursor');
+  const [selectedIdeRule, setSelectedIdeRule] = useState<'cursor' | 'claude' | 'windsurf' | 'agent' | 'agents_md'>('cursor');
   const [selectedFilePath, setSelectedFilePath] = useState<string>('_index.md');
   const [viewSource, setViewSource] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -49,6 +57,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
   const [isZipping, setIsZipping] = useState<boolean>(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [taskStatusFilter, setTaskStatusFilter] = useState<string>('all');
+  const [taskTypeFilter, setTaskTypeFilter] = useState<string>('all');
+  const [taskSearchQuery, setTaskSearchQuery] = useState<string>('');
 
   const specs = content.specsHierarchy || {};
   const activeFileContent = specs[selectedFilePath] || content.srsMarkdown || '# Specification\n\nNo content loaded.';
@@ -143,7 +154,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
             }`}
           >
             <FolderTree className="w-4 h-4 mr-2" />
-            .specs Suite ({Object.keys(specs).length || 22} Files)
+            .specs Suite ({Object.keys(specs).length || 33} Files)
           </button>
 
           {content.strategicPlans && Object.keys(content.strategicPlans).length > 0 && (
@@ -181,7 +192,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
             }`}
           >
             <Terminal className="w-4 h-4 mr-2" />
-            Tasks ({content.implementationTasks?.length || 6})
+            Task Board ({content.implementationTasks?.length || 6})
           </button>
 
           <button
@@ -243,7 +254,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
             <>
               <button
                 onClick={() => {
-                  const targetContent = selectedIdeRule === 'cursor' ? ideRules.cursorRules :
+                  const targetContent = selectedIdeRule === 'agents_md' ? (specs['AGENTS.md'] || ideRules.agentRules) :
+                    selectedIdeRule === 'cursor' ? ideRules.cursorRules :
                     selectedIdeRule === 'claude' ? ideRules.claudeMd :
                     selectedIdeRule === 'windsurf' ? ideRules.windsurfRules : ideRules.agentRules;
                   copyToClipboard(targetContent, 'ide_rule');
@@ -255,10 +267,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
               </button>
               <button
                 onClick={() => {
-                  const targetFile = selectedIdeRule === 'cursor' ? '.cursorrules' :
+                  const targetFile = selectedIdeRule === 'agents_md' ? 'AGENTS.md' :
+                    selectedIdeRule === 'cursor' ? '.cursorrules' :
                     selectedIdeRule === 'claude' ? 'CLAUDE.md' :
                     selectedIdeRule === 'windsurf' ? '.windsurfrules' : '.agentrules';
-                  const targetContent = selectedIdeRule === 'cursor' ? ideRules.cursorRules :
+                  const targetContent = selectedIdeRule === 'agents_md' ? (specs['AGENTS.md'] || ideRules.agentRules) :
+                    selectedIdeRule === 'cursor' ? ideRules.cursorRules :
                     selectedIdeRule === 'claude' ? ideRules.claudeMd :
                     selectedIdeRule === 'windsurf' ? ideRules.windsurfRules : ideRules.agentRules;
                   handleDownloadSingleFile(targetFile, targetContent);
@@ -412,7 +426,14 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
                               : 'text-muted hover:text-white hover:bg-box/50'
                           }`}
                         >
-                          <span className="truncate">{file.path}</span>
+                          <span className="truncate flex items-center gap-1.5">
+                            <span>{file.path}</span>
+                            {file.path === 'AGENTS.md' && (
+                              <span className="px-1 py-0.2 bg-accent/20 text-accent text-[8px] font-mono border border-accent/40 rounded-sm">
+                                ROOT
+                              </span>
+                            )}
+                          </span>
                           {isSelected && <ChevronRight className="w-3.5 h-3.5 text-accent shrink-0" />}
                         </button>
                       );
@@ -428,7 +449,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
               <div className="p-3 bg-surface border-b border-line flex items-center justify-between text-xs text-muted font-mono">
                 <div className="flex items-center gap-2">
                   <FileCode className="w-4 h-4 text-accent" />
-                  <span className="text-white font-semibold">.specs/{selectedFilePath}</span>
+                  <span className="text-white font-semibold">
+                    {selectedFilePath === 'AGENTS.md' ? 'AGENTS.md (Root Universal Manifest)' : `.specs/${selectedFilePath}`}
+                  </span>
                   {isEditing && (
                     <span className="badge--on text-[9px]">
                       Editing
@@ -549,76 +572,336 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
         )}
 
         {/* VIEW 2: EXECUTION TASKS BOARD */}
-        {activeTab === 'tasks' && (
-          <div className="h-full overflow-y-auto p-8 bg-ink">
-            <div className="max-w-4xl mx-auto space-y-6">
-              <div className="agape-card p-6 border-accent/40">
-                <div className="flex items-center gap-2 mb-2">
-                  <Terminal className="w-5 h-5 text-accent" />
-                  <h3 className="font-display text-lg font-semibold text-white tracking-[0.06em] uppercase">
-                    Autonomous AI Coding Task Prompts
-                  </h3>
+        {activeTab === 'tasks' && (() => {
+          const allTasks = content.implementationTasks || [];
+          const filteredTasks = allTasks.filter(task => {
+            if (taskStatusFilter !== 'all' && (task.status || 'todo') !== taskStatusFilter) return false;
+            if (taskTypeFilter !== 'all' && (task.type || 'backend') !== taskTypeFilter) return false;
+            if (taskSearchQuery.trim()) {
+              const q = taskSearchQuery.toLowerCase();
+              const matchId = (task.id || '').toLowerCase().includes(q);
+              const matchTitle = (task.title || '').toLowerCase().includes(q);
+              const matchDesc = (task.description || '').toLowerCase().includes(q);
+              const matchGov = (task.governs || '').toLowerCase().includes(q);
+              const matchFiles = (task.scopeIncluded || []).some(f => f.toLowerCase().includes(q));
+              const matchCaps = (task.requiredCapabilities || []).some(c => c.toLowerCase().includes(q));
+              if (!matchId && !matchTitle && !matchDesc && !matchGov && !matchFiles && !matchCaps) return false;
+            }
+            return true;
+          });
+
+          const taskCounts = {
+            total: allTasks.length,
+            todo: allTasks.filter(t => (t.status || 'todo') === 'todo').length,
+            claimed: allTasks.filter(t => t.status === 'claimed').length,
+            inProgress: allTasks.filter(t => t.status === 'in-progress').length,
+            review: allTasks.filter(t => t.status === 'review').length,
+            done: allTasks.filter(t => t.status === 'done').length,
+            blocked: allTasks.filter(t => t.status === 'blocked').length
+          };
+
+          return (
+            <div className="h-full overflow-y-auto p-4 sm:p-8 bg-ink custom-scrollbar">
+              <div className="max-w-5xl mx-auto space-y-6">
+                {/* Header Information Banner */}
+                <div className="agape-card p-6 border-accent/40 bg-surface">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Terminal className="w-5 h-5 text-accent" />
+                      <h3 className="font-display text-lg font-semibold text-white tracking-[0.06em] uppercase">
+                        System 2 Multi-Agent Task Board & Execution Matrix
+                      </h3>
+                    </div>
+                    <span className="badge--on text-[10px] font-mono self-start sm:self-auto">
+                      Synchronized with .specs/coordination/task_board.md
+                    </span>
+                  </div>
+                  <p className="font-body text-xs text-muted leading-relaxed">
+                    Extracted from <code className="text-white bg-box px-1.5 py-0.5 font-mono">.specs/execution/tasks.md</code>. 
+                    Every atomic task defines strict file boundaries (<code className="text-accent font-mono">INCLUDED</code> vs <code className="text-rose-400 font-mono">EXCLUDED</code>), 
+                    required agent capabilities, and evidence-based verification targets for concurrent, conflict-free AI execution across Git worktrees.
+                  </p>
                 </div>
-                <p className="font-body text-xs text-muted leading-relaxed">
-                  Extracted from <code className="text-white bg-box px-1.5 py-0.5 font-mono">.specs/execution/tasks.md</code>.
-                  Copy each prompt directly into your AI coding tool (Cursor, Windsurf, or Claude Code) in the sequential order shown below.
-                </p>
-              </div>
 
-              <div className="space-y-4">
-                {content.implementationTasks?.map((task, idx) => (
-                  <div
-                    key={task.id || idx}
-                    className="agape-card p-6"
-                  >
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="badge--on text-[10px] font-mono">
-                            {task.id || `TASK-00${idx + 1}`}
-                          </span>
-                          <span className="badge--off text-[10px]">
-                            {task.type}
-                          </span>
-                          {task.complexity && (
-                            <span className="px-2 py-0.5 text-[10px] font-mono bg-box text-muted border border-line">
-                              Complexity: {task.complexity}
-                            </span>
-                          )}
-                        </div>
-                        <h4 className="font-display text-base font-semibold text-white uppercase tracking-[0.06em]">{task.title}</h4>
-                      </div>
-
-                      <button
-                        onClick={() => copyToClipboard(task.prompt, `task_${idx}`)}
-                        className="btn btn-sm btn--ghost shrink-0"
-                      >
-                        {copiedKey === `task_${idx}` ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-accent" />
-                            <span>Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>Copy Prompt</span>
-                          </>
-                        )}
-                      </button>
+                {/* Filter and Search Bar */}
+                <div className="agape-card p-4 space-y-3 bg-surface/80">
+                  <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+                    <div className="relative flex-1">
+                      <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={taskSearchQuery}
+                        onChange={e => setTaskSearchQuery(e.target.value)}
+                        placeholder="Search tasks by ID, title, capability, or file scope..."
+                        className="w-full bg-ink text-white pl-9 pr-8 py-2 text-xs font-mono border border-line focus:border-accent outline-none"
+                      />
+                      {taskSearchQuery && (
+                        <button
+                          onClick={() => setTaskSearchQuery('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-white text-xs font-mono"
+                        >
+                          ✕
+                        </button>
+                      )}
                     </div>
 
-                    <p className="font-body text-xs text-muted mb-4">{task.description}</p>
-
-                    <div className="p-4 bg-box/60 border border-line">
-                      <div className="font-display text-[10px] font-semibold uppercase tracking-[0.16em] text-accent mb-2">Prompt for AI Editor:</div>
-                      <div className="font-mono text-xs text-white whitespace-pre-wrap leading-relaxed">{task.prompt}</div>
+                    <div className="flex items-center gap-2 text-xs font-mono text-muted overflow-x-auto pb-1 md:pb-0">
+                      <span className="text-white font-semibold">{filteredTasks.length}</span> of <span>{allTasks.length} Tasks</span>
                     </div>
                   </div>
-                ))}
+
+                  {/* Status Pills */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-line/60">
+                    <span className="text-[10px] font-display uppercase tracking-wider text-muted mr-1">Status:</span>
+                    {[
+                      { id: 'all', label: `All (${taskCounts.total})` },
+                      { id: 'todo', label: `Todo (${taskCounts.todo})` },
+                      { id: 'claimed', label: `Claimed (${taskCounts.claimed})` },
+                      { id: 'in-progress', label: `In Progress (${taskCounts.inProgress})` },
+                      { id: 'review', label: `Review (${taskCounts.review})` },
+                      { id: 'done', label: `Done (${taskCounts.done})` },
+                      { id: 'blocked', label: `Blocked (${taskCounts.blocked})` }
+                    ].map(st => (
+                      <button
+                        key={st.id}
+                        onClick={() => setTaskStatusFilter(st.id)}
+                        className={`px-2 py-0.5 text-[10px] font-mono transition-all border ${
+                          taskStatusFilter === st.id
+                            ? 'bg-accent text-white border-accent font-semibold'
+                            : 'bg-box/50 text-muted border-line hover:text-white hover:border-line-hover'
+                        }`}
+                      >
+                        {st.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Type Filter Pills */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="text-[10px] font-display uppercase tracking-wider text-muted mr-1">Domain:</span>
+                    {[
+                      { id: 'all', label: 'All Domains' },
+                      { id: 'setup', label: 'Setup' },
+                      { id: 'backend', label: 'Backend' },
+                      { id: 'frontend', label: 'Frontend' },
+                      { id: 'database', label: 'Database' },
+                      { id: 'testing', label: 'Testing' },
+                      { id: 'deployment', label: 'Deployment' }
+                    ].map(tp => (
+                      <button
+                        key={tp.id}
+                        onClick={() => setTaskTypeFilter(tp.id)}
+                        className={`px-2 py-0.5 text-[10px] font-mono transition-all border ${
+                          taskTypeFilter === tp.id
+                            ? 'bg-white text-ink border-white font-semibold'
+                            : 'bg-box/30 text-muted border-line hover:text-white'
+                        }`}
+                      >
+                        {tp.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Task Cards Matrix */}
+                <div className="space-y-4">
+                  {filteredTasks.length === 0 ? (
+                    <div className="agape-card p-12 text-center text-muted">
+                      <Terminal className="w-8 h-8 text-muted mx-auto mb-3 opacity-40" />
+                      <p className="font-display text-sm uppercase tracking-wider text-white mb-1">No Matching Tasks Found</p>
+                      <p className="text-xs">Adjust your status, domain filters, or search query above.</p>
+                    </div>
+                  ) : (
+                    filteredTasks.map((task, idx) => {
+                      const status = task.status || 'todo';
+                      const statusClass =
+                        status === 'done' ? 'bg-emerald-950/60 text-emerald-300 border-emerald-600/40' :
+                        status === 'in-progress' ? 'bg-cyan-950/60 text-cyan-300 border-cyan-600/40' :
+                        status === 'claimed' ? 'bg-amber-950/60 text-amber-300 border-amber-600/40' :
+                        status === 'review' ? 'bg-purple-950/60 text-purple-300 border-purple-600/40' :
+                        status === 'blocked' ? 'bg-rose-950/60 text-rose-300 border-rose-600/40' :
+                        'bg-slate-900 text-slate-300 border-slate-700';
+
+                      return (
+                        <div
+                          key={task.id || idx}
+                          className="agape-card p-6 bg-surface border-line hover:border-line-hover transition-all space-y-4"
+                        >
+                          {/* Task Top Meta Bar */}
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-3 border-b border-line/60">
+                            <div className="space-y-1.5">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="px-2 py-0.5 text-xs font-mono font-bold bg-accent/20 text-accent border border-accent/30">
+                                  {task.id || `TASK-00${idx + 1}`}
+                                </span>
+
+                                <span className={`px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider border font-medium ${statusClass}`}>
+                                  ● {status}
+                                </span>
+
+                                <span className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider bg-box text-muted border border-line">
+                                  {task.type}
+                                </span>
+
+                                {task.complexity && (
+                                  <span className="px-2 py-0.5 text-[10px] font-mono bg-box text-muted border border-line">
+                                    Size: {task.complexity}
+                                  </span>
+                                )}
+
+                                {task.dependsOn && (
+                                  <span className="px-2 py-0.5 text-[10px] font-mono bg-box text-muted border border-line flex items-center gap-1">
+                                    <GitBranch className="w-3 h-3 text-muted" />
+                                    Depends: {task.dependsOn}
+                                  </span>
+                                )}
+
+                                {task.reviewRequired && (
+                                  <span className="px-2 py-0.5 text-[10px] font-mono bg-purple-950/40 text-purple-300 border border-purple-800/40 flex items-center gap-1">
+                                    <ShieldCheck className="w-3 h-3 text-purple-300" />
+                                    Peer Review Required
+                                  </span>
+                                )}
+
+                                {task.claimedBy && (
+                                  <span className="px-2 py-0.5 text-[10px] font-mono bg-amber-950/40 text-amber-300 border border-amber-800/40 flex items-center gap-1">
+                                    <User className="w-3 h-3 text-amber-300" />
+                                    Leased: {task.claimedBy}
+                                  </span>
+                                )}
+                              </div>
+
+                              <h4 className="font-display text-base font-semibold text-white uppercase tracking-[0.05em] pt-1">
+                                {task.title}
+                              </h4>
+                            </div>
+
+                            <button
+                              onClick={() => copyToClipboard(task.prompt, `task_${task.id || idx}`)}
+                              className="btn btn-sm btn--ghost shrink-0 self-start"
+                            >
+                              {copiedKey === `task_${task.id || idx}` ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-accent" />
+                                  <span>Prompt Copied</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5" />
+                                  <span>Copy Task Prompt</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+
+                          <p className="font-body text-xs text-muted leading-relaxed">{task.description}</p>
+
+                          {/* Multi-Agent System 2 Scope & Rule Governance Matrix */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono bg-ink/70 p-3.5 border border-line">
+                            {/* Governs & Spec References */}
+                            <div className="space-y-2">
+                              {task.governs && (
+                                <div>
+                                  <span className="text-[10px] font-display uppercase tracking-wider text-muted block mb-0.5">Governing Scope:</span>
+                                  <span className="text-white text-[11px] font-medium">{task.governs}</span>
+                                </div>
+                              )}
+
+                              {task.specRefs && task.specRefs.length > 0 && (
+                                <div>
+                                  <span className="text-[10px] font-display uppercase tracking-wider text-muted block mb-1">Spec References:</span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {task.specRefs.map((ref, rIdx) => (
+                                      <span key={rIdx} className="px-1.5 py-0.5 bg-box text-[10px] text-accent border border-line">
+                                        {ref}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {task.requiredCapabilities && task.requiredCapabilities.length > 0 && (
+                                <div>
+                                  <span className="text-[10px] font-display uppercase tracking-wider text-muted block mb-1">Required Capabilities:</span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {task.requiredCapabilities.map((cap, cIdx) => (
+                                      <span key={cIdx} className="px-1.5 py-0.2 bg-box text-[10px] text-cyan-300 border border-line">
+                                        {cap}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Scope Boundaries: INCLUDED vs EXCLUDED */}
+                            <div className="space-y-2">
+                              {task.scopeIncluded && task.scopeIncluded.length > 0 && (
+                                <div>
+                                  <span className="text-[10px] font-display uppercase tracking-wider text-emerald-400 block mb-1 flex items-center gap-1">
+                                    <CheckSquare className="w-3 h-3 text-emerald-400" />
+                                    Scope Boundary: INCLUDED (Authorized to edit):
+                                  </span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {task.scopeIncluded.map((inc, iIdx) => (
+                                      <span key={iIdx} className="px-1.5 py-0.2 bg-emerald-950/30 text-[10px] text-emerald-300 border border-emerald-800/40">
+                                        {inc}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {task.scopeExcluded && task.scopeExcluded.length > 0 && (
+                                <div>
+                                  <span className="text-[10px] font-display uppercase tracking-wider text-rose-400 block mb-1 flex items-center gap-1">
+                                    <ShieldAlert className="w-3 h-3 text-rose-400" />
+                                    Scope Boundary: EXCLUDED (Protected):
+                                  </span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {task.scopeExcluded.map((exc, eIdx) => (
+                                      <span key={eIdx} className="px-1.5 py-0.2 bg-rose-950/20 text-[10px] text-rose-400/80 border border-rose-900/30">
+                                        {exc}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Verification Target */}
+                          {task.verificationTarget && (
+                            <div className="p-3 bg-box/40 border border-line text-xs font-mono space-y-1">
+                              <div className="flex items-center gap-1.5 text-[10px] font-display uppercase tracking-wider text-cyan-400 font-semibold">
+                                <Terminal className="w-3.5 h-3.5" />
+                                <span>Evidence-Based Verification Target:</span>
+                              </div>
+                              <p className="text-[11px] text-body pl-5">{task.verificationTarget}</p>
+                            </div>
+                          )}
+
+                          {/* Actionable Prompt for AI Agent */}
+                          <div className="p-4 bg-ink border border-line">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-display text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+                                Formatted Task Prompt for AI Coding Agent:
+                              </span>
+                              <span className="text-[10px] font-mono text-muted">Ready for Cursor, Claude Code, Windsurf, or Antigravity</span>
+                            </div>
+                            <div className="font-mono text-xs text-white whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto custom-scrollbar bg-surface/50 p-3 border border-line/40">
+                              {task.prompt}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* VIEW: FORMAL IEEE 830 SRS DOCUMENT */}
         {activeTab === 'formal_srs' && (
@@ -651,11 +934,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
                 <span className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-accent">
                   Agent Harness Rules
                 </span>
-                <span className="badge--on text-[9px]">4 IDE Formats</span>
+                <span className="badge--on text-[9px]">5 Formats</span>
               </div>
 
               <div className="space-y-1.5 font-mono text-xs">
                 {[
+                  { id: 'agents_md', label: 'AGENTS.md', title: 'Universal Manifest', desc: 'Open standard autonomous multi-agent directives & runbook' },
                   { id: 'cursor', label: '.cursorrules', title: 'Cursor IDE', desc: 'Rules & specification index reader for Cursor agent' },
                   { id: 'claude', label: 'CLAUDE.md', title: 'Claude Code', desc: 'Anthropic CLI & Claude Desktop memory file' },
                   { id: 'windsurf', label: '.windsurfrules', title: 'Windsurf Cascade', desc: 'Invariants & contract enforcement for Cascade' },
@@ -686,7 +970,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
                 <div className="mb-4 pb-3 border-b border-line/60 flex items-center justify-between">
                   <div>
                     <h3 className="font-display text-sm font-semibold text-white uppercase tracking-wider">
-                      {selectedIdeRule === 'cursor' ? '.cursorrules (Cursor IDE Agent Instructions)' :
+                      {selectedIdeRule === 'agents_md' ? 'AGENTS.md (Autonomous Agent Directives & Universal Manifest)' :
+                       selectedIdeRule === 'cursor' ? '.cursorrules (Cursor IDE Agent Instructions)' :
                        selectedIdeRule === 'claude' ? 'CLAUDE.md (Claude Code Context Protocol)' :
                        selectedIdeRule === 'windsurf' ? '.windsurfrules (Windsurf Cascade Directives)' :
                        '.agentrules (Antigravity & Agent Roster Specification)'}
@@ -698,7 +983,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
                 </div>
 
                 <pre className="p-6 bg-box border border-line text-xs font-mono text-body whitespace-pre-wrap leading-relaxed overflow-x-auto">
-                  {selectedIdeRule === 'cursor' ? ideRules.cursorRules :
+                  {selectedIdeRule === 'agents_md' ? (specs['AGENTS.md'] || ideRules.agentRules) :
+                   selectedIdeRule === 'cursor' ? ideRules.cursorRules :
                    selectedIdeRule === 'claude' ? ideRules.claudeMd :
                    selectedIdeRule === 'windsurf' ? ideRules.windsurfRules :
                    ideRules.agentRules}
@@ -732,7 +1018,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
               Delete Specification?
             </h3>
             <p className="font-body text-xs text-muted mb-6">
-              Are you sure? All 22 canonical specification files for <strong className="text-white">"{content.projectMeta?.projectName || 'this project'}"</strong> will be permanently removed.
+              Are you sure? All {Object.keys(specs).length || 33} canonical specification files for <strong className="text-white">"{content.projectMeta?.projectName || 'this project'}"</strong> will be permanently removed.
             </p>
 
             <div className="flex justify-end gap-3">
@@ -746,7 +1032,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
                 onClick={handleConfirmDelete}
                 className="btn btn-sm btn--accent"
               >
-                Delete All 22 Files
+                Delete Specification Suite
               </button>
             </div>
           </div>

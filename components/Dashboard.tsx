@@ -146,7 +146,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         <div className="stat">
-          <span className="stat__value text-accent">22</span>
+          <span className="stat__value text-accent">33</span>
           <span className="stat__label">Files In .Specs Suite</span>
         </div>
 
@@ -166,17 +166,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <FolderTree className="w-5 h-5" />
             </div>
             <div className="font-display text-xs uppercase tracking-[0.2em] text-accent mb-1 font-semibold">
-              Architecture
+              Multi-Agent Architecture
             </div>
             <h3 className="font-display text-lg font-semibold text-white tracking-[0.06em] uppercase mb-2">
-              6-Tier .specs Suite
+              System 2 .specs Suite
             </h3>
             <p className="font-body text-xs text-muted leading-relaxed">
-              Produces 22 atomic specification documents covering Foundation, Domain, Workflow, State, UI, and Execution rules.
+              Produces 33 atomic specification documents covering Foundation, Domain, Architecture, Contracts, Implementation, Coordination, and Agent Runbooks.
             </p>
           </div>
           <div className="mt-4 pt-4 border-t border-line flex items-center text-xs font-display uppercase tracking-[0.16em] text-accent">
-            Brief, API, DB & Tasks <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            AGENTS.md, Coordination & Tasks <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </div>
         </div>
 
@@ -246,7 +246,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {user?.plan || 'Pro'} Tier
               </h3>
               <p className="font-body text-xs text-muted leading-relaxed">
-                Full access to 22-file .specs downloads, high-speed Gemini synthesis, and MCP gateway integration.
+                Full access to 33-file .specs downloads, high-speed Gemini synthesis, and MCP gateway integration.
               </p>
             </div>
             <div className="mt-4 pt-4 border-t border-line flex items-center text-xs font-display uppercase tracking-[0.16em] text-accent">
@@ -443,7 +443,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               Delete Specification?
             </h3>
             <p className="font-body text-xs text-muted mb-6">
-              Are you sure? All 22 generated .specs files and AI agent tasks will be permanently removed.
+              Are you sure? All 33 generated .specs files and AI agent tasks will be permanently removed.
             </p>
 
             <div className="flex justify-end gap-3">

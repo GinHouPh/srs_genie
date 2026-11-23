@@ -1850,7 +1850,7 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
                 </h3>
               </div>
               <span className="text-[11px] font-body text-muted">
-                Choose which model engine synthesizes your 22-file .specs suite
+                Choose which model engine synthesizes your 33-file System 2 .specs suite
               </span>
             </div>
 
@@ -1898,7 +1898,7 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
                className="btn btn--accent w-full justify-center disabled:opacity-50"
              >
                <Sparkles className="w-4 h-4 mr-1.5" />
-               <span>Generate 22-File .specs Suite ({availableModels.find(m => m.id === selectedModelId)?.name || 'Gemini 2.5'})</span>
+               <span>Generate 33-File Multi-Agent .specs Suite ({availableModels.find(m => m.id === selectedModelId)?.name || 'Gemini 2.5'})</span>
              </button>
           </div>
         </div>
