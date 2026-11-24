@@ -147,6 +147,95 @@ function cashfreeProxyPlugin(env: Record<string, string>) {
   };
 }
 
+function aiProxyPlugin() {
+  return {
+    name: 'vite-plugin-ai-proxy',
+    configureServer(server: any) {
+      server.middlewares.use(async (req: any, res: any, next: any) => {
+        if (!req.url?.startsWith('/api/ai/proxy')) {
+          return next();
+        }
+
+        const readBody = () => new Promise<{ raw: string; parsed: any }>((resolve) => {
+          let body = '';
+          req.on('data', (chunk: any) => { body += chunk; });
+          req.on('end', () => {
+            try { resolve({ raw: body, parsed: body ? JSON.parse(body) : {} }); }
+            catch { resolve({ raw: body, parsed: {} }); }
+          });
+        });
+
+        const sendJson = (statusCode: number, data: any) => {
+          res.statusCode = statusCode;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(data));
+        };
+
+        try {
+          const bodyPayload = req.method === 'POST' ? await readBody() : { raw: '', parsed: {} };
+          const { url, method = 'POST', headers = {}, body } = bodyPayload.parsed;
+
+          if (!url) {
+            return sendJson(400, { error: 'Missing target url in AI proxy request' });
+          }
+
+          const forwardHeaders: Record<string, string> = {};
+          for (const [k, v] of Object.entries(headers)) {
+            if (k.toLowerCase() !== 'host' && typeof v === 'string') {
+              forwardHeaders[k] = v;
+            }
+          }
+
+          const fetchOptions: any = {
+            method: method.toUpperCase(),
+            headers: forwardHeaders
+          };
+
+          if (body && ['POST', 'PUT', 'PATCH'].includes(method.toUpperCase())) {
+            fetchOptions.body = typeof body === 'string' ? body : JSON.stringify(body);
+          }
+
+          const response = await fetch(url, fetchOptions);
+          const responseContentType = response.headers.get('content-type') || '';
+
+          if (responseContentType.includes('text/event-stream')) {
+            res.statusCode = response.status;
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+
+            if (response.body) {
+              const reader = (response.body as any).getReader();
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                res.write(value);
+              }
+              res.end();
+              return;
+            }
+          }
+
+          const responseText = await response.text();
+          let parsedData: any;
+          try {
+            parsedData = JSON.parse(responseText);
+          } catch {
+            parsedData = responseText;
+          }
+
+          res.statusCode = response.status;
+          res.setHeader('Content-Type', responseContentType || 'application/json');
+          res.end(typeof parsedData === 'string' ? parsedData : JSON.stringify(parsedData));
+        } catch (err: any) {
+          console.error('[AI Proxy Dev Server Error]', err);
+          sendJson(502, { error: err?.message || 'Failed to proxy AI request' });
+        }
+      });
+    }
+  };
+}
+
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
@@ -156,7 +245,8 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [
         react(),
-        cashfreeProxyPlugin(env)
+        cashfreeProxyPlugin(env),
+        aiProxyPlugin()
       ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),

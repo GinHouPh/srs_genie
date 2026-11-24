@@ -10,6 +10,7 @@ import {
 import { GoogleGenAI } from '@google/genai';
 import { saasStore } from './saasStore';
 import { cryptoService } from './cryptoService';
+import { fetchAiProxy } from './aiProxyClient';
 import { buildCanonicalSpecsSuite } from './specTemplates';
 import { enrichTaskWithMultiAgentScope } from './specTaskDecomposer';
 
@@ -766,10 +767,10 @@ Format in clean, structured Markdown.`;
           };
 
           const timeoutMs = (targetModel.includes('6.1') || targetModel.includes('astra')) ? 300000 : 180000;
-          const res = await fetch(`${rawBaseUrl}/responses`, {
+          const res = await fetchAiProxy(`${rawBaseUrl}/responses`, {
             method: 'POST',
             headers,
-            body: JSON.stringify(requestBody),
+            body: requestBody,
             signal: AbortSignal.timeout(timeoutMs)
           });
 
@@ -782,17 +783,19 @@ Format in clean, structured Markdown.`;
             throw new Error(errJson.error?.message || errJson.message || `HTTP ${res.status}`);
           }
         } else {
-          // Standard /v1/chat/completions endpoint
-          const res = await fetch(`${rawBaseUrl}/chat/completions`, {
+          // Standard /v1/chat/completions endpoint (proxied to bypass browser CORS)
+          const res = await fetchAiProxy(`${rawBaseUrl}/chat/completions`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({
+            body: {
               model: targetModel,
               messages: [
                 { role: 'system', content: 'You are a World-Class Principal Enterprise Software Architect.' },
                 { role: 'user', content: prompt }
-              ]
-            }),
+              ],
+              max_tokens: 8192,
+              temperature: 0.2
+            },
             signal: AbortSignal.timeout(180000)
           });
 

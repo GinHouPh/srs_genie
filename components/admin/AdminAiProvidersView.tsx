@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { AIModelProvider, AIModelDefinition, AIProviderType } from '../../types';
 import { saasStore } from '../../services/saasStore';
+import { probeAiProviderConnection } from '../../services/aiProxyClient';
 
 interface AdminAiProvidersViewProps {
   onToast: (msg: string) => void;
@@ -262,30 +263,26 @@ export const AdminAiProvidersView: React.FC<AdminAiProvidersViewProps> = ({ onTo
       return next;
     });
 
-    setTimeout(() => {
-      const isOllama = provider.type === 'ollama';
-      const hasKey = Boolean(provider.apiKey && provider.apiKey.length > 3);
-      const hasBaseUrl = Boolean(provider.baseUrl && provider.baseUrl.length > 5);
-
-      if (isOllama || hasKey || provider.type === 'google' || hasBaseUrl) {
-        setTestResults(prev => ({
-          ...prev,
-          [provider.id]: {
-            success: true,
-            message: `Connection Verified: Endpoint reachable, 200 OK (${isOllama ? 'Local Daemon' : hasKey ? 'API Key Active' : 'Custom Base URL Active'})`
-          }
-        }));
-      } else {
-        setTestResults(prev => ({
-          ...prev,
-          [provider.id]: {
-            success: false,
-            message: 'Connection Notice: Missing API key or Base URL. Configure credentials for live inference.'
-          }
-        }));
-      }
+    try {
+      const res = await probeAiProviderConnection(provider);
+      setTestResults(prev => ({
+        ...prev,
+        [provider.id]: {
+          success: res.success,
+          message: res.message
+        }
+      }));
+    } catch (err: any) {
+      setTestResults(prev => ({
+        ...prev,
+        [provider.id]: {
+          success: false,
+          message: `Connection Probe Error: ${err?.message || 'Network failure'}`
+        }
+      }));
+    } finally {
       setTestingId(null);
-    }, 800);
+    }
   };
 
   // --- FILTER & SORT LOGIC ---

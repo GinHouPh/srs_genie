@@ -9,6 +9,7 @@ import {
 import { GoogleGenAI } from '@google/genai';
 import { saasStore } from './saasStore';
 import { cryptoService } from './cryptoService';
+import { fetchAiProxy } from './aiProxyClient';
 import { buildCanonicalSpecsSuite, extractSectionFromDraft } from './specTemplates';
 import { SPEC_TIERS, formatFormDataForPrompt, generateDynamicProjectTasks } from './specGeneratorService';
 import { cloneSpecsTemplateForProject, getMasterSpecsTemplates } from './specsTemplateRepository';
@@ -409,15 +410,15 @@ export class SpecAgent {
 
         if (isAgentRouter) {
           const timeoutMs = (targetModel.includes('6.1') || targetModel.includes('astra')) ? 420000 : 360000;
-          const res = await fetch(`${rawBaseUrl}/responses`, {
+          const res = await fetchAiProxy(`${rawBaseUrl}/responses`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({
+            body: {
               model: targetModel,
               input: prompt,
               reasoning: { effort: 'low' },
               stream: true
-            }),
+            },
             signal: AbortSignal.timeout(timeoutMs)
           });
 
@@ -466,16 +467,19 @@ export class SpecAgent {
             }
           }
         } else {
-          const res = await fetch(`${rawBaseUrl}/chat/completions`, {
+          // Standard OpenAI-compatible / NVIDIA NIM endpoint (proxied to bypass CORS)
+          const res = await fetchAiProxy(`${rawBaseUrl}/chat/completions`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({
+            body: {
               model: targetModel,
               messages: [
                 { role: 'system', content: SPEC_AGENT_SYSTEM_DIRECTIVE },
                 { role: 'user', content: prompt }
-              ]
-            }),
+              ],
+              max_tokens: 8192,
+              temperature: 0.2
+            },
             signal: AbortSignal.timeout(180000)
           });
 
@@ -485,6 +489,10 @@ export class SpecAgent {
             if (text.trim().length > 50) {
               return text;
             }
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            const errMsg = errData.error?.message || errData.message || res.statusText || `HTTP ${res.status}`;
+            throw new Error(`${targetProvider.name} (${targetModel}) error: ${errMsg}`);
           }
         }
       } catch (err: any) {
@@ -495,6 +503,11 @@ export class SpecAgent {
 
     if (lastError) {
       console.error('[SpecAgent] All AI candidates failed. Last error:', lastError);
+      this.emit({
+        type: 'thought',
+        title: 'AI Synthesis Diagnostics',
+        content: `Live inference was interrupted: ${lastError?.message || lastError}. Activating deterministic architectural engine so generation continues without data loss.`
+      });
     }
     return '';
   }

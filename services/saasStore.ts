@@ -321,6 +321,63 @@ const BASELINE_AI_PROVIDERS: AIModelProvider[] = [
         isDefault: false
       }
     ]
+  },
+  {
+    id: 'prov_nvidia',
+    name: 'NVIDIA NIM',
+    type: 'custom',
+    apiKey: '',
+    baseUrl: 'https://integrate.api.nvidia.com/v1',
+    isActive: true,
+    isDefault: false,
+    createdAt: '2026-11-24',
+    updatedAt: '2026-11-24',
+    models: [
+      {
+        id: 'meta/llama-3.3-70b-instruct',
+        name: 'Llama 3.3 70B Instruct (NVIDIA)',
+        providerId: 'prov_nvidia',
+        providerName: 'NVIDIA NIM',
+        contextWindow: '128K Tokens',
+        speed: 'Ultra Fast',
+        recommendedFor: 'Frontier code generation, deep multi-tier specs & architecture blueprints',
+        isEnabled: true,
+        isDefault: true
+      },
+      {
+        id: 'meta/llama-3.1-70b-instruct',
+        name: 'Llama 3.1 70B Instruct (NVIDIA)',
+        providerId: 'prov_nvidia',
+        providerName: 'NVIDIA NIM',
+        contextWindow: '128K Tokens',
+        speed: 'Fast',
+        recommendedFor: 'Fast architectural synthesis & IEEE 830 requirement specifications',
+        isEnabled: true,
+        isDefault: false
+      },
+      {
+        id: 'mistralai/mistral-large-2-instruct',
+        name: 'Mistral Large 2 (NVIDIA)',
+        providerId: 'prov_nvidia',
+        providerName: 'NVIDIA NIM',
+        contextWindow: '128K Tokens',
+        speed: 'Fast',
+        recommendedFor: 'Enterprise software architecture & complex domain modeling',
+        isEnabled: true,
+        isDefault: false
+      },
+      {
+        id: 'deepseek-ai/deepseek-r1',
+        name: 'DeepSeek R1 (NVIDIA Reasoning)',
+        providerId: 'prov_nvidia',
+        providerName: 'NVIDIA NIM',
+        contextWindow: '128K Tokens',
+        speed: 'Reasoning Deep',
+        recommendedFor: 'Deep step-by-step reasoning, mathematical invariants & security proofs',
+        isEnabled: true,
+        isDefault: false
+      }
+    ]
   }
 ];
 

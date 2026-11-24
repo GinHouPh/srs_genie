@@ -14,6 +14,7 @@
   RewriteRule ^api/cashfree(/.*)?$ api/cashfree.php [L,QSA]
   RewriteRule ^api/license(/.*)?$ api/license.php [L,QSA]
   RewriteRule ^api/mcp(/.*)?$ api/mcp.php [L,QSA]
+  RewriteRule ^api/ai(/proxy)?$ api/ai_proxy.php [L,QSA]
 
   # 2. Prevent directory listing
   Options -Indexes
