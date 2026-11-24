@@ -206,6 +206,16 @@ export function generateDynamicProjectTasks(input: ProjectInput): VibeTask[] {
   const backend = (fd['technical_requirements']?.['backend_stack'] as string) || 'Node.js / Express TypeScript';
   const frontend = (fd['technical_requirements']?.['frontend_stack'] as string) || 'React / TypeScript';
 
+  // Architecture & Portal Detectors
+  const projectArchetype = (fd['project_overview']?.['project_archetype'] as string) || '';
+  const adminArchitecture = (fd['system_type']?.['admin_panel_architecture'] as string) || '';
+  const subsystemPortals = (fd['system_type']?.['subsystem_portals'] as string[]) || [];
+
+  const isNoAdmin = adminArchitecture.includes('No Admin Panel') || projectArchetype.includes('Client-Side Web Tool');
+  const isDedicatedAdmin = adminArchitecture.includes('Decoupled Dedicated Admin App');
+  const isMultiTenantSaas = projectArchetype.includes('Multi-Tenant B2B SaaS') || adminArchitecture.includes('Multi-Tier Admin Hierarchy');
+  const isMarketplace = projectArchetype.includes('Multi-Sided Marketplace');
+
   const tasks: VibeTask[] = [];
   let taskCounter = 1;
 
@@ -532,6 +542,67 @@ export function generateDynamicProjectTasks(input: ProjectInput): VibeTask[] {
     complexity: 'L',
     dependsOn: tf3
   });
+
+  // Dedicated Portal & Admin Surface Implementation Tasks
+  let lastPortalTaskId = tf4;
+
+  if (isDedicatedAdmin) {
+    const tAdmin = nextId();
+    tasks.push({
+      id: tAdmin,
+      title: `Decoupled Admin Backoffice Application & Staff Operations Console`,
+      description: `Build separate dedicated admin single-page application with staff authentication, system health dashboard, and audit management.`,
+      prompt: `Develop the decoupled admin application per .specs/contracts/ui_contracts.md. Ensure distinct auth credentials and session isolation from the primary client app.`,
+      fileContext: `apps/admin/src/views/AdminOverview.tsx, apps/admin/src/App.tsx`,
+      type: 'frontend',
+      status: 'todo',
+      complexity: 'XL',
+      dependsOn: tf4
+    });
+    lastPortalTaskId = tAdmin;
+  } else if (isMultiTenantSaas) {
+    const tSaas = nextId();
+    tasks.push({
+      id: tSaas,
+      title: `Tenant Organization Console, Team Seats & Subscription Management UI`,
+      description: `Implement tenant workspace management, member invitations, role delegation, and self-serve billing portal.`,
+      prompt: `Construct the tenant organization settings view per .specs/contracts/ui_contracts.md and enforce tenant boundaries from .specs/domain/domain_rules.md.`,
+      fileContext: `src/views/tenant/TenantConsole.tsx, src/views/tenant/BillingSettings.tsx`,
+      type: 'frontend',
+      status: 'todo',
+      complexity: 'L',
+      dependsOn: tf4
+    });
+    lastPortalTaskId = tSaas;
+  } else if (isMarketplace) {
+    const tMarketplace = nextId();
+    tasks.push({
+      id: tMarketplace,
+      title: `Vendor Merchant Hub, Payout Management & Platform Operator Console`,
+      description: `Create dedicated merchant portal for catalog listing, sales order fulfillment, payout balance tracking, and dispute resolution.`,
+      prompt: `Implement vendor management interfaces per .specs/contracts/ui_contracts.md and marketplace commission rules in .specs/domain/domain_rules.md.`,
+      fileContext: `src/views/vendor/VendorPortal.tsx, src/views/admin/DisputeConsole.tsx`,
+      type: 'frontend',
+      status: 'todo',
+      complexity: 'XL',
+      dependsOn: tf4
+    });
+    lastPortalTaskId = tMarketplace;
+  } else if (isNoAdmin) {
+    const tLocal = nextId();
+    tasks.push({
+      id: tLocal,
+      title: `Client-Side Offline Persistence, LocalStorage Sync & Data Export Handlers`,
+      description: `Implement client-side data persistence, JSON/CSV export routines, and offline recovery mechanisms with zero backend dependency.`,
+      prompt: `Build reactive client-side storage handlers per .specs/implementation/frontend_guide.md ensuring robust offline data persistence.`,
+      fileContext: `src/services/localPersistence.ts, src/services/exportService.ts`,
+      type: 'frontend',
+      status: 'todo',
+      complexity: 'M',
+      dependsOn: tf4
+    });
+    lastPortalTaskId = tLocal;
+  }
 
   // 6. Agent Protocol & Tools
   const tmcp = nextId();

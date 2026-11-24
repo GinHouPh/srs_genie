@@ -31,19 +31,19 @@ const DRAFT_STORAGE_KEY = 'srs_genie_active_form_draft';
 
 const SECTION_SHORT_TITLES: Record<string, string> = {
   project_overview: 'Overview',
-  system_type: 'System Type',
+  system_type: 'Architecture & Portals',
   core_features: 'Core Features',
-  architecture: 'Architecture',
-  ui_ux: 'UI / UX',
+  user_roles: 'User Roles',
+  design_ui_ux: 'UI / UX',
   technical_requirements: 'Tech Stack',
-  database_data: 'Database',
-  security: 'Security',
   integrations: 'Integrations',
-  scalability_performance: 'Scalability',
-  testing_quality: 'Testing & QA',
+  security: 'Security',
+  performance: 'Scalability',
   deployment: 'Deployment',
-  timeline_budget: 'Timeline',
-  risks_assumptions: 'Risks',
+  testing: 'Testing & QA',
+  content_data_migration: 'Migration',
+  constraints: 'Constraints',
+  risks: 'Risks',
   additional: 'Additional'
 };
 
@@ -584,8 +584,30 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
           textPlaceholder: 'If Other or additional details, please specify...'
         },
         { 
+          id: 'project_archetype', 
+          label: 'Project Architectural Archetype', 
+          type: 'choice_with_text',
+          required: true,
+          options: [
+            'Client-Side Web Tool / Utility (Frontend Only, No Admin Panel)',
+            'Public Marketing, Content or Documentation Site (Static / Jamstack / Headless CMS)',
+            'Integrated Monolith Web App (Client/Frontend & Admin in Single App / Route)',
+            'Decoupled Dual-Portal Web System (Separate Client App & Dedicated Admin Backoffice)',
+            'Multi-Tenant B2B SaaS Platform (Customer App + Tenant Admin Console + Platform SuperAdmin)',
+            'Multi-Sided Marketplace & Platform (Buyer Portal + Vendor/Merchant Hub + SuperAdmin Console)',
+            'Mobile-First / Omnichannel Ecosystem (iOS/Android Apps + Web Admin Backoffice)',
+            'API-First, Headless or Developer Platform (API Services + Developer Docs + Admin Hub)',
+            'Enterprise Internal Tool / Intranet / Operations Hub (Authenticated Employees Only)',
+            'AI-Agent & Data Analytics Platform (AI Canvas/Chat + RAG/Worker Pipeline + Cost/Usage Admin)',
+            'Desktop Application or Browser Extension (Local Bundle + Cloud Sync/Telemetry)',
+            'Other'
+          ],
+          hasTextInput: true,
+          textPlaceholder: 'If Other or custom archetype, please describe...'
+        },
+        { 
           id: 'project_type', 
-          label: 'Type of Project', 
+          label: 'Project Delivery Stage / Scope', 
           type: 'choice_with_text',
           required: true,
           options: [
@@ -647,9 +669,60 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
     },
     {
       id: 'system_type',
-      title: '2. System Type & Platform',
+      title: '2. System Type, Architecture & Portal Topology',
       icon: '🖥️',
       fields: [
+        {
+          id: 'admin_panel_architecture',
+          label: 'Admin Panel & Backoffice Architecture',
+          type: 'choice_with_text',
+          required: true,
+          options: [
+            'No Admin Panel (Not needed / Zero admin surfaces)',
+            'Integrated Admin Routes (Client frontend & admin live in a single web project, e.g. /admin)',
+            'Decoupled Dedicated Admin App (Separate web app/repository/subdomain, e.g. admin.example.com)',
+            'Multi-Tier Admin Hierarchy (Tenant Business Admin + Central Platform SuperAdmin)',
+            'Third-Party Admin / Direct DB Tool (e.g. Retool, Supabase Studio, Forest Admin)',
+            'Other'
+          ],
+          hasTextInput: true,
+          textPlaceholder: 'Describe specific admin panel architecture requirements...'
+        },
+        {
+          id: 'subsystem_portals',
+          label: 'Subsystem Portals & Application Surfaces',
+          type: 'multiple_choice_with_text',
+          required: true,
+          options: [
+            'Public Marketing / Landing Page (e.g., example.com, SEO & pricing)',
+            'Client / End-User Web Application (e.g., app.example.com)',
+            'Mobile Applications (iOS / Android / Cross-platform)',
+            'Tenant / Business Management Console (e.g., app.example.com/org or merchant.example.com)',
+            'Platform SuperAdmin / Operations Backoffice (e.g., admin.example.com or /admin)',
+            'Partner / Vendor / Seller Portal (e.g., partner.example.com)',
+            'Developer Portal & API Documentation (e.g., docs.example.com)',
+            'Public / Third-Party REST or GraphQL API (e.g., api.example.com)',
+            'Background Worker / Event Queue / Scheduled Jobs System',
+            'Desktop Client or Browser Extension'
+          ],
+          hasTextInput: true,
+          textPlaceholder: 'Describe any custom portals or sub-applications...'
+        },
+        {
+          id: 'portal_deployment_topology',
+          label: 'Deployment & Subdomain Topology',
+          type: 'choice_with_text',
+          options: [
+            'Single Domain & Monolith (All surfaces routed under single domain, e.g. acme.com and acme.com/admin)',
+            'Subdomain Monorepo (app.acme.com, admin.acme.com, api.acme.com in a single repo / Turborepo)',
+            'Independent Repositories / Polyrepo (Completely separate codebases and deployment pipelines)',
+            'Serverless / Micro-frontends (Independent decoupled deployable bundles)',
+            'Static CDN Hosting (Vercel/Netlify/Cloudflare Pages for frontend only)',
+            'Other'
+          ],
+          hasTextInput: true,
+          textPlaceholder: 'Describe domain, subdomain or monorepo structure...'
+        },
         { 
           id: 'application_type', 
           label: 'What type of application do you need?', 
@@ -836,9 +909,20 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
           type: 'multiple_choice_with_text',
           required: true,
           options: [
-            'Super Admin (Full system access)', 'Admin (System management)', 'Manager/Supervisor',
-            'Staff/Employee', 'Customer/Client', 'Guest/Visitor (No login)', 'Vendor/Partner',
-            'Moderator', 'Content Creator', 'Viewer/Read-only User', 'Custom Roles Needed'
+            'Single-User / End-User Only (No Administrative Roles)',
+            'Guest / Anonymous Visitor (No login required)',
+            'Registered Customer / Client (Primary User)',
+            'Tenant Org Owner / Workspace Admin (B2B SaaS)',
+            'Tenant Team Member / Contributor (B2B SaaS)',
+            'Vendor / Merchant / Seller (Marketplace)',
+            'Platform SuperAdmin (Global Operations, Billing & System Ops)',
+            'Admin (System management)',
+            'Manager/Supervisor',
+            'Staff/Employee',
+            'Moderator / Compliance',
+            'Content Creator / Editor',
+            'Viewer / Read-only User',
+            'Custom Roles Needed'
           ],
           hasTextInput: true,
           textPlaceholder: 'Describe each role and their specific permissions in detail...'
@@ -848,9 +932,17 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
           label: 'Permission Model', 
           type: 'choice_with_text',
           options: [
-            'Simple (Admin vs Regular User)', 'Role-based (Multiple fixed roles)', 'Advanced Role-based with custom permissions',
-            'Hierarchical (Manager can manage subordinates)', 'Dynamic permissions (User-specific)',
-            'Team/Group-based permissions', 'Not sure'
+            'No Roles / Public Access Only',
+            'Single Role (All logged-in users have same access)',
+            'Simple (Admin vs Regular User)',
+            'Multi-Tenant Isolation (Tenant Admin vs Member vs Central SuperAdmin)',
+            'Multi-Sided Marketplace (Buyer vs Seller vs Platform Admin)',
+            'Role-based (Multiple fixed roles - RBAC)',
+            'Advanced Role-based with custom permissions',
+            'Hierarchical (Manager can manage subordinates)',
+            'Dynamic permissions (User-specific / ABAC)',
+            'Team/Group-based permissions',
+            'Not sure / Architect recommendation'
           ],
           hasTextInput: true,
           textPlaceholder: 'Explain your permission requirements...'
@@ -2110,6 +2202,63 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
                     <p className="font-body text-xs text-muted mt-1">Specify detailed parameters for this architectural dimension.</p>
                  </div>
               </div>
+
+              {/* Dynamic Architectural Context Banners */}
+              {currentSection.id === 'system_type' && (
+                <div className="p-4 bg-accent/10 border border-accent/30 flex items-start gap-3 mb-6 animate-fadeIn">
+                  <Layers className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                  <div className="text-xs">
+                    <p className="font-display uppercase tracking-wider text-white font-semibold">
+                      System Topology & Subsystem Portals
+                    </p>
+                    <p className="text-muted mt-0.5 leading-relaxed">
+                      Define the structural topology of your solution. Specify whether your project is frontend-only, a monolithic client + /admin, decoupled separate web apps, or a multi-tenant SaaS / Marketplace ecosystem.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {currentSection.id === 'user_roles' && formData['system_type']?.['admin_panel_architecture'] === 'No Admin Panel (Not needed / Zero admin surfaces)' && (
+                <div className="p-4 bg-emerald-950/40 border border-emerald-500/30 flex items-start gap-3 mb-6 animate-fadeIn">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-xs">
+                    <p className="font-display uppercase tracking-wider text-emerald-300 font-semibold">
+                      Architecture Note: No Admin Panel Topology
+                    </p>
+                    <p className="text-emerald-200/80 mt-0.5 leading-relaxed">
+                      You specified that this project requires no administrative panel. Focus on primary end-user/client roles below; administrative and staff roles will be automatically excluded from specifications.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {currentSection.id === 'user_roles' && typeof formData['project_overview']?.['project_archetype'] === 'string' && formData['project_overview']?.['project_archetype'].includes('Multi-Tenant') && (
+                <div className="p-4 bg-sky-950/40 border border-sky-500/30 flex items-start gap-3 mb-6 animate-fadeIn">
+                  <Layers className="w-5 h-5 text-sky-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-xs">
+                    <p className="font-display uppercase tracking-wider text-sky-300 font-semibold">
+                      Architecture Note: Multi-Tenant B2B SaaS Detected
+                    </p>
+                    <p className="text-sky-200/80 mt-0.5 leading-relaxed">
+                      Specifications will establish strict tenant isolation (Tenant Org Owner, Member, Billing Lead) alongside Central Platform SuperAdmin operations.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {currentSection.id === 'user_roles' && typeof formData['project_overview']?.['project_archetype'] === 'string' && formData['project_overview']?.['project_archetype'].includes('Marketplace') && (
+                <div className="p-4 bg-purple-950/40 border border-purple-500/30 flex items-start gap-3 mb-6 animate-fadeIn">
+                  <Layers className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-xs">
+                    <p className="font-display uppercase tracking-wider text-purple-300 font-semibold">
+                      Architecture Note: Multi-Sided Marketplace Detected
+                    </p>
+                    <p className="text-purple-200/80 mt-0.5 leading-relaxed">
+                      Specifications will model separate Buyer, Vendor/Merchant, and SuperAdmin realms with escrow and commission controls.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-6 animate-fadeIn">
                   {currentSection.fields.map((field) => (

@@ -291,6 +291,52 @@ export interface SRSFormData {
   };
 }
 
+// Project Architecture Archetypes
+export type ProjectArchetype =
+  | 'client_tool' // Client-Side Web Tool / Utility (Frontend Only, No Admin Panel)
+  | 'marketing_content' // Public Marketing, Content or Documentation Site (Static / Jamstack / Headless CMS)
+  | 'monolith_web_app' // Integrated Monolith Web App (Client/Frontend & Admin in Single App / Route)
+  | 'decoupled_dual_portal' // Decoupled Dual-Portal Web System (Separate Client App & Dedicated Admin Backoffice)
+  | 'multi_tenant_saas' // Multi-Tenant B2B SaaS Platform (Customer App + Tenant Admin Console + Platform SuperAdmin)
+  | 'multi_sided_marketplace' // Multi-Sided Marketplace & Platform (Buyer Portal + Vendor/Merchant Hub + SuperAdmin Console)
+  | 'mobile_first_ecosystem' // Mobile-First / Omnichannel Ecosystem (iOS/Android Apps + Web Admin Backoffice)
+  | 'api_headless_platform' // API-First, Headless or Developer Platform (API Services + Developer Docs + Admin Hub)
+  | 'enterprise_internal_tool' // Enterprise Internal Tool / Intranet / Operations Hub (Authenticated Employees Only)
+  | 'ai_data_platform' // AI-Agent & Data Analytics Platform (AI Canvas/Chat + RAG/Worker Pipeline + Cost/Usage Admin)
+  | 'desktop_edge_extension' // Desktop Application or Browser Extension (Local Bundle + Cloud Sync/Telemetry)
+  | 'other';
+
+// Admin Panel & Backoffice Architecture Models
+export type AdminPanelArchitecture =
+  | 'no_admin' // No Admin Panel needed / Zero admin surfaces
+  | 'integrated_routes' // Integrated Admin Routes (/admin in same client app)
+  | 'decoupled_dedicated' // Decoupled Dedicated Admin App (admin.domain.com)
+  | 'multi_tier_hierarchy' // Multi-Tier Admin Hierarchy (Tenant Business Admin + Central Platform SuperAdmin)
+  | 'third_party_tool' // Third-Party Admin / Direct DB Tool (Retool, Supabase Studio, Forest Admin)
+  | 'other';
+
+// Subsystem Portals & Application Surfaces
+export type SubsystemPortalType =
+  | 'public_landing'
+  | 'client_web_app'
+  | 'mobile_app'
+  | 'tenant_business_console'
+  | 'superadmin_backoffice'
+  | 'vendor_seller_portal'
+  | 'developer_docs_portal'
+  | 'public_api'
+  | 'background_workers'
+  | 'desktop_or_extension';
+
+// Deployment & Subdomain Topologies
+export type DeploymentTopology =
+  | 'single_domain_monolith'
+  | 'subdomain_monorepo'
+  | 'independent_polyrepo'
+  | 'serverless_micro_frontends'
+  | 'static_cdn'
+  | 'other';
+
 export interface ProjectInput {
   id: string;
   name: string;

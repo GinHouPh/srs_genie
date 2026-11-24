@@ -105,6 +105,12 @@ Standards:
 - Provide concrete schemas, exact tables, explicit routes, real DDL, and actionable code prompts.
 - Strictly adhere to industry best practices, multi-tenant isolation, and zero-trust security.
 - Conciseness & High Signal: Deliver maximum technical precision in ~2,500 to 4,000 words. Focus on core architectural decisions, data schemas, API routes, and concrete registers. Do not generate verbose padding or repetitive filler.
+- Project Archetype & Portal Topology Fidelity:
+  * Honor the selected Project Architectural Archetype and Subsystem Portals explicitly across all generated tiers.
+  * If "Client-Side Web Tool / Utility (Frontend Only, No Admin Panel)": Do NOT invent administrative roles, backoffice panels, or complex staff authorization matrices. Direct effort toward client-side persistence, responsive UX, and data processing.
+  * If "Decoupled Dedicated Admin App": Explicitly design the distinct client and admin portal applications, specifying their subdomains (e.g. app.domain.com vs admin.domain.com), separate entrypoints, and cross-portal auth handoffs.
+  * If "Multi-Tenant B2B SaaS Platform": Formulate strict tenant isolation boundaries, organization member/owner roles, tenant self-serve consoles, and central platform superadmin capabilities.
+  * If "Multi-Sided Marketplace": Decompose the system into Buyer, Vendor/Merchant, and SuperAdmin realms with escrow, commission splits, and dispute handling.
 `;
 
 /**
