@@ -84,7 +84,7 @@ export const apiService = {
   },
 
   // PROJECTS
-  async fetchProjects(userId?: string, tenantId?: string): Promise<any[]> {
+  async fetchProjectsWithStatus(userId?: string, tenantId?: string): Promise<{ ok: boolean; projects: any[] }> {
     try {
       const params = new URLSearchParams();
       if (userId) params.set('userId', userId);
@@ -92,12 +92,17 @@ export const apiService = {
       const res = await fetch(`/api/projects?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        return data.projects || [];
+        return { ok: true, projects: data.projects || [] };
       }
-      return [];
+      return { ok: false, projects: [] };
     } catch {
-      return [];
+      return { ok: false, projects: [] };
     }
+  },
+
+  async fetchProjects(userId?: string, tenantId?: string): Promise<any[]> {
+    const result = await this.fetchProjectsWithStatus(userId, tenantId);
+    return result.projects;
   },
 
   async saveProject(project: any): Promise<boolean> {

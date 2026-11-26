@@ -67,9 +67,10 @@ export default function App() {
     });
   }, []);
 
-  // Sync latest SaaS store settings (plans, business configs) on navigation and auth transitions
+  // Sync latest SaaS store settings and projects on navigation and auth transitions
   useEffect(() => {
     saasStore.syncFromServer();
+    projectStore.syncFromServer();
   }, [appState, user]);
 
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');

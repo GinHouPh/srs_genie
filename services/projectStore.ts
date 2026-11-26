@@ -42,10 +42,15 @@ class ProjectStore {
 
   async syncFromServer() {
     try {
-      const serverProjects = await apiService.fetchProjects();
-      if (serverProjects && serverProjects.length > 0) {
+      const { ok, projects: serverProjects } = await apiService.fetchProjectsWithStatus();
+      if (!ok) {
+        return;
+      }
+
+      if (serverProjects.length > 0) {
+        const mappedServerProjects: SavedProjectRecord[] = [];
         for (const sp of serverProjects) {
-          const idx = this.projects.findIndex(p => p.id === sp.id);
+          const existing = this.projects.find(p => p.id === sp.id);
           let restoredSpecs = sp.specsHierarchy;
           let restoredPlans = sp.strategicPlans;
           if ((!restoredSpecs || Object.keys(restoredSpecs).length === 0) && sp.content) {
@@ -69,19 +74,61 @@ class ProjectStore {
             lastModified: new Date(sp.updatedAt || Date.now()),
             formData: sp.formData,
             content: sp.content,
-            specsHierarchy: restoredSpecs || (idx >= 0 ? this.projects[idx].specsHierarchy : undefined),
-            strategicPlans: restoredPlans || (idx >= 0 ? this.projects[idx].strategicPlans : undefined),
-            vibeTasks: sp.vibeTasks || (idx >= 0 ? this.projects[idx].vibeTasks : undefined)
+            specsHierarchy: restoredSpecs || existing?.specsHierarchy,
+            strategicPlans: restoredPlans || existing?.strategicPlans,
+            vibeTasks: sp.vibeTasks || existing?.vibeTasks
           };
-          if (idx >= 0) {
-            this.projects[idx] = { ...this.projects[idx], ...mapped };
-          } else {
-            this.projects.push(mapped);
-          }
+          mappedServerProjects.push(existing ? { ...existing, ...mapped } : mapped);
         }
+
+        // Preserve any locally-created projects not yet on server (excluding the default starter seed)
+        const serverIds = new Set(mappedServerProjects.map(p => p.id));
+        const localOnly = this.projects.filter(p => !serverIds.has(p.id) && p.id !== 'proj_starter_1');
+        this.projects = [...localOnly, ...mappedServerProjects];
         localStorage.setItem(STORAGE_PROJECTS_KEY, JSON.stringify(this.projects));
+        this.notifyListeners();
+      } else if (this.projects.length === 0) {
+        // Server genuinely has 0 projects and localStorage is empty: seed starter locally without pushing to server
+        const starterProject = this.createStarterProject();
+        this.projects = [starterProject];
+        localStorage.setItem(STORAGE_PROJECTS_KEY, JSON.stringify(this.projects));
+        this.notifyListeners();
       }
     } catch {}
+  }
+
+  private createStarterProject(): SavedProjectRecord {
+    const starterProject: SavedProjectRecord = {
+      id: 'proj_starter_1',
+      tenantId: 'tenant_master_001',
+      userId: 'admin_root',
+      name: 'NextGen SaaS Analytics',
+      version: '1.0.0',
+      status: 'generated',
+      lastModified: new Date(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      formData: {
+        project_overview: {
+          project_name: 'NextGen SaaS Analytics',
+          industry: 'Marketing & Advertising',
+          project_type: 'New Product Development',
+          target_users: ['Management/Executives', 'Technical Users/Developers'],
+          expected_timeline: '3-4 months',
+          budget_range: '$25,000 - $50,000'
+        },
+        system_type: {
+          application_type: ['Web Application (Browser-based)', 'Mobile App - Cross-platform (iOS + Android)']
+        },
+        technical_requirements: {
+          frontend_stack: 'React 19 / TypeScript / Tailwind CSS',
+          backend_stack: 'Node.js / Express TypeScript',
+          database_preference: 'PostgreSQL 16 + Redis'
+        }
+      }
+    };
+    starterProject.specsHierarchy = synthesizeSpecsSuite(starterProject);
+    return starterProject;
   }
 
   private loadFromStorage() {
@@ -90,39 +137,8 @@ class ProjectStore {
       if (stored) {
         this.projects = JSON.parse(stored);
       } else {
-        // Start with a clean starter project so user can immediately test without having to re-type 15 forms
-        const starterProject: SavedProjectRecord = {
-          id: 'proj_starter_1',
-          tenantId: 'tenant_master_001',
-          userId: 'admin_root',
-          name: 'NextGen SaaS Analytics',
-          version: '1.0.0',
-          status: 'generated',
-          lastModified: new Date(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          formData: {
-            project_overview: {
-              project_name: 'NextGen SaaS Analytics',
-              industry: 'Marketing & Advertising',
-              project_type: 'New Product Development',
-              target_users: ['Management/Executives', 'Technical Users/Developers'],
-              expected_timeline: '3-4 months',
-              budget_range: '$25,000 - $50,000'
-            },
-            system_type: {
-              application_type: ['Web Application (Browser-based)', 'Mobile App - Cross-platform (iOS + Android)']
-            },
-            technical_requirements: {
-              frontend_stack: 'React 19 / TypeScript / Tailwind CSS',
-              backend_stack: 'Node.js / Express TypeScript',
-              database_preference: 'PostgreSQL 16 + Redis'
-            }
-          }
-        };
-        starterProject.specsHierarchy = synthesizeSpecsSuite(starterProject);
-        this.projects = [starterProject];
-        this.saveToStorage();
+        // Defer starter seeding until syncFromServer() confirms the server has no projects
+        this.projects = [];
       }
     } catch (e) {
       console.warn('LocalStorage error in ProjectStore:', e);
@@ -132,26 +148,25 @@ class ProjectStore {
   private saveToStorage(projectToSync?: SavedProjectRecord) {
     try {
       localStorage.setItem(STORAGE_PROJECTS_KEY, JSON.stringify(this.projects));
-      const target = projectToSync || this.projects[0];
-      if (target) {
-        let contentPayload = target.content;
-        if (!contentPayload && (target.specsHierarchy || target.strategicPlans)) {
+      if (projectToSync) {
+        let contentPayload = projectToSync.content;
+        if (!contentPayload && (projectToSync.specsHierarchy || projectToSync.strategicPlans)) {
           contentPayload = JSON.stringify({
-            specsHierarchy: target.specsHierarchy,
-            strategicPlans: target.strategicPlans
+            specsHierarchy: projectToSync.specsHierarchy,
+            strategicPlans: projectToSync.strategicPlans
           });
         }
         apiService.saveProject({
-          id: target.id,
-          userId: target.userId,
-          tenantId: target.tenantId,
-          title: target.name,
-          description: target.formData?.project_overview?.industry || '',
-          status: target.status,
+          id: projectToSync.id,
+          userId: projectToSync.userId,
+          tenantId: projectToSync.tenantId,
+          title: projectToSync.name,
+          description: projectToSync.formData?.project_overview?.industry || '',
+          status: projectToSync.status,
           tierCompletion: 100,
-          formData: target.formData,
+          formData: projectToSync.formData,
           content: contentPayload,
-          vibeTasks: target.vibeTasks
+          vibeTasks: projectToSync.vibeTasks
         }).catch(() => {});
       }
     } catch (e) {}
