@@ -84,6 +84,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               >
                 Explore Multi-Agent Specs
               </a>
+
+              <a
+                href="https://github.com/GinHouPh/srs_genie_oss"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn--ghost text-muted hover:text-accent"
+              >
+                Open Source (GitHub)
+              </a>
             </div>
           </div>
         </div>
@@ -466,6 +475,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <a href="#specs-architecture" className="hover:text-white transition-colors">Architecture</a>
           <a href="#mcp" className="hover:text-white transition-colors">MCP Protocol</a>
           <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+          <a
+            href="https://github.com/GinHouPh/srs_genie_oss"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-accent transition-colors"
+          >
+            GitHub (OSS)
+          </a>
           <button onClick={onSignIn} className="hover:text-accent transition-colors">Sign In</button>
         </div>
       </footer>

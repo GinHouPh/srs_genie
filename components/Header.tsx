@@ -151,6 +151,14 @@ export const Header: React.FC<HeaderProps> = ({
             >
               Pricing Plans
             </a>
+            <a
+              href="https://github.com/GinHouPh/srs_genie_oss"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-accent transition-colors"
+            >
+              Open Source
+            </a>
           </nav>
         )}
 
