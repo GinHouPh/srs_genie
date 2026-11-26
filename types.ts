@@ -415,6 +415,45 @@ export enum AppState {
   PROFILE = 'PROFILE'
 }
 
+// Persistent Project Session Management
+export type PreviewTabId = 'specs_suite' | 'strategic_plans' | 'formal_srs' | 'tasks' | 'ide_rules' | 'mcp_connect';
+export type IdeRuleTarget = 'cursor' | 'claude' | 'windsurf' | 'agent' | 'agents_md';
+
+export interface PreviewSessionState {
+  activeTab: PreviewTabId;
+  selectedFilePath: string;
+  selectedPlanFilename: string;
+  selectedIdeRule?: IdeRuleTarget;
+  unsavedEdits?: Record<string, string>;
+}
+
+export interface GenerationCheckpoint {
+  currentPhaseId: GenerationPhaseId;
+  completedPhases: GenerationPhaseId[];
+  partialStrategicPlans?: Record<string, string>;
+  filesGeneratedCount: number;
+  tasksExtractedCount: number;
+  wasInterrupted: boolean;
+  lastUpdatedAt: string;
+}
+
+export interface ProjectSession {
+  sessionId: string;
+  userId: string;
+  tenantId?: string;
+  projectId?: string;
+  projectName: string;
+  appState: AppState;
+  selectedModelId: string;
+  wizardStep: number;
+  formData?: SRSFormData;
+  generationCheckpoint?: GenerationCheckpoint;
+  previewState?: PreviewSessionState;
+  isPinned?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Agentic Generation Stream & Viewport Types
 export type AgentStepType = 'thought' | 'action' | 'draft_chunk' | 'file_created' | 'task_extracted' | 'system';
 

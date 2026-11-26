@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MarkdownViewer } from './MarkdownViewer';
-import { GeneratedContent, VibeTask } from '../types';
+import { GeneratedContent, VibeTask, PreviewSessionState, PreviewTabId, IdeRuleTarget } from '../types';
 import {
   Download,
   FileText,
@@ -43,13 +43,23 @@ interface DocumentPreviewProps {
   onReset: () => void;
   onOpenMcpHub?: () => void;
   onDeleteProject?: (id: string, name: string) => void;
+  initialPreviewState?: PreviewSessionState;
+  onPreviewStateChange?: (state: PreviewSessionState) => void;
 }
 
-export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onReset, onOpenMcpHub, onDeleteProject }) => {
-  const [activeTab, setActiveTab] = useState<'specs_suite' | 'strategic_plans' | 'formal_srs' | 'tasks' | 'ide_rules' | 'mcp_connect'>('specs_suite');
-  const [selectedPlanFilename, setSelectedPlanFilename] = useState<string>('project_plan.md');
-  const [selectedIdeRule, setSelectedIdeRule] = useState<'cursor' | 'claude' | 'windsurf' | 'agent' | 'agents_md'>('cursor');
-  const [selectedFilePath, setSelectedFilePath] = useState<string>('_index.md');
+export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
+  content,
+  onReset,
+  onOpenMcpHub,
+  onDeleteProject,
+  initialPreviewState,
+  onPreviewStateChange
+}) => {
+  const [activeTab, setActiveTab] = useState<PreviewTabId>(initialPreviewState?.activeTab || 'specs_suite');
+  const [selectedPlanFilename, setSelectedPlanFilename] = useState<string>(initialPreviewState?.selectedPlanFilename || 'project_plan.md');
+  const [selectedIdeRule, setSelectedIdeRule] = useState<IdeRuleTarget>(initialPreviewState?.selectedIdeRule || 'cursor');
+  const [selectedFilePath, setSelectedFilePath] = useState<string>(initialPreviewState?.selectedFilePath || '_index.md');
+  const [unsavedEdits, setUnsavedEdits] = useState<Record<string, string>>(initialPreviewState?.unsavedEdits || {});
   const [viewSource, setViewSource] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editedText, setEditedText] = useState<string>('');
@@ -68,9 +78,35 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
   const formalIeeeSrs = compileConsolidatedIeee830SRS(content);
 
   useEffect(() => {
-    setEditedText(activeFileContent);
-    setIsEditing(false);
+    const pendingDraft = unsavedEdits[selectedFilePath];
+    if (pendingDraft !== undefined && pendingDraft !== activeFileContent) {
+      setEditedText(pendingDraft);
+      setIsEditing(true);
+    } else {
+      setEditedText(activeFileContent);
+      setIsEditing(false);
+    }
   }, [selectedFilePath, activeFileContent]);
+
+  useEffect(() => {
+    if (!onPreviewStateChange) return;
+    const timer = setTimeout(() => {
+      const nextUnsaved = { ...unsavedEdits };
+      if (isEditing && editedText !== activeFileContent) {
+        nextUnsaved[selectedFilePath] = editedText;
+      } else if (nextUnsaved[selectedFilePath] !== undefined && editedText === activeFileContent) {
+        delete nextUnsaved[selectedFilePath];
+      }
+      onPreviewStateChange({
+        activeTab,
+        selectedFilePath,
+        selectedPlanFilename,
+        selectedIdeRule,
+        unsavedEdits: Object.keys(nextUnsaved).length > 0 ? nextUnsaved : undefined
+      });
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [activeTab, selectedFilePath, selectedPlanFilename, selectedIdeRule, isEditing, editedText, activeFileContent, unsavedEdits, onPreviewStateChange]);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -113,6 +149,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ content, onRes
         projectStore.updateFileContent(matched.id, selectedFilePath, editedText);
       }
     }
+    setUnsavedEdits(prev => {
+      if (!(selectedFilePath in prev)) return prev;
+      const next = { ...prev };
+      delete next[selectedFilePath];
+      return next;
+    });
     setIsEditing(false);
     showToast(`Saved changes to ${selectedFilePath}`);
   };

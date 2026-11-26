@@ -10,10 +10,14 @@ import {
   Trash2,
   Edit2,
   CheckCircle2,
-  CreditCard
+  CreditCard,
+  Play,
+  Pin,
+  PinOff
 } from 'lucide-react';
-import { ProjectInput, User } from '../types';
+import { AppState, ProjectInput, ProjectSession, User } from '../types';
 import { projectStore, SavedProjectRecord } from '../services/projectStore';
+import { sessionStore } from '../services/sessionStore';
 
 interface DashboardProps {
   onNewProject: () => void;
@@ -22,6 +26,7 @@ interface DashboardProps {
   onOpenMcpHub?: () => void;
   onOpenAdmin?: () => void;
   onOpenSubscription?: () => void;
+  onResumeSession?: (session: ProjectSession) => void;
   user?: User | null;
 }
 
@@ -32,9 +37,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenMcpHub,
   onOpenAdmin,
   onOpenSubscription,
+  onResumeSession,
   user
 }) => {
   const [projects, setProjects] = useState<SavedProjectRecord[]>([]);
+  const [sessions, setSessions] = useState<ProjectSession[]>([]);
   const [editingProject, setEditingProject] = useState<SavedProjectRecord | null>(null);
   const [editName, setEditName] = useState('');
   const [editVersion, setEditVersion] = useState('');
@@ -53,11 +60,36 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  const refreshSessions = () => {
+    if (!user) {
+      setSessions([]);
+      return;
+    }
+    const resumable = sessionStore
+      .getSessions(user.id)
+      .filter(
+        s =>
+          s.appState === AppState.WIZARD ||
+          s.appState === AppState.RESULT ||
+          s.appState === AppState.GENERATING ||
+          s.appState === AppState.MCP_HUB
+      );
+    setSessions(resumable);
+  };
+
   useEffect(() => {
     refreshProjects();
-    return projectStore.subscribe(() => {
+    refreshSessions();
+    const unsubProj = projectStore.subscribe(() => {
       refreshProjects();
     });
+    const unsubSess = sessionStore.subscribe(() => {
+      refreshSessions();
+    });
+    return () => {
+      unsubProj();
+      unsubSess();
+    };
   }, [user]);
 
   const showToast = (msg: string) => {
@@ -255,6 +287,100 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         )}
       </div>
+
+      {/* Saved & In-Progress Sessions */}
+      {sessions.length > 0 && onResumeSession && (
+        <div>
+          <div className="flex items-center justify-between pb-4 border-b border-line mb-6">
+            <div>
+              <h2 className="font-display text-xl sm:text-2xl font-semibold text-white tracking-[0.06em] uppercase">
+                Saved & In-Progress Sessions ({sessions.length})
+              </h2>
+              <span className="font-body text-xs text-muted">
+                Pick up right where you left off — drafts, interrupted generations, and spec reviews
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {sessions.slice(0, 6).map(sess => {
+              const stageLabel =
+                sess.appState === AppState.WIZARD
+                  ? `Wizard Draft · Step ${sess.wizardStep + 1}/15`
+                  : sess.appState === AppState.GENERATING
+                  ? 'Interrupted Generation'
+                  : sess.appState === AppState.MCP_HUB
+                  ? 'MCP Gateway'
+                  : 'Spec Review';
+              const hasUnsaved = Boolean(
+                sess.previewState?.unsavedEdits && Object.keys(sess.previewState.unsavedEdits).length > 0
+              );
+              return (
+                <div
+                  key={sess.sessionId}
+                  className="agape-card p-5 flex flex-col justify-between gap-4 border border-line hover:border-accent/60 transition-colors"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-[10px] font-display uppercase tracking-[0.14em] px-2 py-0.5 bg-accent/10 border border-accent/30 text-accent">
+                        {stageLabel}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {user && (
+                          <button
+                            onClick={() => {
+                              sessionStore.pinSession(user.id, sess.sessionId, !sess.isPinned);
+                              showToast(sess.isPinned ? 'Session unpinned.' : 'Session pinned.');
+                            }}
+                            className={`p-1.5 border border-transparent hover:border-line transition-colors ${
+                              sess.isPinned ? 'text-accent' : 'text-muted hover:text-white'
+                            }`}
+                            title={sess.isPinned ? 'Unpin session' : 'Pin session'}
+                          >
+                            {sess.isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                          </button>
+                        )}
+                        {user && (
+                          <button
+                            onClick={() => {
+                              sessionStore.deleteSession(user.id, sess.sessionId);
+                              showToast(`Removed session "${sess.projectName}".`);
+                            }}
+                            className="p-1.5 text-muted hover:text-accent border border-transparent hover:border-line transition-colors"
+                            title="Delete session"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <h3 className="font-display text-base font-semibold text-white uppercase tracking-[0.04em] truncate">
+                      {sess.projectName || 'Untitled Project'}
+                    </h3>
+                    <div className="flex items-center gap-2 text-[11px] font-mono text-muted mt-1.5">
+                      <Clock className="w-3 h-3" />
+                      <span>Updated {new Date(sess.updatedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    {hasUnsaved && (
+                      <div className="mt-2 text-[10px] font-mono text-amber-400">
+                        • Unsaved spec file edits preserved
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => onResumeSession(sess)}
+                    className="btn btn-sm btn--accent w-full justify-center"
+                  >
+                    <Play className="w-3.5 h-3.5" />
+                    <span>Resume Session</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Projects Grid Header */}
       <div>

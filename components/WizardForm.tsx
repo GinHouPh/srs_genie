@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ProjectInput, SRSFormData, AIModelDefinition } from '../types';
+import { ProjectInput, SRSFormData, AIModelDefinition, ProjectSession } from '../types';
 import {
   ChevronRight,
   ChevronLeft,
@@ -316,11 +316,26 @@ interface WizardFormProps {
   onSubmit: (data: ProjectInput, selectedModelId?: string) => void;
   onBack: () => void;
   initialData?: Partial<ProjectInput>;
+  initialSession?: ProjectSession | null;
+  onSessionChange?: (patch: {
+    formData: SRSFormData;
+    selectedModelId: string;
+    wizardStep: number;
+    projectName: string;
+  }) => void;
 }
 
-export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initialData }) => {
-  const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState<SRSFormData>(initialData?.formData || {});
+export const WizardForm: React.FC<WizardFormProps> = ({
+  onSubmit,
+  onBack,
+  initialData,
+  initialSession,
+  onSessionChange
+}) => {
+  const [activeStep, setActiveStep] = useState(initialSession?.wizardStep ?? 0);
+  const [formData, setFormData] = useState<SRSFormData>(
+    initialData?.formData || initialSession?.formData || {}
+  );
   const [viewMode, setViewMode] = useState<'form' | 'summary'>('form');
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -338,7 +353,8 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
   const availableModels = saasStore.getAvailableModels();
   const defaultModel = saasStore.getDefaultModel();
   const [selectedModelId, setSelectedModelId] = useState<string>(
-    typeof defaultModel === 'string' ? defaultModel : (defaultModel as any)?.id || 'gemini-2.5-flash'
+    initialSession?.selectedModelId ||
+      (typeof defaultModel === 'string' ? defaultModel : (defaultModel as any)?.id || 'gemini-2.5-flash')
   );
 
   const showToast = (msg: string) => {
@@ -346,9 +362,11 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Check for unsaved draft in localStorage on mount
+  // Check for unsaved draft in localStorage on mount (only when no session or initialData was loaded)
   useEffect(() => {
-    if (!initialData?.formData || Object.keys(initialData.formData).length === 0) {
+    const hasInitialForm = Boolean(initialData?.formData && Object.keys(initialData.formData).length > 0);
+    const hasSessionForm = Boolean(initialSession?.formData && Object.keys(initialSession.formData).length > 0);
+    if (!hasInitialForm && !hasSessionForm) {
       try {
         const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
         if (raw) {
@@ -372,7 +390,7 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
     }
   }, []);
 
-  // Debounced auto-save to localStorage
+  // Debounced auto-save to localStorage & sessionStore
   useEffect(() => {
     if (Object.keys(formData).length === 0) return;
     const timer = setTimeout(() => {
@@ -386,11 +404,20 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
             savedAt: new Date().toISOString()
           })
         );
+        if (onSessionChange) {
+          const pName = (formData?.project_overview?.project_name as string) || 'Untitled Draft';
+          onSessionChange({
+            formData,
+            selectedModelId,
+            wizardStep: activeStep,
+            projectName: pName
+          });
+        }
         setLastSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       } catch {}
-    }, 1200);
+    }, 800);
     return () => clearTimeout(timer);
-  }, [formData, selectedModelId, activeStep]);
+  }, [formData, selectedModelId, activeStep, onSessionChange]);
 
   const handleSaveDraft = () => {
     try {
@@ -403,9 +430,18 @@ export const WizardForm: React.FC<WizardFormProps> = ({ onSubmit, onBack, initia
           savedAt: new Date().toISOString()
         })
       );
+      if (onSessionChange) {
+        const pName = (formData?.project_overview?.project_name as string) || 'Untitled Draft';
+        onSessionChange({
+          formData,
+          selectedModelId,
+          wizardStep: activeStep,
+          projectName: pName
+        });
+      }
       const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       setLastSavedTime(nowStr);
-      showToast(`Draft saved locally at ${nowStr}. You can close and continue anytime.`);
+      showToast(`Session & draft saved at ${nowStr}. You can close and resume anytime.`);
     } catch {
       showToast('Error saving draft locally.');
     }

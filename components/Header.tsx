@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollText, LogOut, User as UserIcon, ShieldAlert, Network, LayoutDashboard, Crown, CreditCard } from 'lucide-react';
+import { ScrollText, LogOut, User as UserIcon, ShieldAlert, Network, LayoutDashboard, Crown, CreditCard, BookmarkCheck } from 'lucide-react';
 import { User, AppState } from '../types';
 
 interface HeaderProps {
@@ -13,6 +13,8 @@ interface HeaderProps {
   onOpenClientSubscription?: () => void;
   onNavigateToProfile?: () => void;
   onOpenAuth?: (mode: 'login' | 'register') => void;
+  onSaveSession?: () => void;
+  sessionSavedAt?: string | null;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -25,7 +27,9 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateToLanding,
   onOpenClientSubscription,
   onNavigateToProfile,
-  onOpenAuth
+  onOpenAuth,
+  onSaveSession,
+  sessionSavedAt
 }) => {
   const isBusinessOwnerOrStaff = user?.role === 'admin' || user?.role === 'staff';
   const isClient = user?.role === 'client';
@@ -154,6 +158,22 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center space-x-3">
           {user ? (
             <div className="flex items-center gap-3">
+              {/* Save Session Button during active workspace states */}
+              {onSaveSession &&
+                (currentAppState === AppState.WIZARD ||
+                  currentAppState === AppState.RESULT ||
+                  currentAppState === AppState.MCP_HUB ||
+                  currentAppState === AppState.GENERATING) && (
+                  <button
+                    onClick={onSaveSession}
+                    className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-box border border-line hover:border-accent text-white font-display text-[11px] uppercase tracking-[0.12em] transition-colors"
+                    title={sessionSavedAt ? `Last saved at ${sessionSavedAt}` : 'Save current session to resume anytime'}
+                  >
+                    <BookmarkCheck className="w-3.5 h-3.5 text-accent" />
+                    <span>{sessionSavedAt ? `Saved ${sessionSavedAt}` : 'Save Session'}</span>
+                  </button>
+                )}
+
               {/* Role Indicator Badge */}
               <div className="hidden sm:flex items-center">
                 {user.role === 'admin' && (
