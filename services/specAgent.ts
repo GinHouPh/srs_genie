@@ -306,6 +306,14 @@ export class SpecAgent {
   private majorProjectPlan: string = '';
   private dynamicTasks: VibeTask[] = [];
   private compiledSpecs: Record<string, string> = {};
+  private domainSpecsOverrides: {
+    dataModel?: string;
+    databaseSchema?: string;
+    apiContracts?: string;
+    uiContracts?: string;
+  } = {};
+  private totalInputTokens: number = 0;
+  private totalOutputTokens: number = 0;
 
   constructor(
     input: ProjectInput,
@@ -363,141 +371,175 @@ export class SpecAgent {
     }
 
     let lastError: any = null;
+    const isTransientError = (err: any): boolean => {
+      const msg = String(err?.message || err || '').toLowerCase();
+      return (
+        msg.includes('429') ||
+        msg.includes('rate limit') ||
+        msg.includes('too many requests') ||
+        msg.includes('timeout') ||
+        msg.includes('aborted') ||
+        msg.includes('502') ||
+        msg.includes('503') ||
+        msg.includes('504') ||
+        msg.includes('econnreset')
+      );
+    };
+
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     for (const { provider: targetProvider, modelId: targetModel } of candidates) {
-      try {
-        let activeKey = targetProvider?.apiKey || '';
-        if (targetProvider?.type === 'google' && !activeKey) {
-          activeKey = process.env.API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
-        }
-
-        if (activeKey && (activeKey.startsWith('aes_gcm$') || activeKey.startsWith('enc_b64_'))) {
-          try {
-            activeKey = await cryptoService.decryptSecret(activeKey);
-          } catch {}
-        }
-
-        if (!activeKey && !targetProvider.baseUrl) continue;
-
-        // Route to Google Gemini
-        if (targetProvider.type === 'google') {
-          if (!activeKey || activeKey.includes('AIzaSyAMzGX1Ecar')) {
-            // Skip invalid placeholder key to failover immediately
-            continue;
-          }
-          const ai = new GoogleGenAI({ apiKey: activeKey });
-          const res = await ai.models.generateContent({
-            model: targetModel.startsWith('gemini') ? targetModel : 'gemini-2.5-flash',
-            contents: prompt
-          });
-          const text = res.text || '';
-          if (text.trim().length > 50) return text;
-        }
-
-        // Route to AgentRouter or OpenAI-compatible
-        const rawBaseUrl = (targetProvider.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
-        const isAgentRouter = rawBaseUrl.includes('agentrouter') || targetProvider.name.toLowerCase().includes('agentrouter');
-
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json'
-        };
-        if (activeKey && activeKey !== 'ollama-local') {
-          headers['Authorization'] = `Bearer ${activeKey}`;
-        }
-        if (isAgentRouter) {
-          headers['Originator'] = 'codex_cli_rs';
-        }
-
-        if (isAgentRouter) {
-          const timeoutMs = (targetModel.includes('6.1') || targetModel.includes('astra')) ? 420000 : 360000;
-          const res = await fetchAiProxy(`${rawBaseUrl}/responses`, {
-            method: 'POST',
-            headers,
-            body: {
-              model: targetModel,
-              input: prompt,
-              reasoning: { effort: 'low' },
-              stream: true
-            },
-            signal: AbortSignal.timeout(timeoutMs)
-          });
-
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(`AgentRouter error: ${err.error?.message || err.message || res.status}`);
+      const maxAttempts = 3;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          let activeKey = targetProvider?.apiKey || '';
+          if (targetProvider?.type === 'google' && !activeKey) {
+            activeKey = process.env.API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
           }
 
-          if (res.body) {
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-            let accumulatedText = '';
+          if (activeKey && (activeKey.startsWith('aes_gcm$') || activeKey.startsWith('enc_b64_'))) {
+            try {
+              activeKey = await cryptoService.decryptSecret(activeKey);
+            } catch {}
+          }
 
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split('\n');
-              buffer = lines.pop() || '';
+          if (!activeKey && !targetProvider.baseUrl) break;
 
-              for (const line of lines) {
-                const trimmed = line.trim();
-                if (!trimmed || !trimmed.startsWith('data:')) continue;
-                const jsonStr = trimmed.replace(/^data:\s*/, '');
-                if (jsonStr === '[DONE]') continue;
-                try {
-                  const payload = JSON.parse(jsonStr);
-                  if (typeof payload.delta === 'string') {
-                    accumulatedText += payload.delta;
-                  } else if (payload.delta?.text) {
-                    accumulatedText += payload.delta.text;
-                  } else if (payload.text) {
-                    accumulatedText += payload.text;
-                  } else if (payload.response?.output && !accumulatedText) {
-                    const msg = payload.response.output.find((o: any) => o.type === 'message');
-                    const t = msg?.content?.[0]?.text;
-                    if (t) accumulatedText = t;
-                  }
-                } catch {}
-              }
+          // Route to Google Gemini
+          if (targetProvider.type === 'google') {
+            if (!activeKey || activeKey.includes('AIzaSyAMzGX1Ecar')) {
+              // Skip invalid placeholder key to failover immediately
+              break;
             }
-
-            if (accumulatedText.trim().length > 50) {
-              return accumulatedText.trim();
-            }
-          }
-        } else {
-          // Standard OpenAI-compatible / NVIDIA NIM endpoint (proxied to bypass CORS)
-          const res = await fetchAiProxy(`${rawBaseUrl}/chat/completions`, {
-            method: 'POST',
-            headers,
-            body: {
-              model: targetModel,
-              messages: [
-                { role: 'system', content: SPEC_AGENT_SYSTEM_DIRECTIVE },
-                { role: 'user', content: prompt }
-              ],
-              max_tokens: 8192,
-              temperature: 0.2
-            },
-            signal: AbortSignal.timeout(180000)
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            const text = data.choices?.[0]?.message?.content || '';
+            const ai = new GoogleGenAI({ apiKey: activeKey });
+            const res = await ai.models.generateContent({
+              model: targetModel.startsWith('gemini') ? targetModel : 'gemini-2.5-flash',
+              contents: prompt
+            });
+            const text = res.text || '';
             if (text.trim().length > 50) {
+              const usage: any = (res as any).usageMetadata;
+              this.totalInputTokens += usage?.promptTokenCount || Math.round(prompt.length / 4);
+              this.totalOutputTokens += usage?.candidatesTokenCount || Math.round(text.length / 4);
               return text;
             }
-          } else {
-            const errData = await res.json().catch(() => ({}));
-            const errMsg = errData.error?.message || errData.message || res.statusText || `HTTP ${res.status}`;
-            throw new Error(`${targetProvider.name} (${targetModel}) error: ${errMsg}`);
           }
+
+          // Route to AgentRouter or OpenAI-compatible
+          const rawBaseUrl = (targetProvider.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
+          const isAgentRouter = rawBaseUrl.includes('agentrouter') || targetProvider.name.toLowerCase().includes('agentrouter');
+
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json'
+          };
+          if (activeKey && activeKey !== 'ollama-local') {
+            headers['Authorization'] = `Bearer ${activeKey}`;
+          }
+          if (isAgentRouter) {
+            headers['Originator'] = 'codex_cli_rs';
+          }
+
+          if (isAgentRouter) {
+            const timeoutMs = (targetModel.includes('6.1') || targetModel.includes('astra')) ? 420000 : 360000;
+            const res = await fetchAiProxy(`${rawBaseUrl}/responses`, {
+              method: 'POST',
+              headers,
+              body: {
+                model: targetModel,
+                input: prompt,
+                reasoning: { effort: 'low' },
+                stream: true
+              },
+              signal: AbortSignal.timeout(timeoutMs)
+            });
+
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}));
+              throw new Error(`AgentRouter error (${res.status}): ${err.error?.message || err.message || res.status}`);
+            }
+
+            if (res.body) {
+              const reader = res.body.getReader();
+              const decoder = new TextDecoder();
+              let buffer = '';
+              let accumulatedText = '';
+
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                  const trimmed = line.trim();
+                  if (!trimmed || !trimmed.startsWith('data:')) continue;
+                  const jsonStr = trimmed.replace(/^data:\s*/, '');
+                  if (jsonStr === '[DONE]') continue;
+                  try {
+                    const payload = JSON.parse(jsonStr);
+                    if (typeof payload.delta === 'string') {
+                      accumulatedText += payload.delta;
+                    } else if (payload.delta?.text) {
+                      accumulatedText += payload.delta.text;
+                    } else if (payload.text) {
+                      accumulatedText += payload.text;
+                    } else if (payload.response?.output && !accumulatedText) {
+                      const msg = payload.response.output.find((o: any) => o.type === 'message');
+                      const t = msg?.content?.[0]?.text;
+                      if (t) accumulatedText = t;
+                    }
+                  } catch {}
+                }
+              }
+
+              if (accumulatedText.trim().length > 50) {
+                this.totalInputTokens += Math.round(prompt.length / 4);
+                this.totalOutputTokens += Math.round(accumulatedText.length / 4);
+                return accumulatedText.trim();
+              }
+            }
+          } else {
+            // Standard OpenAI-compatible / NVIDIA NIM endpoint (proxied to bypass CORS)
+            const res = await fetchAiProxy(`${rawBaseUrl}/chat/completions`, {
+              method: 'POST',
+              headers,
+              body: {
+                model: targetModel,
+                messages: [
+                  { role: 'system', content: SPEC_AGENT_SYSTEM_DIRECTIVE },
+                  { role: 'user', content: prompt }
+                ],
+                max_tokens: 8192,
+                temperature: 0.2
+              },
+              signal: AbortSignal.timeout(180000)
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              const text = data.choices?.[0]?.message?.content || '';
+              if (text.trim().length > 50) {
+                this.totalInputTokens += data.usage?.prompt_tokens || Math.round(prompt.length / 4);
+                this.totalOutputTokens += data.usage?.completion_tokens || Math.round(text.length / 4);
+                return text;
+              }
+            } else {
+              const errData = await res.json().catch(() => ({}));
+              const errMsg = errData.error?.message || errData.message || res.statusText || `HTTP ${res.status}`;
+              throw new Error(`${targetProvider.name} (${targetModel}) HTTP ${res.status}: ${errMsg}`);
+            }
+          }
+        } catch (err: any) {
+          lastError = err;
+          console.warn(`[SpecAgent] Candidate ${targetProvider.name} attempt ${attempt}/${maxAttempts} failed:`, err?.message || err);
+          if (attempt < maxAttempts && isTransientError(err)) {
+            const backoffMs = attempt * 3000 + Math.floor(Math.random() * 1000);
+            await sleep(backoffMs);
+            continue;
+          }
+          break;
         }
-      } catch (err: any) {
-        lastError = err;
-        console.warn(`[SpecAgent] Candidate provider ${targetProvider.name} failed:`, err?.message || err);
       }
     }
 
@@ -536,8 +578,8 @@ export class SpecAgent {
     const formattedInput = formatFormDataForPrompt(fd);
     const dateStr = new Date().toISOString().split('T')[0];
 
-    // Generate the 9 Specialized Planning Documents in concurrent batches of 3
-    const BATCH_SIZE = 3;
+    // Generate the 9 Specialized Planning Documents in concurrent batches of 2 (safer against RPM limits)
+    const BATCH_SIZE = 2;
     for (let i = 0; i < STRATEGIC_PLAN_DEFINITIONS.length; i += BATCH_SIZE) {
       const batch = STRATEGIC_PLAN_DEFINITIONS.slice(i, i + BATCH_SIZE);
 
@@ -689,6 +731,14 @@ ${Object.entries(this.strategicPlans).map(([filename, doc]) => `## Document: ${f
 
     this.emit({
       type: 'action',
+      title: 'Synthesizing Domain-Specific .specs Data Model & API/UI Contracts',
+      content: `Deriving bespoke relational entities, SQL DDL, REST endpoints, and UI routes for "${this.input.name}" from PRD & Architecture.`
+    });
+
+    await this.synthesizeDomainSpecsContracts();
+
+    this.emit({
+      type: 'action',
       title: 'Compiling 33 Project .specs & Multi-Agent Files from Strategic Architecture',
       content: `Commencing top-down population of all 33 project specification and multi-agent coordination files derived from PRD, designs, architecture, tech specs, roadmap, risk, QA, and deployment plans.`
     });
@@ -707,7 +757,8 @@ ${Object.entries(this.strategicPlans).map(([filename, doc]) => `## Document: ${f
       this.input,
       this.dynamicTasks,
       this.majorProjectPlan,
-      recordFileCallback
+      recordFileCallback,
+      this.domainSpecsOverrides
     );
 
     return {
@@ -717,10 +768,71 @@ ${Object.entries(this.strategicPlans).map(([filename, doc]) => `## Document: ${f
   }
 
   /**
+   * Generates domain-specific Data Model, SQL Schema, API Contracts, and UI Contracts
+   * so .specs/ files never fall back to generic placeholder entities when AI is available.
+   */
+  private async synthesizeDomainSpecsContracts(): Promise<void> {
+    const fd = this.input.formData || {};
+    const projectName = this.input.name || (fd['project_overview']?.['project_name'] as string) || 'Application';
+    const projectSummary = (fd['project_overview']?.['project_summary'] as string) || '';
+    const backend = (fd['technical_requirements']?.['backend_stack'] as string) || 'Node.js / Express TypeScript';
+    const database = (fd['technical_requirements']?.['database_preference'] as string) || 'PostgreSQL 16 + Redis';
+    const frontend = (fd['technical_requirements']?.['frontend_stack'] as string) || 'React 19 / TypeScript / Tailwind CSS';
+
+    const prdExcerpt = (this.strategicPlans['PRD.md'] || '').slice(0, 3000);
+    const archExcerpt = (this.strategicPlans['architecture.md'] || '').slice(0, 2500);
+
+    const prompt = `You are a Principal Database & API Architect.
+Produce domain-specific technical specifications for "${projectName}" (${backend} · ${database} · ${frontend}).
+${projectSummary.trim() ? `\nAUTHORITATIVE PROJECT SUMMARY:\n${projectSummary.slice(0, 2500)}\n` : ''}
+${prdExcerpt ? `\nPRD EXCERPT:\n${prdExcerpt}\n` : ''}
+${archExcerpt ? `\nARCHITECTURE EXCERPT:\n${archExcerpt}\n` : ''}
+
+Output EXACTLY the following four XML-tagged sections with concrete, domain-accurate content (NO generic "domain_resources" or "Acme Logistics" placeholders):
+
+<DATA_MODEL>
+Include a Mermaid erDiagram with the real domain entities and relationships for ${projectName}, followed by field definitions (PK, FK, types, constraints).
+</DATA_MODEL>
+
+<DATABASE_SCHEMA>
+Include production PostgreSQL DDL (CREATE TABLE, indexes, foreign keys, RLS policies where multi-tenant) for the real domain entities of ${projectName}.
+</DATABASE_SCHEMA>
+
+<API_CONTRACTS>
+Include concrete REST API endpoints (method, path, auth headers, request JSON, response JSON) for the core domain workflows of ${projectName}.
+</API_CONTRACTS>
+
+<UI_CONTRACTS>
+Include the application route/screen table (route, component/screen, role, layout, key interactive states) for ${projectName} (including mobile screens if applicable).
+</UI_CONTRACTS>`;
+
+    try {
+      const raw = await this.executeModelPrompt(prompt);
+      if (!raw || raw.length < 200) return;
+
+      const extractTag = (tag: string): string | undefined => {
+        const match = raw.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, 'i'));
+        const content = match?.[1]?.trim();
+        return content && content.length > 80 ? content : undefined;
+      };
+
+      this.domainSpecsOverrides = {
+        dataModel: extractTag('DATA_MODEL'),
+        databaseSchema: extractTag('DATABASE_SCHEMA'),
+        apiContracts: extractTag('API_CONTRACTS'),
+        uiContracts: extractTag('UI_CONTRACTS')
+      };
+    } catch (err: any) {
+      console.warn('[SpecAgent] Domain .specs contract synthesis skipped:', err?.message || err);
+    }
+  }
+
+  /**
    * Step 5: Finalizes and packages specifications for preview, zip export, and MCP
    */
   finalizeAndPackage(): GeneratedContent {
-    const tokenCost = 28500;
+    const measuredTokens = this.totalInputTokens + this.totalOutputTokens;
+    const tokenCost = measuredTokens > 0 ? measuredTokens : 28500;
     saasStore.recordSpecGeneration(tokenCost);
 
     // Annotate _index.md with AI synthesis metadata

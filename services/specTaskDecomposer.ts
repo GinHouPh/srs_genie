@@ -43,11 +43,12 @@ export function enrichTaskWithMultiAgentScope(task: Partial<VibeTask>, idx: numb
     }
   }
 
-  // 3. Scope Excluded
+  // 3. Scope Excluded (ensure no excluded glob shadows an included file)
   let scopeExcluded = task.scopeExcluded;
   if (!scopeExcluded || scopeExcluded.length === 0) {
     if (type === 'setup') {
-      scopeExcluded = ['src/**', '.specs/**'];
+      const touchesSrc = scopeIncluded.some(p => p.startsWith('src/'));
+      scopeExcluded = touchesSrc ? ['src/modules/**', 'src/pages/**', '.specs/**'] : ['src/**', '.specs/**'];
     } else if (type === 'frontend') {
       scopeExcluded = ['src/modules/**', 'src/config/**', '.specs/**'];
     } else if (type === 'database') {

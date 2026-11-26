@@ -7,25 +7,32 @@ export function extractSectionFromDraft(draft: string | undefined, keywords: str
   if (!draft) return '';
   const lines = draft.split('\n');
   let capturing = false;
+  let captureLevel = 0;
   const captured: string[] = [];
 
   for (const line of lines) {
-    const isHeading = /^#{1,3}\s+/.test(line);
-    if (isHeading) {
-      const lower = line.toLowerCase();
+    const headingMatch = line.match(/^(#{1,3})\s+(.+)/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const lower = headingMatch[2].toLowerCase();
       const matches = keywords.some(kw => lower.includes(kw.toLowerCase()));
-      if (matches) {
+      if (!capturing && matches) {
         capturing = true;
+        captureLevel = level;
         captured.push(line);
         continue;
-      } else if (capturing) {
+      } else if (capturing && level <= captureLevel) {
         break;
       }
-    } else if (capturing) {
+    }
+    if (capturing) {
       captured.push(line);
     }
   }
 
+  // Require meaningful body content beyond a bare heading
+  const bodyLines = captured.slice(1).filter(l => l.trim().length > 0);
+  if (bodyLines.length < 2) return '';
   return captured.join('\n').trim();
 }
 
@@ -83,6 +90,13 @@ export function getIndustryGlossary(industry: string): { term: string; definitio
   ];
 }
 
+export interface DomainSpecsOverrides {
+  dataModel?: string;
+  databaseSchema?: string;
+  apiContracts?: string;
+  uiContracts?: string;
+}
+
 /**
  * Builds the complete 22-file canonical .specs hierarchy
  */
@@ -90,7 +104,8 @@ export function buildCanonicalSpecsSuite(
   input: ProjectInput,
   dynamicTasks: VibeTask[],
   draftText: string | undefined,
-  recordFileCallback?: (path: string, tier: string, title: string, content: string) => void
+  recordFileCallback?: (path: string, tier: string, title: string, content: string) => void,
+  domainOverrides?: DomainSpecsOverrides
 ): Record<string, string> {
   const files: Record<string, string> = {};
   const recordFile = (path: string, tier: string, title: string, content: string) => {
@@ -583,7 +598,19 @@ ${aiSystemDesign ? `\n---\n\n## 3. Frontier Architecture Blueprint Synthesis\n\n
 `);
 
   // 7. architecture/data_model.md
-  recordFile('architecture/data_model.md', 'Tier 2', 'Canonical Data Model', `---
+  recordFile('architecture/data_model.md', 'Tier 2', 'Canonical Data Model', domainOverrides?.dataModel
+    ? `---
+tier: 2
+role: canonical-data-model
+depends-on: domain/user_stories.md · domain/domain_rules.md
+updated: ${dateStr}
+---
+
+# Canonical Data Model & Relational Schema: ${projectName}
+
+${domainOverrides.dataModel}
+`
+    : `---
 tier: 2
 role: canonical-data-model
 depends-on: domain/user_stories.md · domain/domain_rules.md
@@ -728,7 +755,24 @@ ${aiSecurityModel ? `\n---\n\n## Frontier Model Security Architecture Directives
 `);
 
   // 9. contracts/api_contracts.md
-  recordFile('contracts/api_contracts.md', 'Tier 3', 'REST / GraphQL API Contracts', `---
+  recordFile('contracts/api_contracts.md', 'Tier 3', 'REST / GraphQL API Contracts', domainOverrides?.apiContracts
+    ? `---
+tier: 3
+role: api-contracts
+depends-on: architecture/data_model.md · architecture/security_model.md
+updated: ${dateStr}
+---
+
+# REST API Contracts & Endpoint Specifications: ${projectName}
+
+> **Global API Protocol:** All endpoints return standard JSON envelopes formatted as:  
+> \`{ "success": boolean, "data"?: any, "error"?: { "code": string, "message": string }, "meta"?: any }\`
+
+---
+
+${domainOverrides.apiContracts}
+`
+    : `---
 tier: 3
 role: api-contracts
 depends-on: architecture/data_model.md · architecture/security_model.md
@@ -750,9 +794,9 @@ updated: ${dateStr}
 \`\`\`json
 {
   "name": "Jane Doe",
-  "email": "jane@company.com",
+  "email": "jane@example.com",
   "password": "StrongPassword123!",
-  "companyName": "Acme Logistics"
+  "organizationName": "${projectName} Workspace"
 }
 \`\`\`
 - **Response (201 Created):**
@@ -760,8 +804,8 @@ updated: ${dateStr}
 {
   "success": true,
   "data": {
-    "user": { "id": "b3e944a1-0001", "email": "jane@company.com", "role": "admin" },
-    "tenant": { "id": "t7a109c4-0001", "name": "Acme Logistics", "plan": "pro" },
+    "user": { "id": "b3e944a1-0001", "email": "jane@example.com", "role": "admin" },
+    "tenant": { "id": "t7a109c4-0001", "name": "${projectName} Workspace", "plan": "pro" },
     "token": "eyJhbGciOiJSUzI1NiIs..."
   }
 }
@@ -816,7 +860,19 @@ ${aiApiContracts ? `\n---\n\n## Frontier Model API Contracts\n\n${aiApiContracts
 `);
 
   // 10. contracts/database_schema.md
-  recordFile('contracts/database_schema.md', 'Tier 3', 'Database Schema & Migrations', `---
+  recordFile('contracts/database_schema.md', 'Tier 3', 'Database Schema & Migrations', domainOverrides?.databaseSchema
+    ? `---
+tier: 3
+role: database-schema
+depends-on: architecture/data_model.md
+updated: ${dateStr}
+---
+
+# Production Database Schema & SQL Migrations: ${projectName}
+
+${domainOverrides.databaseSchema}
+`
+    : `---
 tier: 3
 role: database-schema
 depends-on: architecture/data_model.md
@@ -905,7 +961,19 @@ ${aiDatabaseSchema ? `\n---\n\n## Frontier Model DDL Migrations\n\n${aiDatabaseS
 `);
 
   // 11. contracts/ui_contracts.md
-  recordFile('contracts/ui_contracts.md', 'Tier 3', 'UI Component & State Contracts', `---
+  recordFile('contracts/ui_contracts.md', 'Tier 3', 'UI Component & State Contracts', domainOverrides?.uiContracts
+    ? `---
+tier: 3
+role: ui-contracts
+depends-on: architecture/system_design.md · contracts/api_contracts.md
+updated: ${dateStr}
+---
+
+# UI Architecture, Routes & Component Contracts: ${projectName}
+
+${domainOverrides.uiContracts}
+`
+    : `---
 tier: 3
 role: ui-contracts
 depends-on: architecture/system_design.md
