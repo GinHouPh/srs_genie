@@ -40,32 +40,32 @@ class LicenseService {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        return {
-          ...parsed,
-          isLocal
-        };
+        if (parsed && parsed.isLicensed && parsed.licenseKey) {
+          return {
+            ...parsed,
+            isLocal
+          };
+        }
       }
     } catch {}
 
-    // Default baseline license state
+    // Default baseline license state: STRICTLY UNLICENSED until activated
     return {
-      isLicensed: isLocal,
+      isLicensed: false,
       isLocal,
-      licenseKey: isLocal ? 'LOCAL-DEV-SANDBOX-ENVIRONMENT' : '',
-      channel: isLocal ? 'offline_dev' : 'envato',
-      tier: isLocal ? 'developer' : 'regular',
-      buyerName: isLocal ? 'Local Sandbox Developer' : '',
+      licenseKey: '',
+      channel: 'envato',
+      tier: 'regular',
+      buyerName: '',
       boundDomain: typeof window !== 'undefined' ? window.location.hostname : 'localhost',
       features: {
-        mcpGateway: true,
-        multiAiProvider: true,
+        mcpGateway: false,
+        multiAiProvider: false,
         whiteLabel: false,
-        priorityUpdates: true
+        priorityUpdates: false
       },
-      status: isLocal ? 'active' : 'unlicensed',
-      statusMessage: isLocal
-        ? 'Running in local development / staging sandbox mode (Permissive free dev tier).'
-        : 'License key not activated. Please activate to enable specification synthesis.'
+      status: 'unlicensed',
+      statusMessage: 'Software activation required. Please activate with your Envato Purchase Code or Agape License Key.'
     };
   }
 
@@ -125,18 +125,7 @@ class LicenseService {
         return updated;
       }
     } catch {
-      // In local Vite standalone dev, backend PHP might be offline; fallback safely
-      if (this.isLocalEnvironment()) {
-        const localActive: LicenseInfo = {
-          ...this.currentLicense,
-          isLicensed: true,
-          isLocal: true,
-          status: 'active',
-          statusMessage: 'Local development environment verified (Permissive developer allowance).'
-        };
-        this.saveToStorage(localActive);
-        return localActive;
-      }
+      // In standalone frontend or network failure, do not automatically grant license
     } finally {
       this.isChecking = false;
     }

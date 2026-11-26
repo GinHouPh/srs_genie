@@ -18,6 +18,7 @@ import { saasStore } from './services/saasStore';
 import { ShieldAlert } from 'lucide-react';
 import { licenseService } from './services/licenseService';
 import { LicenseActivationModal } from './components/LicenseActivationModal';
+import { ProductActivationGate } from './components/ProductActivationGate';
 
 export default function App() {
   // Real persistent session
@@ -454,19 +455,28 @@ export default function App() {
       )}
 
       <main className="flex-1 flex flex-col items-center justify-start relative z-10 w-full">
-        {/* Error notification banner if any */}
-        {error && (
-          <div className="w-full max-w-4xl mx-auto my-4 p-4 border-l-2 border-accent bg-box border border-line text-white text-xs flex items-center justify-between">
-            <span>{error}</span>
-            <button onClick={() => setError(null)} className="font-display uppercase tracking-[0.1em] text-accent hover:text-white text-xs ml-4">
-              Dismiss
-            </button>
-          </div>
-        )}
+        {/* If the installation is unactivated, hard-lock the application behind ProductActivationGate */}
+        {!licenseInfo.isLicensed ? (
+          <ProductActivationGate
+            onActivationSuccess={() => {
+              licenseService.fetchLicenseStatus();
+            }}
+          />
+        ) : (
+          <>
+            {/* Error notification banner if any */}
+            {error && (
+              <div className="w-full max-w-4xl mx-auto my-4 p-4 border-l-2 border-accent bg-box border border-line text-white text-xs flex items-center justify-between">
+                <span>{error}</span>
+                <button onClick={() => setError(null)} className="font-display uppercase tracking-[0.1em] text-accent hover:text-white text-xs ml-4">
+                  Dismiss
+                </button>
+              </div>
+            )}
 
-        {/* State: Storefront Landing Page (Public default for visitors) */}
-        {appState === AppState.LANDING && (
-          <LandingPage
+            {/* State: Storefront Landing Page (Public default for visitors) */}
+            {appState === AppState.LANDING && (
+              <LandingPage
             onStartFree={() => handleOpenAuth('register', 'free')}
             onSignIn={() => handleOpenAuth('login')}
             onSelectPlan={(planId) => handleOpenAuth('register', planId)}
@@ -621,12 +631,15 @@ export default function App() {
             />
           </div>
         )}
+          </>
+        )}
       </main>
 
       {/* Floating License Activation Modal */}
       <LicenseActivationModal
         isOpen={showLicenseModal}
         onClose={() => setShowLicenseModal(false)}
+        isMandatory={!licenseInfo.isLicensed}
         onSuccess={() => {
           licenseService.fetchLicenseStatus();
         }}

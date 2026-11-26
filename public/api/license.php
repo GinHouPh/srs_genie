@@ -40,8 +40,8 @@ if ($action === 'status') {
         'isLocal'      => $isLocal,
         'licenseKey'   => $stored['license_key'] ? substr($stored['license_key'], 0, 8) . '...' . substr($stored['license_key'], -4) : '',
         'fullKey'      => $stored['license_key'] ?? '',
-        'channel'      => $stored['channel'] ?? ($isLocal ? 'offline_dev' : 'envato'),
-        'tier'         => $stored['tier'] ?? ($isLocal ? 'developer' : 'regular'),
+        'channel'      => $stored['channel'] ?? 'envato',
+        'tier'         => $stored['tier'] ?? 'regular',
         'buyerName'    => $stored['buyer'] ?? '',
         'boundDomain'  => $stored['bound_domain'] ?? $currentDomain,
         'supportUntil' => $stored['support_until'] ?? null,
@@ -49,10 +49,10 @@ if ($action === 'status') {
         'status'       => $licenseState['status'],
         'statusMessage'=> $licenseState['message'],
         'features'     => [
-            'mcpGateway'       => true,
-            'multiAiProvider'  => true,
-            'whiteLabel'       => in_array($stored['tier'] ?? '', ['extended', 'agency', 'enterprise']),
-            'priorityUpdates'  => true
+            'mcpGateway'       => $licenseState['valid'],
+            'multiAiProvider'  => $licenseState['valid'],
+            'whiteLabel'       => $licenseState['valid'] && in_array($stored['tier'] ?? '', ['extended', 'agency', 'enterprise']),
+            'priorityUpdates'  => $licenseState['valid']
         ]
     ]);
 }

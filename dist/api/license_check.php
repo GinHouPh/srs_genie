@@ -93,37 +93,23 @@ class SRSLocalLicenseGate
         $currentDomain = self::getCurrentDomain();
         $licenseData = self::getStoredLicense();
 
-        // 1. Localhost and staging environments are automatically granted developer tier
-        if ($isLocal) {
-            return [
-                'valid'        => true,
-                'is_local'     => true,
-                'license_key'  => $licenseData['license_key'] ?: 'LOCAL-DEV-SANDBOX-ENVIRONMENT',
-                'channel'      => $licenseData['channel'] ?: 'offline_dev',
-                'tier'         => $licenseData['tier'] ?: 'developer',
-                'bound_domain' => $currentDomain,
-                'status'       => 'active',
-                'message'      => 'Running in local development / staging sandbox mode (Free dev allowance).'
-            ];
-        }
-
-        // 2. Production Domain Verification
-        $key  = $licenseData['license_key'] ?? '';
-        $hash = $licenseData['activation_hash'] ?? '';
-        $salt = $licenseData['client_salt'] ?? '';
+        // 1. Check for stored license key, hash, and salt
+        $key  = trim($licenseData['license_key'] ?? '');
+        $hash = trim($licenseData['activation_hash'] ?? '');
+        $salt = trim($licenseData['client_salt'] ?? '');
         $tier = $licenseData['tier'] ?? 'regular';
 
         if (empty($key) || empty($hash) || empty($salt)) {
             return [
                 'valid'        => false,
-                'is_local'     => false,
+                'is_local'     => $isLocal,
                 'error'        => 'UNLICENSED_INSTANCE',
                 'status'       => 'unlicensed',
-                'message'      => 'SRS Genie is not licensed on this domain. Please activate via Admin Console or Setup Wizard.'
+                'message'      => 'SRS Genie is not activated. Enter your Envato Purchase Code or Agape License Key to activate the software.'
             ];
         }
 
-        // 3. Cryptographic HMAC Check
+        // 2. Cryptographic HMAC Check
         // The expected payload format signed by Central Server: "{key}::{domain}::{tier}::perpetual"
         $expectedPayload = implode('::', [$key, $currentDomain, $tier, 'perpetual']);
         $computedHash = hash_hmac('sha256', $expectedPayload, $salt);
@@ -131,22 +117,22 @@ class SRSLocalLicenseGate
         if (!hash_equals($computedHash, $hash)) {
             return [
                 'valid'        => false,
-                'is_local'     => false,
+                'is_local'     => $isLocal,
                 'error'        => 'DOMAIN_MISMATCH',
                 'status'       => 'suspended',
                 'message'      => "License is bound to another host and cannot be run on '{$currentDomain}'."
             ];
         }
 
-        // 4. Periodic background heartbeat check (every 7 days)
+        // 3. Periodic background heartbeat check (every 7 days)
         $lastHeartbeat = (int)($licenseData['last_heartbeat'] ?? 0);
-        if (time() - $lastHeartbeat > (7 * 86400)) {
+        if (!$isLocal && time() - $lastHeartbeat > (7 * 86400)) {
             self::triggerAsyncHeartbeat($key, $currentDomain);
         }
 
         return [
             'valid'         => true,
-            'is_local'      => false,
+            'is_local'      => $isLocal,
             'license_key'   => $key,
             'channel'       => $licenseData['channel'] ?? 'envato',
             'tier'          => $tier,

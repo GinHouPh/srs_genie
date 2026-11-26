@@ -15,12 +15,14 @@ interface LicenseActivationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  isMandatory?: boolean;
 }
 
 export const LicenseActivationModal: React.FC<LicenseActivationModalProps> = ({
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
+  isMandatory = false
 }) => {
   const [keyInput, setKeyInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,7 +49,7 @@ export const LicenseActivationModal: React.FC<LicenseActivationModalProps> = ({
         if (onSuccess) onSuccess();
         setTimeout(() => {
           onClose();
-        }, 1500);
+        }, 1200);
       } else {
         setError(res.message || 'Verification rejected by licensing server.');
       }
@@ -59,16 +61,18 @@ export const LicenseActivationModal: React.FC<LicenseActivationModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-lg bg-surface border border-line p-6 sm:p-8 space-y-6 shadow-2xl">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 text-muted hover:text-white p-1"
-          aria-label="Close"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        {/* Close Button - Only show if not mandatory */}
+        {!isMandatory && (
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-4 text-muted hover:text-white p-1 transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
 
         {/* Modal Header */}
         <div className="flex items-start gap-4">

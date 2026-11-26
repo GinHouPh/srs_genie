@@ -1,0 +1,8 @@
+# Autonomous Agent Global Rules: Ekklesia
+
+1. Consult `AGENTS.md` and `.specs/_index.md` before inspecting or modifying any repository source code.
+2. Coordinate with peer agents via `.specs/coordination/protocol.md` and `.specs/coordination/task_board.md`.
+3. Work in an isolated Git worktree (`agent/{session_id}`) and respect `INCLUDED` scope boundaries.
+4. Maintain strict backward compatibility with contracts defined in `.specs/contracts/`.
+5. Adhere to zero-trust RBAC and multi-tenant isolation outlined in `.specs/architecture/security_model.md`.
+6. Compile verifiable test evidence per `.specs/agents/verification.md` and update `.specs/state/current_state.md` after task completion.

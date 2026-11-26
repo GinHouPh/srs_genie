@@ -1,0 +1,8 @@
+# Windsurf Cascade Rules: Ekklesia
+
+- **Universal Entrypoint:** Parse `AGENTS.md` and `.specs/_index.md` before generating or modifying any code.
+- **Coordination & Leases:** Check `.specs/coordination/task_board.md` and follow `.specs/coordination/protocol.md`.
+- **Scope Boundary Invariants:** Modify only files declared under your claimed task's `Scope boundary: INCLUDED` list.
+- **Contract Enforcement:** All API endpoints and database models must strictly adhere to `.specs/contracts/api_contracts.md` and `.specs/contracts/database_schema.md`.
+- **Quality Gates:** Code must pass `.specs/implementation/coding_standards.md` and `.specs/agents/verification.md` with zero TypeScript errors or linter warnings.
+- **Audit Logging:** Maintain architectural consistency and document design decisions in `.specs/state/decisions_log.md`.

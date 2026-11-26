@@ -12,6 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+require_once __DIR__ . '/license_check.php';
+SRSLocalLicenseGate::enforce();
+
 $rawInput = file_get_contents('php://input');
 $payload = json_decode($rawInput, true);
 

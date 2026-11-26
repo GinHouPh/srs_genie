@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/license_check.php';
+SRSLocalLicenseGate::enforce();
 $pdo = getDbConnection();
 
 $method = $_SERVER['REQUEST_METHOD'];
